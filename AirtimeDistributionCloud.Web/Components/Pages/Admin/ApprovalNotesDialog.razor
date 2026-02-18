@@ -1,0 +1,23 @@
+@rendermode InteractiveServer
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField @bind-Value="_notes" Label="Notes" Lines="3" Variant="Variant.Outlined" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="@ActionColor" Variant="Variant.Filled" OnClick="Submit">@ActionLabel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string ActionLabel { get; set; } = "Confirm";
+    [Parameter] public Color ActionColor { get; set; } = Color.Primary;
+
+    private string _notes = "";
+
+    private void Submit() => MudDialog.Close(DialogResult.Ok(_notes));
+    private void Cancel() => MudDialog.Cancel();
+}

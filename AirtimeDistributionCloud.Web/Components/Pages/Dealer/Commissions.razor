@@ -1,0 +1,112 @@
+@page "/dealer/commissions"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "SystemAdmin,SuperAdministrator,Dealer")]
+@using AirtimeDistributionCloud.Core.Entities
+@using AirtimeDistributionCloud.Core.Interfaces
+@using AirtimeDistributionCloud.Application.Services
+@inject IDealerService DealerService
+@inject IUnitOfWork UnitOfWork
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>Commissions - Airtime Distribution</PageTitle>
+
+<div class="page-header">
+    <h1>Commissions</h1>
+    <p>View dealer commission rates and balances</p>
+</div>
+
+<MudPaper Elevation="0" Class="data-card pa-4 mb-4">
+    <MudSelect T="int?" Value="_selectedDealerId" Label="Select Dealer" Class="mb-4"
+               ValueChanged="@((int? v) => OnDealerChanged(v))">
+        <MudSelectItem T="int?" Value="@((int?)null)">-- All Dealers --</MudSelectItem>
+        @foreach (var dealer in _dealers)
+        {
+            <MudSelectItem T="int?" Value="@((int?)dealer.Id)">@dealer.Name</MudSelectItem>
+        }
+    </MudSelect>
+</MudPaper>
+
+<MudPaper Elevation="0" Class="data-card pa-4">
+    <MudDataGrid T="DealerProductView" Items="@_dealerProducts" Loading="@_loading"
+                 Dense="true" Hover="true" Striped="true" Filterable="false">
+        <Columns>
+            <PropertyColumn Property="x => x.DealerName" Title="Dealer" />
+            <PropertyColumn Property="x => x.ProductName" Title="Product" />
+            <PropertyColumn Property="x => x.CommissionRate" Title="Commission Rate %" Format="N6" />
+            <PropertyColumn Property="x => x.Balance" Title="Balance" Format="C6" />
+        </Columns>
+        <NoRecordsContent>
+            <MudText>No commission data found. Select a dealer or register dealers with products first.</MudText>
+        </NoRecordsContent>
+    </MudDataGrid>
+</MudPaper>
+
+@code {
+    private List<Application.DTOs.DealerDto> _dealers = new();
+    private List<DealerProductView> _dealerProducts = new();
+    private int? _selectedDealerId;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _dealers = (await DealerService.GetAllDealersAsync()).ToList();
+            await LoadDealerProducts();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task OnDealerChanged(int? dealerId)
+    {
+        _selectedDealerId = dealerId;
+        await LoadDealerProducts();
+    }
+
+    private async Task LoadDealerProducts()
+    {
+        _loading = true;
+        try
+        {
+            var dpRepo = UnitOfWork.Repository<DealerProduct>();
+            var allDp = await dpRepo.GetAllAsync();
+            var products = (await UnitOfWork.Repository<Product>().GetAllAsync()).ToDictionary(p => p.Id);
+            var dealerMap = _dealers.ToDictionary(d => d.Id);
+
+            var query = allDp.AsEnumerable();
+            if (_selectedDealerId.HasValue)
+                query = query.Where(dp => dp.DealerId == _selectedDealerId.Value);
+
+            _dealerProducts = query.Select(dp => new DealerProductView
+            {
+                DealerName = dealerMap.GetValueOrDefault(dp.DealerId)?.Name ?? "Unknown",
+                ProductName = products.GetValueOrDefault(dp.ProductId)?.Name ?? "Unknown",
+                CommissionRate = dp.CommissionRate,
+                Balance = dp.Balance
+            }).ToList();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading commissions: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private class DealerProductView
+    {
+        public string DealerName { get; set; } = "";
+        public string ProductName { get; set; } = "";
+        public decimal CommissionRate { get; set; }
+        public decimal Balance { get; set; }
+    }
+}

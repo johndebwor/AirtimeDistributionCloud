@@ -1,0 +1,150 @@
+@rendermode InteractiveServer
+@using AirtimeDistributionCloud.Application.DTOs
+@using AirtimeDistributionCloud.Application.Services
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<ApplicationUser> UserManager
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField @bind-Value="Model.FullName" Label="Full Name" Required="true"
+                      RequiredError="Full name is required" Class="mb-3" />
+        <MudTextField @bind-Value="Model.Email" Label="Email" Required="true"
+                      RequiredError="Email is required" InputType="InputType.Email" Class="mb-3" />
+        <MudTextField @bind-Value="Model.Password" Label="@(IsEdit ? "New Password (leave blank to keep)" : "Password")"
+                      Required="@(!IsEdit)" RequiredError="Password is required"
+                      InputType="@(_showPassword ? InputType.Text : InputType.Password)"
+                      Adornment="Adornment.End"
+                      AdornmentIcon="@(_showPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                      OnAdornmentClick="@(() => _showPassword = !_showPassword)"
+                      Class="mb-3" />
+        <MudSelect T="int?" @bind-Value="Model.BranchId" Label="Branch" Clearable="true" Class="mb-3">
+            @foreach (var b in Branches)
+            {
+                <MudSelectItem T="int?" Value="@((int?)b.Id)">@b.Name</MudSelectItem>
+            }
+        </MudSelect>
+        <MudSelect T="string" Label="Roles" MultiSelection="true" @bind-SelectedValues="_selectedRolesValues" Class="mb-3">
+            @foreach (var role in AvailableRoles)
+            {
+                <MudSelectItem T="string" Value="@role">@role</MudSelectItem>
+            }
+        </MudSelect>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit"
+                   Disabled="@_saving">@(IsEdit ? "Update" : "Save")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public bool IsEdit { get; set; }
+    [Parameter] public UserModel Model { get; set; } = new();
+    [Parameter] public List<string> AvailableRoles { get; set; } = new();
+    [Parameter] public List<BranchDto> Branches { get; set; } = new();
+
+    private bool _saving;
+    private bool _showPassword;
+
+    private IEnumerable<string> _selectedRolesValues
+    {
+        get => Model.SelectedRoles;
+        set => Model.SelectedRoles = value.ToList();
+    }
+
+    private async Task Submit()
+    {
+        if (string.IsNullOrWhiteSpace(Model.FullName) || string.IsNullOrWhiteSpace(Model.Email))
+        {
+            Snackbar.Add("Full name and email are required", Severity.Warning);
+            return;
+        }
+
+        if (!IsEdit && string.IsNullOrWhiteSpace(Model.Password))
+        {
+            Snackbar.Add("Password is required for new users", Severity.Warning);
+            return;
+        }
+
+        _saving = true;
+        try
+        {
+            if (IsEdit)
+            {
+                var user = await UserManager.FindByIdAsync(Model.Id);
+                if (user == null)
+                {
+                    Snackbar.Add("User not found", Severity.Error);
+                    return;
+                }
+
+                user.FullName = Model.FullName;
+                user.Email = Model.Email;
+                user.UserName = Model.Email;
+                user.BranchId = Model.BranchId;
+                await UserManager.UpdateAsync(user);
+
+                var currentRoles = await UserManager.GetRolesAsync(user);
+                await UserManager.RemoveFromRolesAsync(user, currentRoles);
+                if (Model.SelectedRoles.Any())
+                    await UserManager.AddToRolesAsync(user, Model.SelectedRoles);
+
+                if (!string.IsNullOrEmpty(Model.Password))
+                {
+                    var token = await UserManager.GeneratePasswordResetTokenAsync(user);
+                    await UserManager.ResetPasswordAsync(user, token, Model.Password);
+                }
+
+                Snackbar.Add("User updated", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                var user = new ApplicationUser
+                {
+                    UserName = Model.Email,
+                    Email = Model.Email,
+                    FullName = Model.FullName,
+                    BranchId = Model.BranchId,
+                    EmailConfirmed = true
+                };
+
+                var result = await UserManager.CreateAsync(user, Model.Password);
+                if (result.Succeeded)
+                {
+                    if (Model.SelectedRoles.Any())
+                        await UserManager.AddToRolesAsync(user, Model.SelectedRoles);
+
+                    Snackbar.Add("User created", Severity.Success);
+                    MudDialog.Close(DialogResult.Ok(true));
+                }
+                else
+                {
+                    Snackbar.Add(string.Join(", ", result.Errors.Select(e => e.Description)), Severity.Error);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    public class UserModel
+    {
+        public string Id { get; set; } = "";
+        public string FullName { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Password { get; set; } = "";
+        public int? BranchId { get; set; }
+        public List<string> SelectedRoles { get; set; } = new();
+    }
+}

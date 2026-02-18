@@ -1,0 +1,49 @@
+<MudNavMenu Rounded="true" Margin="Margin.Dense" Color="Color.Primary">
+
+    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Outlined.SpaceDashboard">
+        Dashboard
+    </MudNavLink>
+
+    <AuthorizeView Roles="SystemAdmin,SuperAdministrator">
+        <div class="nav-label">
+            <span class="dot" style="background:#3B82F6;"></span>
+            Admin
+        </div>
+        <MudNavLink Href="/admin/products" Icon="@Icons.Material.Outlined.Inventory2">Products</MudNavLink>
+        <MudNavLink Href="/admin/branches" Icon="@Icons.Material.Outlined.Store">Branches</MudNavLink>
+        <MudNavLink Href="/admin/deposits" Icon="@Icons.Material.Outlined.AccountBalanceWallet">Deposits</MudNavLink>
+        <MudNavLink Href="/admin/approvals" Icon="@Icons.Material.Outlined.FactCheck">Deposit Approvals</MudNavLink>
+        <MudNavLink Href="/admin/transfer-approvals" Icon="@Icons.Material.Outlined.SwapHorizontalCircle">Transfer Approvals</MudNavLink>
+        <MudNavLink Href="/admin/expense-approvals" Icon="@Icons.Material.Outlined.RuleFolder">Expense Approvals</MudNavLink>
+    </AuthorizeView>
+
+    <AuthorizeView Roles="SystemAdmin,SuperAdministrator,Dealer">
+        <div class="nav-label">
+            <span class="dot" style="background:#F59E0B;"></span>
+            Dealers
+        </div>
+        <MudNavLink Href="/dealer/registration" Icon="@Icons.Material.Outlined.PersonAdd">Registration</MudNavLink>
+        <MudNavLink Href="/dealer/transfers" Icon="@Icons.Material.Outlined.SwapHoriz">Transfers</MudNavLink>
+        <MudNavLink Href="/dealer/commissions" Icon="@Icons.Material.Outlined.Payments">Commissions</MudNavLink>
+    </AuthorizeView>
+
+    <AuthorizeView Roles="SystemAdmin,Cashier">
+        <div class="nav-label">
+            <span class="dot" style="background:#16A34A;"></span>
+            Cashier
+        </div>
+        <MudNavLink Href="/cashier/deposits" Icon="@Icons.Material.Outlined.Paid">Cash Deposits</MudNavLink>
+        <MudNavLink Href="/cashier/balances" Icon="@Icons.Material.Outlined.AccountBalance">Balances</MudNavLink>
+        <MudNavLink Href="/cashier/expenses" Icon="@Icons.Material.Outlined.Receipt">Expenses</MudNavLink>
+    </AuthorizeView>
+
+    <AuthorizeView Roles="SystemAdmin,SuperAdministrator">
+        <div class="nav-label">
+            <span class="dot" style="background:#A855F7;"></span>
+            System
+        </div>
+        <MudNavLink Href="/superadmin/users" Icon="@Icons.Material.Outlined.Group">Users</MudNavLink>
+        <MudNavLink Href="/superadmin/audit" Icon="@Icons.Material.Outlined.History">Audit Logs</MudNavLink>
+    </AuthorizeView>
+
+</MudNavMenu>

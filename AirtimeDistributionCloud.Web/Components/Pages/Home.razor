@@ -1,0 +1,437 @@
+@page "/"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using AirtimeDistributionCloud.Application.DTOs
+@using AirtimeDistributionCloud.Application.Services
+@using AirtimeDistributionCloud.Core.Entities
+@using AirtimeDistributionCloud.Core.Enums
+@using AirtimeDistributionCloud.Core.Interfaces
+@using Microsoft.AspNetCore.Identity
+@inject IProductService ProductService
+@inject IDealerService DealerService
+@inject IAirtimeTransferService TransferService
+@inject ICashDepositService CashDepositService
+@inject IAirtimeDepositService DepositService
+@inject IBranchService BranchService
+@inject IAuditLogService AuditLogService
+@inject ICurrentUserService CurrentUser
+@inject UserManager<ApplicationUser> UserManager
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Dashboard - Airtime Distribution</PageTitle>
+
+<!-- Welcome Section -->
+<div class="page-header">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+        <MudAvatar Color="Color.Primary" Size="Size.Large">
+            <MudIcon Icon="@Icons.Material.Filled.Person" />
+        </MudAvatar>
+        <div>
+            <h1>Welcome back, @_userName!</h1>
+            <p>Here's what's happening in your airtime distribution system</p>
+        </div>
+    </MudStack>
+</div>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-4" />
+}
+
+<MudGrid Spacing="4">
+    <!-- Summary Cards -->
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Class="stat-card" Elevation="0" Style="border-left: 4px solid #3B82F6 !important;"
+                 @onclick="@(() => Navigation.NavigateTo("/admin/products"))">
+            <MudCardContent>
+                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                    <div>
+                        <MudText Typo="Typo.overline" Color="Color.Secondary">PRODUCTS</MudText>
+                        <MudText Typo="Typo.h4">@_productCount</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Success">@_activeProductCount active</MudText>
+                    </div>
+                    <MudAvatar Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Large">
+                        <MudIcon Icon="@Icons.Material.Filled.Inventory" />
+                    </MudAvatar>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Class="stat-card" Elevation="0" Style="border-left: 4px solid #F59E0B !important;"
+                 @onclick="@(() => Navigation.NavigateTo("/dealer/registration"))">
+            <MudCardContent>
+                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                    <div>
+                        <MudText Typo="Typo.overline" Color="Color.Secondary">DEALERS</MudText>
+                        <MudText Typo="Typo.h4">@_dealerCount</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Info">registered</MudText>
+                    </div>
+                    <MudAvatar Color="Color.Secondary" Variant="Variant.Outlined" Size="Size.Large">
+                        <MudIcon Icon="@Icons.Material.Filled.People" />
+                    </MudAvatar>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Class="stat-card" Elevation="0" Style="border-left: 4px solid #0284C7 !important;"
+                 @onclick="@(() => Navigation.NavigateTo("/dealer/transfers"))">
+            <MudCardContent>
+                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                    <div>
+                        <MudText Typo="Typo.overline" Color="Color.Secondary">TRANSFERS</MudText>
+                        <MudText Typo="Typo.h4">@_transferCount</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Info">@_totalTransferAmount.ToString("C6")</MudText>
+                    </div>
+                    <MudAvatar Color="Color.Info" Variant="Variant.Outlined" Size="Size.Large">
+                        <MudIcon Icon="@Icons.Material.Filled.SwapHoriz" />
+                    </MudAvatar>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Class="stat-card" Elevation="0" Style="border-left: 4px solid #16A34A !important;"
+                 @onclick="@(() => Navigation.NavigateTo("/cashier/deposits"))">
+            <MudCardContent>
+                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                    <div>
+                        <MudText Typo="Typo.overline" Color="Color.Secondary">CASH DEPOSITS</MudText>
+                        <MudText Typo="Typo.h4">@_cashDepositCount</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Success">@_totalCashDeposits.ToString("C6")</MudText>
+                    </div>
+                    <MudAvatar Color="Color.Success" Variant="Variant.Outlined" Size="Size.Large">
+                        <MudIcon Icon="@Icons.Material.Filled.AttachMoney" />
+                    </MudAvatar>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <!-- Quick Actions -->
+    <MudItem xs="12">
+        <MudPaper Elevation="0" Class="data-card pa-4">
+            <MudText Typo="Typo.h6" Class="mb-3">Quick Actions</MudText>
+            <MudStack Row="true" Spacing="3" Wrap="Wrap.Wrap">
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.SwapHoriz"
+                           OnClick="@(() => Navigation.NavigateTo("/dealer/transfers"))">New Transfer</MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Success"
+                           StartIcon="@Icons.Material.Filled.AttachMoney"
+                           OnClick="@(() => Navigation.NavigateTo("/cashier/deposits"))">Cash Deposit</MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Warning"
+                           StartIcon="@Icons.Material.Filled.AccountBalanceWallet"
+                           OnClick="@(() => Navigation.NavigateTo("/admin/deposits"))">Airtime Deposit</MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Info"
+                           StartIcon="@Icons.Material.Filled.PersonAdd"
+                           OnClick="@(() => Navigation.NavigateTo("/dealer/registration"))">Register Dealer</MudButton>
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+
+    <!-- Pending Approvals Alerts -->
+    @if (_pendingDepositsCount > 0)
+    {
+        <MudItem xs="12" md="6">
+            <MudAlert Severity="Severity.Warning" Variant="Variant.Filled" Dense="true"
+                      Class="cursor-pointer" OnClick="@(() => Navigation.NavigateTo("/admin/approvals"))">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudText>You have <strong>@_pendingDepositsCount</strong> airtime deposit(s) pending approval.</MudText>
+                    <MudButton Variant="Variant.Text" Color="Color.Inherit" Size="Size.Small"
+                               EndIcon="@Icons.Material.Filled.ArrowForward">Review</MudButton>
+                </MudStack>
+            </MudAlert>
+        </MudItem>
+    }
+
+    @if (_pendingTransfersCount > 0)
+    {
+        <MudItem xs="12" md="6">
+            <MudAlert Severity="Severity.Info" Variant="Variant.Filled" Dense="true"
+                      Class="cursor-pointer" OnClick="@(() => Navigation.NavigateTo("/admin/transfer-approvals"))">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudText>You have <strong>@_pendingTransfersCount</strong> airtime transfer(s) pending approval.</MudText>
+                    <MudButton Variant="Variant.Text" Color="Color.Inherit" Size="Size.Small"
+                               EndIcon="@Icons.Material.Filled.ArrowForward">Review</MudButton>
+                </MudStack>
+            </MudAlert>
+        </MudItem>
+    }
+
+    <!-- Product Balances -->
+    <MudItem xs="12" md="6">
+        <MudPaper Elevation="0" Class="data-card pa-4">
+            <MudText Typo="Typo.h6" Class="mb-3">Product Balances</MudText>
+            @if (_products.Any())
+            {
+                <MudSimpleTable Hover="true" Dense="true" Striped="true">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Bonus %</th>
+                            <th style="text-align: right;">Balance</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var product in _products)
+                        {
+                            <tr>
+                                <td>@product.Name</td>
+                                <td>@product.BonusPercentage.ToString("N6")%</td>
+                                <td style="text-align: right; font-weight: 600;">@product.AirtimeAccountBalance.ToString("C6")</td>
+                                <td>
+                                    <MudChip T="string" Size="Size.Small"
+                                             Color="@(product.IsActive ? Color.Success : Color.Error)">
+                                        @(product.IsActive ? "Active" : "Inactive")
+                                    </MudChip>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            }
+            else
+            {
+                <div style="text-align: center; padding: 40px 0;">
+                    <MudIcon Icon="@Icons.Material.Outlined.Inventory2" Size="Size.Large" Color="Color.Secondary" />
+                    <MudText Color="Color.Secondary" Class="mt-2">No products configured yet</MudText>
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Class="mt-1"
+                               OnClick="@(() => Navigation.NavigateTo("/admin/products"))">Add Product</MudButton>
+                </div>
+            }
+        </MudPaper>
+    </MudItem>
+
+    <!-- Deposit Status Chart -->
+    <MudItem xs="12" md="6">
+        <MudPaper Elevation="0" Class="data-card pa-4">
+            <MudText Typo="Typo.h6" Class="mb-3">Deposit Status Distribution</MudText>
+            @if (_pendingDepositsCount + _approvedDepositsCount + _rejectedDepositsCount > 0)
+            {
+                <div style="display: flex; justify-content: center;">
+                    <MudChart ChartType="ChartType.Donut"
+                              InputData="@(new double[] { _pendingDepositsCount, _approvedDepositsCount, _rejectedDepositsCount })"
+                              InputLabels="@(new[] { $"Pending ({_pendingDepositsCount})", $"Approved ({_approvedDepositsCount})", $"Rejected ({_rejectedDepositsCount})" })"
+                              ChartOptions="@(new ChartOptions { ChartPalette = new[] { "#D97706", "#16A34A", "#DC2626" } })"
+                              Width="250px" Height="250px" />
+                </div>
+                <MudDivider Class="my-3" />
+                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                    <MudText Typo="Typo.subtitle1"><strong>Total Approved Value</strong></MudText>
+                    <MudText Typo="Typo.subtitle1" Color="Color.Success"><strong>@_totalApprovedValue.ToString("C6")</strong></MudText>
+                </MudStack>
+            }
+            else
+            {
+                <div style="text-align: center; padding: 40px 0;">
+                    <MudIcon Icon="@Icons.Material.Outlined.PieChart" Size="Size.Large" Color="Color.Secondary" />
+                    <MudText Color="Color.Secondary" Class="mt-2">No deposit data yet</MudText>
+                </div>
+            }
+        </MudPaper>
+    </MudItem>
+
+    <!-- Recent Transfers -->
+    <MudItem xs="12" md="6">
+        <MudPaper Elevation="0" Class="data-card pa-4">
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-3">
+                <MudText Typo="Typo.h6">Recent Transfers</MudText>
+                <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small"
+                           EndIcon="@Icons.Material.Filled.ArrowForward"
+                           OnClick="@(() => Navigation.NavigateTo("/dealer/transfers"))">View All</MudButton>
+            </MudStack>
+            @if (_recentTransfers.Any())
+            {
+                <MudSimpleTable Hover="true" Dense="true" Striped="true">
+                    <thead>
+                        <tr>
+                            <th>Dealer</th>
+                            <th>Product</th>
+                            <th>Status</th>
+                            <th style="text-align: right;">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var t in _recentTransfers)
+                        {
+                            <tr>
+                                <td>@t.DealerName</td>
+                                <td>@t.ProductName</td>
+                                <td>
+                                    @{
+                                        var tColor = t.Status switch
+                                        {
+                                            DepositStatus.Pending => Color.Warning,
+                                            DepositStatus.Approved => Color.Success,
+                                            DepositStatus.Rejected => Color.Error,
+                                            _ => Color.Default
+                                        };
+                                    }
+                                    <MudChip T="string" Size="Size.Small" Color="@tColor">@t.Status</MudChip>
+                                </td>
+                                <td style="text-align: right;">@t.Amount.ToString("C6")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            }
+            else
+            {
+                <div style="text-align: center; padding: 40px 0;">
+                    <MudIcon Icon="@Icons.Material.Outlined.SwapHoriz" Size="Size.Large" Color="Color.Secondary" />
+                    <MudText Color="Color.Secondary" Class="mt-2">No transfers yet</MudText>
+                </div>
+            }
+        </MudPaper>
+    </MudItem>
+
+    <!-- Branches -->
+    <MudItem xs="12" md="6">
+        <MudPaper Elevation="0" Class="data-card pa-4">
+            <MudText Typo="Typo.h6" Class="mb-3">Branches</MudText>
+            @if (_branches.Any())
+            {
+                <MudSimpleTable Hover="true" Dense="true" Striped="true">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Location</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var b in _branches)
+                        {
+                            <tr>
+                                <td>@b.Name</td>
+                                <td>@b.Location</td>
+                                <td>
+                                    <MudChip T="string" Size="Size.Small"
+                                             Color="@(b.IsActive ? Color.Success : Color.Error)">
+                                        @(b.IsActive ? "Active" : "Inactive")
+                                    </MudChip>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            }
+            else
+            {
+                <div style="text-align: center; padding: 40px 0;">
+                    <MudIcon Icon="@Icons.Material.Outlined.Store" Size="Size.Large" Color="Color.Secondary" />
+                    <MudText Color="Color.Secondary" Class="mt-2">No branches configured yet</MudText>
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Class="mt-1"
+                               OnClick="@(() => Navigation.NavigateTo("/admin/branches"))">Add Branch</MudButton>
+                </div>
+            }
+        </MudPaper>
+    </MudItem>
+
+    <!-- Recent Activity Feed -->
+    <MudItem xs="12">
+        <MudPaper Elevation="0" Class="data-card pa-4">
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-3">
+                <MudText Typo="Typo.h6">Recent Activity</MudText>
+                <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small"
+                           EndIcon="@Icons.Material.Filled.ArrowForward"
+                           OnClick="@(() => Navigation.NavigateTo("/superadmin/audit"))">View All</MudButton>
+            </MudStack>
+            @if (_recentAuditLogs.Any())
+            {
+                <MudTimeline TimelineOrientation="TimelineOrientation.Vertical" TimelinePosition="TimelinePosition.Start">
+                    @foreach (var log in _recentAuditLogs)
+                    {
+                        <MudTimelineItem Color="@GetAuditColor(log.Action)" Size="Size.Small">
+                            <MudStack Spacing="0">
+                                <MudText Typo="Typo.body2"><strong>@log.Action</strong> @log.EntityName #@log.EntityId</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    @(log.UserName ?? "System") &mdash; @log.Timestamp.ToString("dd MMM yyyy HH:mm")
+                                </MudText>
+                            </MudStack>
+                        </MudTimelineItem>
+                    }
+                </MudTimeline>
+            }
+            else
+            {
+                <div style="text-align: center; padding: 40px 0;">
+                    <MudIcon Icon="@Icons.Material.Outlined.Timeline" Size="Size.Large" Color="Color.Secondary" />
+                    <MudText Color="Color.Secondary" Class="mt-2">No activity recorded yet</MudText>
+                </div>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private bool _loading = true;
+    private string _userName = "User";
+    private List<ProductDto> _products = new();
+    private List<BranchDto> _branches = new();
+    private List<AirtimeTransferDto> _recentTransfers = new();
+    private List<AuditLogDto> _recentAuditLogs = new();
+    private int _productCount, _activeProductCount, _dealerCount, _transferCount, _cashDepositCount;
+    private int _pendingDepositsCount, _approvedDepositsCount, _rejectedDepositsCount;
+    private int _pendingTransfersCount;
+    private decimal _totalTransferAmount, _totalCashDeposits, _totalApprovedValue;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var user = await UserManager.FindByIdAsync(CurrentUser.UserId ?? "");
+            _userName = user?.FullName ?? CurrentUser.UserName ?? "User";
+
+            _products = (await ProductService.GetAllProductsAsync()).ToList();
+            _productCount = _products.Count;
+            _activeProductCount = _products.Count(p => p.IsActive);
+
+            var dealers = await DealerService.GetAllDealersAsync();
+            _dealerCount = dealers.Count;
+
+            var transfers = await TransferService.GetAllTransfersAsync();
+            _transferCount = transfers.Count;
+            _totalTransferAmount = transfers.Where(t => t.Status == DepositStatus.Approved).Sum(t => t.Amount);
+            _recentTransfers = transfers.OrderByDescending(t => t.CreatedDate).Take(5).ToList();
+            _pendingTransfersCount = transfers.Count(t => t.Status == DepositStatus.Pending);
+
+            var cashDeposits = await CashDepositService.GetAllDepositsAsync();
+            _cashDepositCount = cashDeposits.Count;
+            _totalCashDeposits = cashDeposits.Sum(d => d.Amount);
+
+            var airtimeDeposits = await DepositService.GetAllDepositsAsync();
+            _pendingDepositsCount = airtimeDeposits.Count(d => d.Status == DepositStatus.Pending);
+            _approvedDepositsCount = airtimeDeposits.Count(d => d.Status == DepositStatus.Approved);
+            _rejectedDepositsCount = airtimeDeposits.Count(d => d.Status == DepositStatus.Rejected);
+            _totalApprovedValue = airtimeDeposits.Where(d => d.Status == DepositStatus.Approved).Sum(d => d.TotalAmount);
+
+            _branches = (await BranchService.GetAllBranchesAsync()).ToList();
+
+            _recentAuditLogs = (await AuditLogService.GetRecentLogsAsync(8)).ToList();
+        }
+        catch
+        {
+            // Dashboard should not crash on data errors
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private Color GetAuditColor(string action) => action switch
+    {
+        "Create" => Color.Success,
+        "Update" => Color.Info,
+        "Delete" => Color.Error,
+        "Approve" => Color.Success,
+        "Reject" => Color.Warning,
+        _ => Color.Default
+    };
+}

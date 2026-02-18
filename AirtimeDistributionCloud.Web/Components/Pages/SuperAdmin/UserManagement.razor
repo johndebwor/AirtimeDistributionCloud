@@ -1,0 +1,169 @@
+@page "/superadmin/users"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "SuperAdministrator")]
+@using AirtimeDistributionCloud.Application.Services
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<ApplicationUser> UserManager
+@inject RoleManager<IdentityRole> RoleManager
+@inject IBranchService BranchService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>User Management - Airtime Distribution</PageTitle>
+
+<div class="page-header">
+    <h1>User Management</h1>
+    <p>Manage system users and roles</p>
+</div>
+
+<div class="page-toolbar">
+    <MudTextField @bind-Value="_searchString" Placeholder="Search users..." Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
+                  Immediate="true" Style="max-width: 300px;" />
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd"
+               OnClick="OpenCreateDialog">Add User</MudButton>
+</div>
+
+<MudPaper Elevation="0" Class="data-card pa-4">
+    <MudDataGrid T="UserView" Items="@_filteredUsers" Loading="@_loading" Dense="true" Hover="true" Striped="true"
+                 Filterable="false" SortMode="SortMode.Multiple">
+        <Columns>
+            <PropertyColumn Property="x => x.FullName" Title="Full Name" />
+            <PropertyColumn Property="x => x.Email" Title="Email" />
+            <PropertyColumn Property="x => x.BranchName" Title="Branch" />
+            <TemplateColumn Title="Roles" Sortable="false">
+                <CellTemplate>
+                    @foreach (var role in context.Item.Roles)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined" Class="mr-1">@role</MudChip>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Status" Sortable="false">
+                <CellTemplate>
+                    <MudChip T="string" Color="@(context.Item.EmailConfirmed ? Color.Success : Color.Warning)" Size="Size.Small">
+                        @(context.Item.EmailConfirmed ? "Confirmed" : "Pending")
+                    </MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.CreatedDate" Title="Created" Format="dd MMM yyyy" />
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary"
+                                   OnClick="@(() => OpenEditDialog(context.Item))" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <NoRecordsContent>
+            <MudText>No users found.</MudText>
+        </NoRecordsContent>
+    </MudDataGrid>
+</MudPaper>
+
+@code {
+    private List<UserView> _users = new();
+    private string _searchString = "";
+    private bool _loading = true;
+
+    private IEnumerable<UserView> _filteredUsers =>
+        string.IsNullOrWhiteSpace(_searchString)
+            ? _users
+            : _users.Where(u =>
+                u.FullName.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ||
+                u.Email.Contains(_searchString, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        _loading = true;
+        try
+        {
+            var branches = (await BranchService.GetAllBranchesAsync()).ToDictionary(b => b.Id, b => b.Name);
+            var users = UserManager.Users.ToList();
+            var userViews = new List<UserView>();
+
+            foreach (var user in users)
+            {
+                var roles = await UserManager.GetRolesAsync(user);
+                userViews.Add(new UserView
+                {
+                    Id = user.Id,
+                    FullName = user.FullName,
+                    Email = user.Email ?? "",
+                    BranchId = user.BranchId,
+                    BranchName = user.BranchId.HasValue ? branches.GetValueOrDefault(user.BranchId.Value, "Unknown") : "-",
+                    Roles = roles.ToList(),
+                    EmailConfirmed = user.EmailConfirmed,
+                    CreatedDate = user.CreatedDate
+                });
+            }
+            _users = userViews;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading users: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task OpenCreateDialog()
+    {
+        var roles = RoleManager.Roles.Select(r => r.Name!).ToList();
+        var branches = (await BranchService.GetAllBranchesAsync()).Where(b => b.IsActive).ToList();
+
+        var parameters = new DialogParameters<UserDialog>
+        {
+            { x => x.IsEdit, false },
+            { x => x.AvailableRoles, roles },
+            { x => x.Branches, branches }
+        };
+        var dialog = await DialogService.ShowAsync<UserDialog>("Add User", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+            await LoadUsers();
+    }
+
+    private async Task OpenEditDialog(UserView user)
+    {
+        var roles = RoleManager.Roles.Select(r => r.Name!).ToList();
+        var branches = (await BranchService.GetAllBranchesAsync()).Where(b => b.IsActive).ToList();
+
+        var parameters = new DialogParameters<UserDialog>
+        {
+            { x => x.IsEdit, true },
+            { x => x.AvailableRoles, roles },
+            { x => x.Branches, branches },
+            { x => x.Model, new UserDialog.UserModel
+                {
+                    Id = user.Id, FullName = user.FullName, Email = user.Email,
+                    BranchId = user.BranchId, SelectedRoles = user.Roles
+                }
+            }
+        };
+        var dialog = await DialogService.ShowAsync<UserDialog>("Edit User", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+            await LoadUsers();
+    }
+
+    public class UserView
+    {
+        public string Id { get; set; } = "";
+        public string FullName { get; set; } = "";
+        public string Email { get; set; } = "";
+        public int? BranchId { get; set; }
+        public string BranchName { get; set; } = "";
+        public List<string> Roles { get; set; } = new();
+        public bool EmailConfirmed { get; set; }
+        public DateTime CreatedDate { get; set; }
+    }
+}

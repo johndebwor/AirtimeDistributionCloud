@@ -1,0 +1,96 @@
+@rendermode InteractiveServer
+@using AirtimeDistributionCloud.Application.DTOs
+@using AirtimeDistributionCloud.Application.Services
+@inject IAirtimeTransferService TransferService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudSelect T="int" @bind-Value="_branchId" Label="Branch" Required="true"
+                           RequiredError="Branch is required" Class="mb-3">
+                    @foreach (var branch in Branches)
+                    {
+                        <MudSelectItem T="int" Value="@branch.Id">@branch.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudSelect T="int" @bind-Value="_productId" Label="Product" Required="true"
+                           RequiredError="Product is required" Class="mb-3">
+                    @foreach (var product in Products)
+                    {
+                        <MudSelectItem T="int" Value="@product.Id">@product.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudSelect T="int" @bind-Value="_dealerId" Label="Dealer" Required="true"
+                           RequiredError="Dealer is required" Class="mb-3">
+                    @foreach (var dealer in Dealers)
+                    {
+                        <MudSelectItem T="int" Value="@dealer.Id">@dealer.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudNumericField T="decimal" @bind-Value="_amount" Label="Amount" Min="0.01m"
+                                 Required="true" RequiredError="Amount is required" Class="mb-3" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudSelect T="TransferType" @bind-Value="_transferType" Label="Transfer Type" Required="true"
+                           RequiredError="Transfer type is required" Class="mb-3">
+                    <MudSelectItem T="TransferType" Value="TransferType.Loan">Loan</MudSelectItem>
+                    <MudSelectItem T="TransferType" Value="TransferType.Cash">Cash</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="@_saving">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public List<ProductDto> Products { get; set; } = new();
+    [Parameter] public List<BranchDto> Branches { get; set; } = new();
+    [Parameter] public List<DealerDto> Dealers { get; set; } = new();
+
+    private bool _saving;
+    private int _branchId;
+    private int _productId;
+    private int _dealerId;
+    private decimal _amount;
+    private TransferType _transferType = TransferType.Loan;
+
+    private async Task Submit()
+    {
+        if (_branchId == 0 || _productId == 0 || _dealerId == 0 || _amount <= 0)
+        {
+            Snackbar.Add("Please fill in all required fields", Severity.Warning);
+            return;
+        }
+
+        _saving = true;
+        try
+        {
+            await TransferService.CreateTransferAsync(new CreateAirtimeTransferRequest(
+                _branchId, _productId, _dealerId, _amount, _transferType));
+            Snackbar.Add("Transfer submitted for approval", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

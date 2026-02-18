@@ -1,0 +1,115 @@
+@page "/admin/products"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "SystemAdmin,SuperAdministrator")]
+@using AirtimeDistributionCloud.Application.DTOs
+@using AirtimeDistributionCloud.Application.Services
+@inject IProductService ProductService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>Products - Airtime Distribution</PageTitle>
+
+<div class="page-header">
+    <h1>Products</h1>
+    <p>Manage airtime products and balances</p>
+</div>
+
+<div class="page-toolbar">
+    <MudTextField @bind-Value="_searchString" Placeholder="Search products..." Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
+                  Immediate="true" Style="max-width: 300px;" />
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+               OnClick="OpenCreateDialog">Add Product</MudButton>
+</div>
+
+<MudPaper Elevation="0" Class="data-card pa-4">
+    <MudDataGrid T="ProductDto" Items="@_products" Filterable="false" SortMode="SortMode.Multiple"
+                 Loading="@_loading" Dense="true" Hover="true" Striped="true"
+                 QuickFilter="@(new Func<ProductDto, bool>(FilterFunc))">
+        <Columns>
+            <PropertyColumn Property="x => x.Id" Title="ID" />
+            <PropertyColumn Property="x => x.Name" Title="Name" />
+            <PropertyColumn Property="x => x.BonusPercentage" Title="Bonus %" Format="N6" />
+            <PropertyColumn Property="x => x.AirtimeAccountBalance" Title="Balance" Format="C6" />
+            <TemplateColumn Title="Status" Sortable="false">
+                <CellTemplate>
+                    <MudChip T="string" Color="@(context.Item.IsActive ? Color.Success : Color.Error)" Size="Size.Small">
+                        @(context.Item.IsActive ? "Active" : "Inactive")
+                    </MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary"
+                                   OnClick="@(() => OpenEditDialog(context.Item))" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <NoRecordsContent>
+            <MudText>No products found.</MudText>
+        </NoRecordsContent>
+    </MudDataGrid>
+</MudPaper>
+
+@code {
+    private List<ProductDto> _products = new();
+    private string _searchString = "";
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProducts();
+    }
+
+    private async Task LoadProducts()
+    {
+        _loading = true;
+        try
+        {
+            _products = (await ProductService.GetAllProductsAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading products: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private bool FilterFunc(ProductDto product) =>
+        string.IsNullOrWhiteSpace(_searchString) ||
+        product.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase);
+
+    private async Task OpenCreateDialog()
+    {
+        var parameters = new DialogParameters<ProductDialog> { { x => x.IsEdit, false } };
+        var dialog = await DialogService.ShowAsync<ProductDialog>("Add Product", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+            await LoadProducts();
+    }
+
+    private async Task OpenEditDialog(ProductDto product)
+    {
+        var parameters = new DialogParameters<ProductDialog>
+        {
+            { x => x.IsEdit, true },
+            { x => x.Model, new ProductDialog.ProductModel
+                {
+                    Id = product.Id, Name = product.Name,
+                    BonusPercentage = product.BonusPercentage,
+                    AirtimeAccountBalance = product.AirtimeAccountBalance,
+                    IsActive = product.IsActive
+                }
+            }
+        };
+        var dialog = await DialogService.ShowAsync<ProductDialog>("Edit Product", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+            await LoadProducts();
+    }
+}

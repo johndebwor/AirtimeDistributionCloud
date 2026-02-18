@@ -1,0 +1,229 @@
+@page "/profile"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Identity
+@using AirtimeDistributionCloud.Application.Services
+@using AirtimeDistributionCloud.Application.DTOs
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IBranchService BranchService
+@inject ISnackbar Snackbar
+
+<PageTitle>My Profile - Airtime Distribution</PageTitle>
+
+<div class="page-header">
+    <h1>My Profile</h1>
+    <p>Manage your account settings</p>
+</div>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-4" />
+}
+else if (_user is null)
+{
+    <MudAlert Severity="Severity.Error">Unable to load user profile.</MudAlert>
+}
+else
+{
+    <MudGrid Spacing="4">
+        <!-- Left Column: Account Information -->
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="0" Class="data-card pa-6">
+                <MudText Typo="Typo.h6" Class="mb-4">Account Information</MudText>
+
+                <MudStack AlignItems="AlignItems.Center" Class="mb-4">
+                    <MudAvatar Size="Size.Large" Color="Color.Primary">
+                        @(_fullName?.Length > 0 ? _fullName[0].ToString().ToUpper() : "?")
+                    </MudAvatar>
+                </MudStack>
+
+                <MudStack Spacing="3">
+                    <MudTextField @bind-Value="_fullName"
+                                  Label="Full Name"
+                                  Variant="Variant.Outlined"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Outlined.Person" />
+
+                    <MudTextField @bind-Value="_phoneNumber"
+                                  Label="Phone Number"
+                                  Variant="Variant.Outlined"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Outlined.Phone" />
+
+                    <MudTextField Value="@_email"
+                                  Label="Email"
+                                  Variant="Variant.Outlined"
+                                  Disabled="true"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Outlined.Email" />
+
+                    <MudTextField Value="@(_branchName ?? "-")"
+                                  Label="Branch"
+                                  Variant="Variant.Outlined"
+                                  Disabled="true"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Outlined.Business" />
+
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Outlined.Save"
+                               OnClick="SaveProfile"
+                               Disabled="_saving"
+                               FullWidth="true"
+                               Class="mt-2">
+                        @if (_saving)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            <span>Saving...</span>
+                        }
+                        else
+                        {
+                            <span>Save Changes</span>
+                        }
+                    </MudButton>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Right Column: Account Details -->
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="0" Class="data-card pa-6">
+                <MudText Typo="Typo.h6" Class="mb-4">Account Details</MudText>
+
+                <MudStack Spacing="3">
+                    <div>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Roles</MudText>
+                        <MudStack Row="true" Spacing="1" Class="mt-1">
+                            @if (_roles.Any())
+                            {
+                                @foreach (var role in _roles)
+                                {
+                                    <MudChip T="string" Color="Color.Primary" Size="Size.Small">@role</MudChip>
+                                }
+                            }
+                            else
+                            {
+                                <MudChip T="string" Color="Color.Default" Size="Size.Small">No roles assigned</MudChip>
+                            }
+                        </MudStack>
+                    </div>
+
+                    <MudDivider />
+
+                    <div>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Account Created</MudText>
+                        <MudText Typo="Typo.body1">@_user.CreatedDate.ToString("MMMM dd, yyyy")</MudText>
+                    </div>
+
+                    <MudDivider />
+
+                    <div>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Email Confirmed</MudText>
+                        <MudChip T="string"
+                                 Color="@(_user.EmailConfirmed ? Color.Success : Color.Warning)"
+                                 Size="Size.Small"
+                                 Class="mt-1">
+                            @(_user.EmailConfirmed ? "Confirmed" : "Not Confirmed")
+                        </MudChip>
+                    </div>
+
+                    <MudDivider />
+
+                    <div>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Last Modified</MudText>
+                        <MudText Typo="Typo.body1">
+                            @(_user.ModifiedDate.HasValue ? _user.ModifiedDate.Value.ToString("MMMM dd, yyyy") : "Never")
+                        </MudText>
+                    </div>
+
+                    <MudDivider />
+
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Outlined.Lock"
+                               Href="/Account/Manage/ChangePassword"
+                               FullWidth="true"
+                               Class="mt-2">
+                        Change Password
+                    </MudButton>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    private ApplicationUser? _user;
+    private string _fullName = string.Empty;
+    private string? _phoneNumber;
+    private string _email = string.Empty;
+    private string? _branchName;
+    private IList<string> _roles = new List<string>();
+    private bool _loading = true;
+    private bool _saving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            _user = await UserManager.GetUserAsync(authState.User);
+
+            if (_user is not null)
+            {
+                _fullName = _user.FullName;
+                _phoneNumber = _user.PhoneNumber;
+                _email = _user.Email ?? string.Empty;
+                _roles = await UserManager.GetRolesAsync(_user);
+
+                if (_user.BranchId.HasValue)
+                {
+                    var branch = await BranchService.GetBranchByIdAsync(_user.BranchId.Value);
+                    _branchName = branch?.Name;
+                }
+            }
+        }
+        catch
+        {
+            // Fail gracefully
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task SaveProfile()
+    {
+        if (_user is null) return;
+
+        _saving = true;
+        try
+        {
+            _user.FullName = _fullName;
+            _user.PhoneNumber = _phoneNumber;
+            var result = await UserManager.UpdateAsync(_user);
+
+            if (result.Succeeded)
+            {
+                Snackbar.Add("Profile updated", Severity.Success);
+            }
+            else
+            {
+                foreach (var error in result.Errors)
+                {
+                    Snackbar.Add(error.Description, Severity.Error);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error updating profile: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

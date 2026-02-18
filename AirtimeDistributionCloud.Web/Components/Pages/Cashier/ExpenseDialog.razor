@@ -1,0 +1,82 @@
+@rendermode InteractiveServer
+@using AirtimeDistributionCloud.Application.DTOs
+@using AirtimeDistributionCloud.Application.Services
+@using AirtimeDistributionCloud.Core.Enums
+@using AirtimeDistributionCloud.Core.Interfaces
+@inject IExpenseService ExpenseService
+@inject ICurrentUserService CurrentUser
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudSelect T="int" @bind-Value="_branchId" Label="Branch" Required="true"
+                   RequiredError="Branch is required" Class="mb-3">
+            @foreach (var b in Branches)
+            {
+                <MudSelectItem T="int" Value="@b.Id">@b.Name</MudSelectItem>
+            }
+        </MudSelect>
+        <MudTextField @bind-Value="_description" Label="Description" Required="true"
+                      RequiredError="Description is required" Lines="2" Class="mb-3" />
+        <MudSelect T="ExpenseCategory" @bind-Value="_category" Label="Category" Required="true"
+                   RequiredError="Category is required" Class="mb-3">
+            @foreach (ExpenseCategory cat in Enum.GetValues<ExpenseCategory>())
+            {
+                <MudSelectItem T="ExpenseCategory" Value="@cat">@cat</MudSelectItem>
+            }
+        </MudSelect>
+        <MudNumericField @bind-Value="_amount" Label="Amount" Min="0.01m" Format="N6"
+                         Required="true" RequiredError="Amount is required" Class="mb-3" />
+        <MudTextField @bind-Value="_receiptNumber" Label="Receipt Number (Optional)" Class="mb-3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit"
+                   Disabled="@_saving">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public List<BranchDto> Branches { get; set; } = new();
+
+    private bool _saving;
+    private int _branchId;
+    private string _description = string.Empty;
+    private ExpenseCategory _category;
+    private decimal _amount;
+    private string? _receiptNumber;
+
+    private async Task Submit()
+    {
+        if (_branchId == 0 || string.IsNullOrWhiteSpace(_description) || _amount <= 0)
+        {
+            Snackbar.Add("Please fill in all required fields", Severity.Warning);
+            return;
+        }
+
+        _saving = true;
+        try
+        {
+            var result = await ExpenseService.CreateExpenseAsync(
+                new CreateExpenseRequest(_branchId, _description, _category, _amount, _receiptNumber),
+                CurrentUser.UserId ?? "");
+
+            var message = result.Status == DepositStatus.Approved
+                ? "Expense recorded and auto-approved"
+                : "Expense submitted for approval";
+            Snackbar.Add(message, Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

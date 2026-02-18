@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="AirtimeDistributionCloud.Application/AirtimeDistributionCloud.Application.csproj" />
+  <Project Path="AirtimeDistributionCloud.Core/AirtimeDistributionCloud.Core.csproj" />
+  <Project Path="AirtimeDistributionCloud.Infrastructure/AirtimeDistributionCloud.Infrastructure.csproj" />
+  <Project Path="AirtimeDistributionCloud.Tests/AirtimeDistributionCloud.Tests.csproj" />
+  <Project Path="AirtimeDistributionCloud.Web/AirtimeDistributionCloud.Web.csproj" />
+</Solution>

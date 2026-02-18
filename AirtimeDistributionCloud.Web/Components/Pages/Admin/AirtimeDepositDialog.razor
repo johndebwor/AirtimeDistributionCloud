@@ -1,0 +1,64 @@
+@rendermode InteractiveServer
+@using AirtimeDistributionCloud.Application.DTOs
+@using AirtimeDistributionCloud.Application.Services
+@using AirtimeDistributionCloud.Core.Interfaces
+@inject IAirtimeDepositService DepositService
+@inject ICurrentUserService CurrentUser
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudSelect T="int" @bind-Value="_selectedProductId" Label="Product" Required="true"
+                   RequiredError="Product is required" Class="mb-3">
+            @foreach (var product in Products)
+            {
+                <MudSelectItem T="int" Value="@product.Id">@product.Name</MudSelectItem>
+            }
+        </MudSelect>
+        <MudNumericField @bind-Value="_amount" Label="Amount" Min="0.01m"
+                         Required="true" RequiredError="Amount is required" Class="mb-3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit"
+                   Disabled="@_saving">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public List<ProductDto> Products { get; set; } = new();
+
+    private int _selectedProductId;
+    private decimal _amount;
+    private bool _saving;
+
+    private async Task Submit()
+    {
+        if (_selectedProductId == 0 || _amount <= 0)
+        {
+            Snackbar.Add("Please select a product and enter an amount", Severity.Warning);
+            return;
+        }
+
+        _saving = true;
+        try
+        {
+            await DepositService.CreateDepositAsync(
+                new CreateAirtimeDepositRequest(_selectedProductId, _amount),
+                CurrentUser.UserId ?? "");
+            Snackbar.Add("Deposit created successfully", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

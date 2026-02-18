@@ -1,0 +1,118 @@
+@page "/dealer/transfers"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "SystemAdmin,SuperAdministrator,Dealer")]
+@using AirtimeDistributionCloud.Application.DTOs
+@using AirtimeDistributionCloud.Application.Services
+@using AirtimeDistributionCloud.Core.Enums
+@inject IAirtimeTransferService TransferService
+@inject IProductService ProductService
+@inject IBranchService BranchService
+@inject IDealerService DealerService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>Airtime Transfers - Airtime Distribution</PageTitle>
+
+<div class="page-header">
+    <h1>Airtime Transfers</h1>
+    <p>Transfer airtime to dealers</p>
+</div>
+
+<div class="page-toolbar">
+    <MudTextField @bind-Value="_searchString" Placeholder="Search transfers..." Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
+                  Immediate="true" Style="max-width: 300px;" />
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.SwapHoriz"
+               OnClick="OpenCreateDialog">New Transfer</MudButton>
+</div>
+
+<MudPaper Elevation="0" Class="data-card pa-4">
+    <MudDataGrid T="AirtimeTransferDto" Items="@_transfers" Filterable="false" SortMode="SortMode.Multiple"
+                 Loading="@_loading" Dense="true" Hover="true" Striped="true"
+                 QuickFilter="@(new Func<AirtimeTransferDto, bool>(FilterFunc))">
+        <Columns>
+            <PropertyColumn Property="x => x.Id" Title="ID" />
+            <PropertyColumn Property="x => x.BranchName" Title="Branch" />
+            <PropertyColumn Property="x => x.ProductName" Title="Product" />
+            <PropertyColumn Property="x => x.DealerName" Title="Dealer" />
+            <PropertyColumn Property="x => x.Amount" Title="Amount" Format="C6" />
+            <TemplateColumn Title="Type" Sortable="false">
+                <CellTemplate>
+                    <MudChip T="string" Color="@(context.Item.TransferType == TransferType.Loan ? Color.Warning : Color.Success)"
+                             Size="Size.Small">@context.Item.TransferType</MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Status" Sortable="false">
+                <CellTemplate>
+                    @{
+                        var statusColor = context.Item.Status switch
+                        {
+                            DepositStatus.Pending => Color.Warning,
+                            DepositStatus.Approved => Color.Success,
+                            DepositStatus.Rejected => Color.Error,
+                            _ => Color.Default
+                        };
+                    }
+                    <MudChip T="string" Color="@statusColor" Size="Size.Small">@context.Item.Status</MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.CreatedDate" Title="Date" Format="dd MMM yyyy HH:mm" />
+        </Columns>
+        <NoRecordsContent>
+            <MudText>No transfers found.</MudText>
+        </NoRecordsContent>
+    </MudDataGrid>
+</MudPaper>
+
+@code {
+    private List<AirtimeTransferDto> _transfers = new();
+    private string _searchString = "";
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTransfers();
+    }
+
+    private async Task LoadTransfers()
+    {
+        _loading = true;
+        try
+        {
+            _transfers = (await TransferService.GetAllTransfersAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading transfers: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private bool FilterFunc(AirtimeTransferDto t) =>
+        string.IsNullOrWhiteSpace(_searchString) ||
+        t.DealerName.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ||
+        t.ProductName.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ||
+        t.BranchName.Contains(_searchString, StringComparison.OrdinalIgnoreCase);
+
+    private async Task OpenCreateDialog()
+    {
+        var products = (await ProductService.GetAllProductsAsync()).Where(p => p.IsActive).ToList();
+        var branches = (await BranchService.GetAllBranchesAsync()).Where(b => b.IsActive).ToList();
+        var dealers = await DealerService.GetAllDealersAsync();
+
+        var parameters = new DialogParameters<TransferDialog>
+        {
+            { x => x.Products, products },
+            { x => x.Branches, branches },
+            { x => x.Dealers, dealers.ToList() }
+        };
+        var dialog = await DialogService.ShowAsync<TransferDialog>("New Airtime Transfer", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+            await LoadTransfers();
+    }
+}

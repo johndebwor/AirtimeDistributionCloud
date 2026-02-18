@@ -1,0 +1,115 @@
+@page "/cashier/expenses"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "SystemAdmin,Cashier")]
+@using AirtimeDistributionCloud.Application.DTOs
+@using AirtimeDistributionCloud.Application.Services
+@using AirtimeDistributionCloud.Core.Enums
+@inject IExpenseService ExpenseService
+@inject IBranchService BranchService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>Expenses - Airtime Distribution</PageTitle>
+
+<div class="page-header">
+    <h1>Expenses</h1>
+    <p>Track and manage expenses</p>
+</div>
+
+<div class="page-toolbar">
+    <MudTextField @bind-Value="_searchString" Placeholder="Search expenses..." Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
+                  Immediate="true" Style="max-width: 300px;" />
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Receipt"
+               OnClick="OpenCreateDialog">New Expense</MudButton>
+</div>
+
+<MudPaper Elevation="0" Class="data-card pa-4">
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    <MudDataGrid T="ExpenseDto" Items="@_expenses" Filterable="false" SortMode="SortMode.Multiple"
+                 Loading="@_loading" Dense="true" Hover="true" Striped="true"
+                 QuickFilter="@(new Func<ExpenseDto, bool>(FilterFunc))">
+        <Columns>
+            <PropertyColumn Property="x => x.Id" Title="ID" />
+            <PropertyColumn Property="x => x.BranchName" Title="Branch" />
+            <PropertyColumn Property="x => x.Description" Title="Description" />
+            <TemplateColumn Title="Category" Sortable="false">
+                <CellTemplate>
+                    <MudChip T="string" Color="Color.Info" Size="Size.Small">@context.Item.Category</MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.Amount" Title="Amount" Format="C6" />
+            <PropertyColumn Property="x => x.ExpenseDate" Title="Date" Format="dd MMM yyyy" />
+            <TemplateColumn Title="Status" Sortable="false">
+                <CellTemplate>
+                    @{
+                        var color = context.Item.Status switch
+                        {
+                            DepositStatus.Pending => Color.Warning,
+                            DepositStatus.Approved => Color.Success,
+                            DepositStatus.Rejected => Color.Error,
+                            _ => Color.Default
+                        };
+                    }
+                    <MudChip T="string" Color="@color" Size="Size.Small">@context.Item.Status</MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.ReceiptNumber" Title="Receipt #" />
+        </Columns>
+        <NoRecordsContent>
+            <MudText>No expenses found.</MudText>
+        </NoRecordsContent>
+    </MudDataGrid>
+</MudPaper>
+
+@code {
+    private List<ExpenseDto> _expenses = new();
+    private string _searchString = "";
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadExpenses();
+    }
+
+    private async Task LoadExpenses()
+    {
+        _loading = true;
+        try
+        {
+            _expenses = (await ExpenseService.GetAllExpensesAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading expenses: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private bool FilterFunc(ExpenseDto e) =>
+        string.IsNullOrWhiteSpace(_searchString) ||
+        e.Description.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ||
+        e.BranchName.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ||
+        (e.ReceiptNumber?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false);
+
+    private async Task OpenCreateDialog()
+    {
+        var branches = (await BranchService.GetAllBranchesAsync()).Where(b => b.IsActive).ToList();
+
+        var parameters = new DialogParameters<ExpenseDialog>
+        {
+            { x => x.Branches, branches }
+        };
+        var dialog = await DialogService.ShowAsync<ExpenseDialog>("New Expense", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+            await LoadExpenses();
+    }
+}

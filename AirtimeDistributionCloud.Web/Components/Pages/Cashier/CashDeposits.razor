@@ -1,0 +1,92 @@
+@page "/cashier/deposits"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "SystemAdmin,Cashier")]
+@using AirtimeDistributionCloud.Application.DTOs
+@using AirtimeDistributionCloud.Application.Services
+@inject ICashDepositService CashDepositService
+@inject IBranchService BranchService
+@inject IDealerService DealerService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>Cash Deposits - Airtime Distribution</PageTitle>
+
+<div class="page-header">
+    <h1>Cash Deposits</h1>
+    <p>Record and track cash deposits</p>
+</div>
+
+<div class="page-toolbar">
+    <MudTextField @bind-Value="_searchString" Placeholder="Search deposits..." Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
+                  Immediate="true" Style="max-width: 300px;" />
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AttachMoney"
+               OnClick="OpenCreateDialog">New Cash Deposit</MudButton>
+</div>
+
+<MudPaper Elevation="0" Class="data-card pa-4">
+    <MudDataGrid T="CashDepositDto" Items="@_deposits" Filterable="false" SortMode="SortMode.Multiple"
+                 Loading="@_loading" Dense="true" Hover="true" Striped="true"
+                 QuickFilter="@(new Func<CashDepositDto, bool>(FilterFunc))">
+        <Columns>
+            <PropertyColumn Property="x => x.Id" Title="ID" />
+            <PropertyColumn Property="x => x.BranchName" Title="Branch" />
+            <PropertyColumn Property="x => x.DealerName" Title="Dealer" />
+            <PropertyColumn Property="x => x.Amount" Title="Amount" Format="C6" />
+            <PropertyColumn Property="x => x.DepositDate" Title="Date" Format="dd MMM yyyy HH:mm" />
+        </Columns>
+        <NoRecordsContent>
+            <MudText>No cash deposits found.</MudText>
+        </NoRecordsContent>
+    </MudDataGrid>
+</MudPaper>
+
+@code {
+    private List<CashDepositDto> _deposits = new();
+    private string _searchString = "";
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDeposits();
+    }
+
+    private async Task LoadDeposits()
+    {
+        _loading = true;
+        try
+        {
+            _deposits = (await CashDepositService.GetAllDepositsAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading deposits: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private bool FilterFunc(CashDepositDto d) =>
+        string.IsNullOrWhiteSpace(_searchString) ||
+        d.DealerName.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ||
+        d.BranchName.Contains(_searchString, StringComparison.OrdinalIgnoreCase);
+
+    private async Task OpenCreateDialog()
+    {
+        var branches = (await BranchService.GetAllBranchesAsync()).Where(b => b.IsActive).ToList();
+        var dealers = await DealerService.GetAllDealersAsync();
+
+        var parameters = new DialogParameters<CashDepositDialog>
+        {
+            { x => x.Branches, branches },
+            { x => x.Dealers, dealers.ToList() }
+        };
+        var dialog = await DialogService.ShowAsync<CashDepositDialog>("New Cash Deposit", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+            await LoadDeposits();
+    }
+}

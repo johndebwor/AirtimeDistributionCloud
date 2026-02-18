@@ -1,0 +1,43 @@
+using AirtimeDistributionCloud.Core.Entities;
+using AirtimeDistributionCloud.Core.Interfaces;
+using AirtimeDistributionCloud.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+
+namespace AirtimeDistributionCloud.Infrastructure.Repositories;
+
+public class SystemSettingRepository : ISystemSettingRepository
+{
+    private readonly AppDbContext _context;
+
+    public SystemSettingRepository(AppDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<SystemSetting?> GetByKeyAsync(string key, CancellationToken cancellationToken = default)
+    {
+        return await _context.SystemSettings
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Key == key, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<SystemSetting>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.SystemSettings
+            .AsNoTracking()
+            .OrderBy(s => s.Key)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task AddAsync(SystemSetting setting, CancellationToken cancellationToken = default)
+    {
+        await _context.SystemSettings.AddAsync(setting, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task UpdateAsync(SystemSetting setting, CancellationToken cancellationToken = default)
+    {
+        _context.SystemSettings.Update(setting);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+}

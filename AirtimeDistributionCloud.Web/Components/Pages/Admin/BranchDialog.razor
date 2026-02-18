@@ -1,0 +1,74 @@
+@rendermode InteractiveServer
+@using AirtimeDistributionCloud.Application.DTOs
+@using AirtimeDistributionCloud.Application.Services
+@inject IBranchService BranchService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField @bind-Value="Model.Name" Label="Name" Required="true"
+                      RequiredError="Name is required" Class="mb-3" />
+        <MudTextField @bind-Value="Model.Location" Label="Location" Required="true"
+                      RequiredError="Location is required" Class="mb-3" />
+        @if (IsEdit)
+        {
+            <MudSwitch @bind-Value="Model.IsActive" Label="Active" Color="Color.Primary" />
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit"
+                   Disabled="@_saving">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public bool IsEdit { get; set; }
+    [Parameter] public BranchModel Model { get; set; } = new();
+
+    private bool _saving;
+
+    private async Task Submit()
+    {
+        if (string.IsNullOrWhiteSpace(Model.Name) || string.IsNullOrWhiteSpace(Model.Location))
+        {
+            Snackbar.Add("Name and Location are required", Severity.Warning);
+            return;
+        }
+
+        _saving = true;
+        try
+        {
+            if (IsEdit)
+            {
+                await BranchService.UpdateBranchAsync(new UpdateBranchRequest(
+                    Model.Id, Model.Name, Model.Location, Model.IsActive));
+            }
+            else
+            {
+                await BranchService.CreateBranchAsync(new CreateBranchRequest(
+                    Model.Name, Model.Location));
+            }
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    public class BranchModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Location { get; set; } = "";
+        public bool IsActive { get; set; } = true;
+    }
+}

@@ -1,0 +1,113 @@
+@page "/admin/branches"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "SystemAdmin,SuperAdministrator")]
+@using AirtimeDistributionCloud.Application.DTOs
+@using AirtimeDistributionCloud.Application.Services
+@inject IBranchService BranchService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>Branches - Airtime Distribution</PageTitle>
+
+<div class="page-header">
+    <h1>Branches</h1>
+    <p>Manage branch locations</p>
+</div>
+
+<div class="page-toolbar">
+    <MudTextField @bind-Value="_searchString" Placeholder="Search branches..." Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
+                  Immediate="true" Style="max-width: 300px;" />
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+               OnClick="OpenCreateDialog">Add Branch</MudButton>
+</div>
+
+<MudPaper Elevation="0" Class="data-card pa-4">
+    <MudDataGrid T="BranchDto" Items="@_branches" Filterable="false" SortMode="SortMode.Multiple"
+                 Loading="@_loading" Dense="true" Hover="true" Striped="true"
+                 QuickFilter="@(new Func<BranchDto, bool>(FilterFunc))">
+        <Columns>
+            <PropertyColumn Property="x => x.Id" Title="ID" />
+            <PropertyColumn Property="x => x.Name" Title="Name" />
+            <PropertyColumn Property="x => x.Location" Title="Location" />
+            <TemplateColumn Title="Status" Sortable="false">
+                <CellTemplate>
+                    <MudChip T="string" Color="@(context.Item.IsActive ? Color.Success : Color.Error)" Size="Size.Small">
+                        @(context.Item.IsActive ? "Active" : "Inactive")
+                    </MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary"
+                                   OnClick="@(() => OpenEditDialog(context.Item))" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <NoRecordsContent>
+            <MudText>No branches found.</MudText>
+        </NoRecordsContent>
+    </MudDataGrid>
+</MudPaper>
+
+@code {
+    private List<BranchDto> _branches = new();
+    private string _searchString = "";
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBranches();
+    }
+
+    private async Task LoadBranches()
+    {
+        _loading = true;
+        try
+        {
+            _branches = (await BranchService.GetAllBranchesAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading branches: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private bool FilterFunc(BranchDto branch) =>
+        string.IsNullOrWhiteSpace(_searchString) ||
+        branch.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ||
+        branch.Location.Contains(_searchString, StringComparison.OrdinalIgnoreCase);
+
+    private async Task OpenCreateDialog()
+    {
+        var parameters = new DialogParameters<BranchDialog> { { x => x.IsEdit, false } };
+        var dialog = await DialogService.ShowAsync<BranchDialog>("Add Branch", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+            await LoadBranches();
+    }
+
+    private async Task OpenEditDialog(BranchDto branch)
+    {
+        var parameters = new DialogParameters<BranchDialog>
+        {
+            { x => x.IsEdit, true },
+            { x => x.Model, new BranchDialog.BranchModel
+                {
+                    Id = branch.Id, Name = branch.Name,
+                    Location = branch.Location, IsActive = branch.IsActive
+                }
+            }
+        };
+        var dialog = await DialogService.ShowAsync<BranchDialog>("Edit Branch", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+            await LoadBranches();
+    }
+}

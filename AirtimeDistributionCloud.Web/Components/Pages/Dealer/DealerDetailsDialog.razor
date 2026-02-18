@@ -1,0 +1,57 @@
+@rendermode InteractiveServer
+@using AirtimeDistributionCloud.Application.DTOs
+
+<MudDialog>
+    <DialogContent>
+        <MudSimpleTable Hover="true" Dense="true" Striped="true">
+            <tbody>
+                <tr>
+                    <td><strong>Type</strong></td>
+                    <td>@Dealer.Type</td>
+                </tr>
+                <tr>
+                    <td><strong>Name</strong></td>
+                    <td>@Dealer.Name</td>
+                </tr>
+                <tr>
+                    <td><strong>Gender</strong></td>
+                    <td>@(string.IsNullOrEmpty(Dealer.Gender) ? "-" : Dealer.Gender)</td>
+                </tr>
+                <tr>
+                    <td><strong>ID Number</strong></td>
+                    <td>@(string.IsNullOrEmpty(Dealer.IDNumber) ? "-" : Dealer.IDNumber)</td>
+                </tr>
+                <tr>
+                    <td><strong>Company Reg Number</strong></td>
+                    <td>@(string.IsNullOrEmpty(Dealer.CompanyRegNumber) ? "-" : Dealer.CompanyRegNumber)</td>
+                </tr>
+                <tr>
+                    <td><strong>Nationality</strong></td>
+                    <td>@(string.IsNullOrEmpty(Dealer.Nationality) ? "-" : Dealer.Nationality)</td>
+                </tr>
+                <tr>
+                    <td><strong>State</strong></td>
+                    <td>@(string.IsNullOrEmpty(Dealer.State) ? "-" : Dealer.State)</td>
+                </tr>
+                <tr>
+                    <td><strong>County</strong></td>
+                    <td>@(string.IsNullOrEmpty(Dealer.County) ? "-" : Dealer.County)</td>
+                </tr>
+                <tr>
+                    <td><strong>Physical Address</strong></td>
+                    <td>@(string.IsNullOrEmpty(Dealer.PhysicalAddress) ? "-" : Dealer.PhysicalAddress)</td>
+                </tr>
+            </tbody>
+        </MudSimpleTable>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close" Variant="Variant.Filled" Color="Color.Primary">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public DealerDto Dealer { get; set; } = null!;
+
+    private void Close() => MudDialog.Close();
+}

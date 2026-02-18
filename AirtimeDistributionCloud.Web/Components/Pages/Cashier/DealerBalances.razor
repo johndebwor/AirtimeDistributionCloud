@@ -1,0 +1,80 @@
+@page "/cashier/balances"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "SystemAdmin,Cashier")]
+@using AirtimeDistributionCloud.Application.DTOs
+@using AirtimeDistributionCloud.Application.Services
+@inject IDealerService DealerService
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>Dealer Balances - Airtime Distribution</PageTitle>
+
+<div class="page-header">
+    <h1>Dealer Balances</h1>
+    <p>Overview of dealer cash balances</p>
+</div>
+
+<MudPaper Elevation="0" Class="data-card pa-4">
+    <MudDataGrid T="DealerBalanceView" Items="@_balances" Loading="@_loading"
+                 Dense="true" Hover="true" Striped="true" Filterable="false"
+                 SortMode="SortMode.Multiple">
+        <Columns>
+            <PropertyColumn Property="x => x.DealerId" Title="ID" />
+            <PropertyColumn Property="x => x.DealerName" Title="Dealer" />
+            <PropertyColumn Property="x => x.DealerType" Title="Type" />
+            <TemplateColumn Title="Cash Balance">
+                <CellTemplate>
+                    <MudText Color="@(context.Item.CashBalance >= 0 ? Color.Success : Color.Error)">
+                        @context.Item.CashBalance.ToString("C6")
+                    </MudText>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <NoRecordsContent>
+            <MudText>No dealers found.</MudText>
+        </NoRecordsContent>
+    </MudDataGrid>
+</MudPaper>
+
+@code {
+    private List<DealerBalanceView> _balances = new();
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        try
+        {
+            var dealers = await DealerService.GetAllDealersAsync();
+            var balances = new List<DealerBalanceView>();
+
+            foreach (var dealer in dealers)
+            {
+                var cashBalance = await DealerService.GetDealerCashBalanceAsync(dealer.Id);
+                balances.Add(new DealerBalanceView
+                {
+                    DealerId = dealer.Id,
+                    DealerName = dealer.Name,
+                    DealerType = dealer.Type.ToString(),
+                    CashBalance = cashBalance
+                });
+            }
+            _balances = balances;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading balances: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private class DealerBalanceView
+    {
+        public int DealerId { get; set; }
+        public string DealerName { get; set; } = "";
+        public string DealerType { get; set; } = "";
+        public decimal CashBalance { get; set; }
+    }
+}

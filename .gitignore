@@ -1,0 +1,61 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## NuGet
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nupkg
+**/[Pp]roject.lock.json
+**/[Pp]roject.fragment.lock.json
+artifacts/
+
+## Visual Studio
+.vs/
+*.rsuser
+*.sln.docstates
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Ll]og/
+[Ll]ogs/
+
+## User-specific files
+*.csproj.user
+*.dbmdl
+*.jfm
+
+## Build results
+[Dd]ebugPublic/
+[Rr]eleases/
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+## SQLite database files
+*.db
+*.db-shm
+*.db-wal
+
+## OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+## IDE
+.idea/
+*.swp
+*.swo
+*~
+
+## Secrets
+appsettings.*.json
+!appsettings.json
+!appsettings.Development.json

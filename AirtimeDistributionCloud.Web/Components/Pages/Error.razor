@@ -1,0 +1,35 @@
+@page "/Error"
+@using System.Diagnostics
+
+<PageTitle>Error - Airtime Distribution</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="d-flex flex-column align-center justify-center" Style="min-height: 60vh;">
+    <MudAvatar Color="Color.Error" Variant="Variant.Filled" Size="Size.Large" Class="mb-4">
+        <MudIcon Icon="@Icons.Material.Outlined.ErrorOutline" />
+    </MudAvatar>
+    <MudText Typo="Typo.h5" GutterBottom="true" Style="font-weight: 700;">Something went wrong</MudText>
+    <MudText Typo="Typo.body1" Color="Color.Secondary" Align="Align.Center" Class="mb-4">
+        An error occurred while processing your request. Please try again.
+    </MudText>
+    @if (ShowRequestId)
+    {
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-4">
+            Request ID: @RequestId
+        </MudText>
+    }
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/"
+               StartIcon="@Icons.Material.Outlined.Home" Class="text-transform-none">
+        Back to Dashboard
+    </MudButton>
+</MudContainer>
+
+@code {
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private string? RequestId { get; set; }
+    private bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
+
+    protected override void OnInitialized() =>
+        RequestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
+}
