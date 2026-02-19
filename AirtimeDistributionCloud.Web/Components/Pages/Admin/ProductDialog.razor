@@ -3,18 +3,23 @@
 @using AirtimeDistributionCloud.Application.Services
 @inject IProductService ProductService
 @inject ISnackbar Snackbar
+@inject IJSRuntime JS
 
 <MudDialog>
     <DialogContent>
         <MudTextField @bind-Value="Model.Name" Label="Name" Required="true"
                       RequiredError="Name is required" Class="mb-3" />
-        <MudNumericField @bind-Value="Model.BonusPercentage" Label="Bonus Percentage (%)"
-                         Min="0m" Max="100m" Class="mb-3" />
-        <MudNumericField @bind-Value="Model.AirtimeAccountBalance" Label="Airtime Account Balance"
-                         Min="0m" Class="mb-3" />
+        <div @ref="_bonusRef">
+            <MudTextField T="string" Value="@_bonusDisplay" ValueChanged="OnBonusChanged"
+                          Label="Bonus Percentage (%)" Class="mb-3" />
+        </div>
+        <div @ref="_balanceRef">
+            <MudTextField T="string" Value="@_balanceDisplay" ValueChanged="OnBalanceChanged"
+                          Label="Airtime Account Balance" Class="mb-3" />
+        </div>
         @if (IsEdit)
         {
-            <MudSwitch @bind-Value="Model.IsActive" Label="Active" Color="Color.Primary" />
+            <MudSwitch T="bool" @bind-Value="Model.IsActive" Label="Active" Color="Color.Primary" />
         }
     </DialogContent>
     <DialogActions>
@@ -30,12 +35,58 @@
     [Parameter] public ProductModel Model { get; set; } = new();
 
     private bool _saving;
+    private string _bonusDisplay = "";
+    private string _balanceDisplay = "";
+    private ElementReference _bonusRef;
+    private ElementReference _balanceRef;
+
+    protected override void OnParametersSet()
+    {
+        _bonusDisplay = Model.BonusPercentage != 0
+            ? FormatNumber(Model.BonusPercentage.ToString(System.Globalization.CultureInfo.InvariantCulture))
+            : "";
+        _balanceDisplay = Model.AirtimeAccountBalance != 0
+            ? FormatNumber(Model.AirtimeAccountBalance.ToString(System.Globalization.CultureInfo.InvariantCulture))
+            : "";
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("initNumericFormat", _bonusRef);
+            await JS.InvokeVoidAsync("initNumericFormat", _balanceRef);
+        }
+    }
+
+    private void OnBonusChanged(string value)
+    {
+        _bonusDisplay = FormatNumber(value);
+        Model.BonusPercentage = ParseNumber(value);
+    }
+
+    private void OnBalanceChanged(string value)
+    {
+        _balanceDisplay = FormatNumber(value);
+        Model.AirtimeAccountBalance = ParseNumber(value);
+    }
 
     private async Task Submit()
     {
         if (string.IsNullOrWhiteSpace(Model.Name))
         {
             Snackbar.Add("Name is required", Severity.Warning);
+            return;
+        }
+
+        var bonusRaw = await JS.InvokeAsync<string>("getNumericInputValue", _bonusRef);
+        var balanceRaw = await JS.InvokeAsync<string>("getNumericInputValue", _balanceRef);
+        Model.BonusPercentage = ParseNumber(bonusRaw);
+        Model.AirtimeAccountBalance = ParseNumber(balanceRaw);
+
+        if (Model.BonusPercentage < 0 || Model.BonusPercentage > 100)
+        {
+            Snackbar.Add("Bonus percentage must be between 0% and 100%", Severity.Warning);
             return;
         }
 
@@ -65,6 +116,30 @@
     }
 
     private void Cancel() => MudDialog.Cancel();
+
+    private static string FormatNumber(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return "";
+        var clean = "";
+        var hasDecimal = false;
+        foreach (var c in input)
+        {
+            if (char.IsDigit(c)) clean += c;
+            else if (c == '.' && !hasDecimal) { clean += c; hasDecimal = true; }
+        }
+        if (string.IsNullOrEmpty(clean)) return "";
+        var parts = clean.Split('.');
+        if (long.TryParse(parts[0], out var intPart))
+            parts[0] = intPart.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("en-US"));
+        return parts.Length > 1 ? $"{parts[0]}.{parts[1]}" : parts[0];
+    }
+
+    private static decimal ParseNumber(string formatted)
+    {
+        var clean = new string(formatted.Where(c => char.IsDigit(c) || c == '.').ToArray());
+        return decimal.TryParse(clean, System.Globalization.NumberStyles.Any,
+            System.Globalization.CultureInfo.InvariantCulture, out var val) ? val : 0;
+    }
 
     public class ProductModel
     {

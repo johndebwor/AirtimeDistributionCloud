@@ -1,0 +1,121 @@
+@page "/admin/settings"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "SystemAdmin,SuperAdministrator")]
+@using AirtimeDistributionCloud.Core.Entities
+@using AirtimeDistributionCloud.Core.Interfaces
+@inject IUnitOfWork UnitOfWork
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>System Settings - Airtime Distribution</PageTitle>
+
+<div class="page-header">
+    <h1>System Settings</h1>
+    <p>Configure application-wide settings</p>
+</div>
+
+<MudPaper Elevation="0" Class="data-card pa-4">
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" />
+    }
+    else
+    {
+        <MudGrid>
+            @foreach (var setting in _settings)
+            {
+                <MudItem xs="12" sm="6">
+                    <MudPaper Elevation="1" Class="pa-4 mb-2" Style="border-radius:8px;">
+                        <MudText Typo="Typo.subtitle2" Class="mb-1">@FormatKey(setting.Key)</MudText>
+                        @if (!string.IsNullOrEmpty(setting.Description))
+                        {
+                            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-2">@setting.Description</MudText>
+                        }
+                        <div class="d-flex align-center gap-2">
+                            @if (_editingId == setting.Id)
+                            {
+                                <MudTextField @bind-Value="_editValue" Variant="Variant.Outlined"
+                                              Margin="Margin.Dense" Style="flex:1" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Check" Color="Color.Success"
+                                               Size="Size.Small" OnClick="@(() => SaveSetting(setting))" Disabled="@_saving" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default"
+                                               Size="Size.Small" OnClick="CancelEdit" />
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.body1" Style="flex:1; font-weight:600;">@setting.Value</MudText>
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary"
+                                               Size="Size.Small" OnClick="@(() => StartEdit(setting))" />
+                            }
+                        </div>
+                    </MudPaper>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</MudPaper>
+
+@code {
+    private List<SystemSetting> _settings = new();
+    private bool _loading = true;
+    private bool _saving;
+    private int? _editingId;
+    private string _editValue = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSettings();
+    }
+
+    private async Task LoadSettings()
+    {
+        _loading = true;
+        try
+        {
+            _settings = (await UnitOfWork.Repository<SystemSetting>().GetAllAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void StartEdit(SystemSetting setting)
+    {
+        _editingId = setting.Id;
+        _editValue = setting.Value;
+    }
+
+    private void CancelEdit()
+    {
+        _editingId = null;
+        _editValue = "";
+    }
+
+    private async Task SaveSetting(SystemSetting setting)
+    {
+        _saving = true;
+        try
+        {
+            setting.Value = _editValue;
+            await UnitOfWork.Repository<SystemSetting>().UpdateAsync(setting);
+            await UnitOfWork.SaveChangesAsync();
+            _editingId = null;
+            Snackbar.Add("Setting updated", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private static string FormatKey(string key) =>
+        System.Text.RegularExpressions.Regex.Replace(key, "([A-Z])", " $1").Trim();
+}

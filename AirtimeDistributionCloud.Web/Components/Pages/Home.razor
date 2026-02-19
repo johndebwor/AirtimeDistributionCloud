@@ -41,24 +41,6 @@
 <MudGrid Spacing="4">
     <!-- Summary Cards -->
     <MudItem xs="12" sm="6" md="3">
-        <MudCard Class="stat-card" Elevation="0" Style="border-left: 4px solid #3B82F6 !important;"
-                 @onclick="@(() => Navigation.NavigateTo("/admin/products"))">
-            <MudCardContent>
-                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                    <div>
-                        <MudText Typo="Typo.overline" Color="Color.Secondary">PRODUCTS</MudText>
-                        <MudText Typo="Typo.h4">@_productCount</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Success">@_activeProductCount active</MudText>
-                    </div>
-                    <MudAvatar Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Large">
-                        <MudIcon Icon="@Icons.Material.Filled.Inventory" />
-                    </MudAvatar>
-                </MudStack>
-            </MudCardContent>
-        </MudCard>
-    </MudItem>
-
-    <MudItem xs="12" sm="6" md="3">
         <MudCard Class="stat-card" Elevation="0" Style="border-left: 4px solid #F59E0B !important;"
                  @onclick="@(() => Navigation.NavigateTo("/dealer/registration"))">
             <MudCardContent>
@@ -106,6 +88,26 @@
                     </div>
                     <MudAvatar Color="Color.Success" Variant="Variant.Outlined" Size="Size.Large">
                         <MudIcon Icon="@Icons.Material.Filled.AttachMoney" />
+                    </MudAvatar>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Class="stat-card" Elevation="0" Style="border-left: 4px solid #3B82F6 !important;"
+                 @onclick="@(() => Navigation.NavigateTo("/cashier/balances"))">
+            <MudCardContent>
+                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                    <div>
+                        <MudText Typo="Typo.overline" Color="Color.Secondary">TOTAL BALANCE</MudText>
+                        <MudText Typo="Typo.h5" Style="@($"font-weight:700;{(_totalBalance < 0 ? "color:#EF4444;" : "")}")">
+                            @(_totalBalance < 0 ? $"-{Math.Abs(_totalBalance).ToString("C2")}" : _totalBalance.ToString("C2"))
+                        </MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Deposits − Transfers</MudText>
+                    </div>
+                    <MudAvatar Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Large">
+                        <MudIcon Icon="@Icons.Material.Filled.AccountBalance" />
                     </MudAvatar>
                 </MudStack>
             </MudCardContent>
@@ -379,7 +381,7 @@
     private int _productCount, _activeProductCount, _dealerCount, _transferCount, _cashDepositCount;
     private int _pendingDepositsCount, _approvedDepositsCount, _rejectedDepositsCount;
     private int _pendingTransfersCount;
-    private decimal _totalTransferAmount, _totalCashDeposits, _totalApprovedValue;
+    private decimal _totalTransferAmount, _totalCashDeposits, _totalApprovedValue, _totalBalance;
 
     protected override async Task OnInitializedAsync()
     {
@@ -404,6 +406,7 @@
             var cashDeposits = await CashDepositService.GetAllDepositsAsync();
             _cashDepositCount = cashDeposits.Count;
             _totalCashDeposits = cashDeposits.Sum(d => d.Amount);
+            _totalBalance = _totalCashDeposits - _totalTransferAmount;
 
             var airtimeDeposits = await DepositService.GetAllDepositsAsync();
             _pendingDepositsCount = airtimeDeposits.Count(d => d.Status == DepositStatus.Pending);

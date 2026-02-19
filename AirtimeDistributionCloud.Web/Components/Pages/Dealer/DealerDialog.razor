@@ -1,6 +1,7 @@
 @rendermode InteractiveServer
 @using AirtimeDistributionCloud.Application.DTOs
 @using AirtimeDistributionCloud.Application.Services
+@using AirtimeDistributionCloud.Core.Enums
 @inject IDealerService DealerService
 @inject ISnackbar Snackbar
 
@@ -18,30 +19,66 @@
                 <MudTextField @bind-Value="_name" Label="Name" Required="true"
                               RequiredError="Name is required" Class="mb-3" />
             </MudItem>
-            <MudItem xs="12" sm="6">
-                <MudSelect T="string" @bind-Value="_gender" Label="Gender" Clearable="true" Class="mb-3">
-                    <MudSelectItem T="string" Value="@("Male")">Male</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("Female")">Female</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("Other")">Other</MudSelectItem>
-                </MudSelect>
-            </MudItem>
-            <MudItem xs="12" sm="6">
-                <MudTextField @bind-Value="_idNumber" Label="ID Number" Class="mb-3" />
-            </MudItem>
+
+            @if (_type == DealerType.Person)
+            {
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="string" @bind-Value="_gender" Label="Gender" Clearable="true" Class="mb-3">
+                        <MudSelectItem T="string" Value="@("Male")">Male</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("Female")">Female</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="string" Value="@_idType" Label="ID Type" Clearable="true" Class="mb-3"
+                               ValueChanged="OnIdTypeChanged">
+                        <MudSelectItem T="string" Value="@("National ID")">National ID</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("Passport")">Passport</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("Others")">Others</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                @if (_idType == "Others")
+                {
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_idTypeSpecification" Label="Specify ID Type" Class="mb-3" />
+                    </MudItem>
+                }
+                @if (!string.IsNullOrEmpty(_idType))
+                {
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_idNumber" Label="@IdNumberLabel" Class="mb-3" />
+                    </MudItem>
+                }
+                <MudItem xs="12" sm="6">
+                    <MudAutocomplete T="string" @bind-Value="_nationality" Label="Nationality"
+                                     SearchFunc="SearchNationality" Class="mb-3"
+                                     ResetValueOnEmptyText="false" CoerceText="true" />
+                </MudItem>
+            }
+
             @if (_type == DealerType.Company)
             {
                 <MudItem xs="12" sm="6">
                     <MudTextField @bind-Value="_companyRegNumber" Label="Company Reg Number" Class="mb-3" />
                 </MudItem>
             }
+
             <MudItem xs="12" sm="6">
-                <MudTextField @bind-Value="_nationality" Label="Nationality" Class="mb-3" />
+                <MudSelect T="string" Value="@_state" Label="State / Administrative Area"
+                           Clearable="true" Class="mb-3" ValueChanged="OnStateChanged">
+                    @foreach (var state in StatesAndCounties.Keys)
+                    {
+                        <MudSelectItem T="string" Value="@state">@state</MudSelectItem>
+                    }
+                </MudSelect>
             </MudItem>
             <MudItem xs="12" sm="6">
-                <MudTextField @bind-Value="_state" Label="State" Class="mb-3" />
-            </MudItem>
-            <MudItem xs="12" sm="6">
-                <MudTextField @bind-Value="_county" Label="County" Class="mb-3" />
+                <MudSelect T="string" @bind-Value="_county" Label="County" Clearable="true" Class="mb-3"
+                           Disabled="@string.IsNullOrEmpty(_state)">
+                    @foreach (var county in _counties)
+                    {
+                        <MudSelectItem T="string" Value="@county">@county</MudSelectItem>
+                    }
+                </MudSelect>
             </MudItem>
             <MudItem xs="12">
                 <MudTextField @bind-Value="_physicalAddress" Label="Physical Address" Lines="2" Class="mb-3" />
@@ -61,12 +98,76 @@
     private DealerType _type = DealerType.Person;
     private string _name = "";
     private string? _gender;
+    private string? _idType;
+    private string? _idTypeSpecification;
     private string? _idNumber;
     private string? _companyRegNumber;
-    private string? _nationality;
+    private string _nationality = "South Sudanese";
     private string? _state;
     private string? _county;
     private string? _physicalAddress;
+    private List<string> _counties = new();
+
+    private string IdNumberLabel => _idType switch
+    {
+        "Passport" => "Passport Number",
+        "National ID" => "ID Number",
+        _ => "ID / Reference Number"
+    };
+
+    private static readonly Dictionary<string, List<string>> StatesAndCounties = new()
+    {
+        ["Central Equatoria"] = new() { "Juba", "Kajo-Keji", "Lainya", "Morobo", "Mundri East", "Mundri West", "Terekeka", "Yei River" },
+        ["Eastern Equatoria"] = new() { "Budi", "Ikotos", "Kapoeta East", "Kapoeta North", "Kapoeta South", "Lafon", "Magwi", "Torit" },
+        ["Jonglei"] = new() { "Akobo", "Ayod", "Bor South", "Duk", "Fangak", "Nyirol", "Pochalla", "Twic East", "Uror" },
+        ["Lakes"] = new() { "Awerial", "Cueibet", "Rumbek Centre", "Rumbek East", "Rumbek North", "Wulu", "Yirol East", "Yirol West" },
+        ["Northern Bahr el Ghazal"] = new() { "Aweil Centre", "Aweil East", "Aweil North", "Aweil South", "Aweil West" },
+        ["Unity"] = new() { "Abiemnhom", "Guit", "Koch", "Leer", "Mayendit", "Mayom", "Panyijiar", "Rubkona" },
+        ["Upper Nile"] = new() { "Akoka", "Baliet", "Fashoda", "Longochuk", "Luakpiny/Nasir", "Maban", "Makal", "Manyo", "Melut", "Renk", "Ulang" },
+        ["Warrap"] = new() { "Gogrial East", "Gogrial West", "Tonj East", "Tonj North", "Tonj South", "Twic" },
+        ["Western Bahr el Ghazal"] = new() { "Jur River", "Raja", "Wau" },
+        ["Western Equatoria"] = new() { "Ibba", "Maridi", "Mvolo", "Nagero", "Nzara", "Tambura", "Yambio" },
+        ["Abyei Administrative Area"] = new() { "Abyei" },
+        ["Pibor Administrative Area"] = new() { "Boma", "Gumuruk", "Pochalla", "Verteth" },
+        ["Ruweng Administrative Area"] = new() { "Abiemnhom", "Pariang", "Rubkona" },
+    };
+
+    private static readonly List<string> Nationalities = new()
+    {
+        "South Sudanese", "Afghan", "Albanian", "Algerian", "American", "Angolan", "Argentine",
+        "Australian", "Austrian", "Bangladeshi", "Belgian", "Belarusian", "Bolivian", "Brazilian",
+        "British", "Bulgarian", "Burundian", "Cameroonian", "Canadian", "Central African", "Chadian",
+        "Chilean", "Chinese", "Colombian", "Congolese", "Croatian", "Cuban", "Czech", "Danish",
+        "Dutch", "Egyptian", "Eritrean", "Ethiopian", "Finnish", "French", "German", "Ghanaian",
+        "Greek", "Hungarian", "Indian", "Indonesian", "Iranian", "Iraqi", "Irish", "Israeli",
+        "Italian", "Japanese", "Jordanian", "Kenyan", "Korean", "Libyan", "Malaysian", "Mexican",
+        "Moroccan", "Mozambican", "Namibian", "Nigerian", "Norwegian", "Pakistani", "Philippine",
+        "Polish", "Portuguese", "Romanian", "Russian", "Rwandan", "Saudi Arabian", "Senegalese",
+        "Somalian", "South African", "Spanish", "Sri Lankan", "Sudanese", "Swedish", "Swiss",
+        "Syrian", "Tanzanian", "Thai", "Turkish", "Ugandan", "Ukrainian", "Venezuelan",
+        "Vietnamese", "Yemeni", "Zambian", "Zimbabwean"
+    };
+
+    private Task<IEnumerable<string>> SearchNationality(string value, CancellationToken token)
+    {
+        if (string.IsNullOrEmpty(value))
+            return Task.FromResult(Nationalities.AsEnumerable());
+        return Task.FromResult(Nationalities.Where(n =>
+            n.Contains(value, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private void OnStateChanged(string? state)
+    {
+        _state = state;
+        _county = null;
+        _counties = state is not null && StatesAndCounties.TryGetValue(state, out var c) ? c : new();
+    }
+
+    private void OnIdTypeChanged(string? type)
+    {
+        _idType = type;
+        if (type != "Others") _idTypeSpecification = null;
+    }
 
     private async Task Submit()
     {
@@ -79,9 +180,15 @@
         _saving = true;
         try
         {
+            var gender = _type == DealerType.Person ? _gender : null;
+            var idType = _type == DealerType.Person ? _idType : null;
+            var idTypeSpec = _type == DealerType.Person ? _idTypeSpecification : null;
+            var idNumber = _type == DealerType.Person ? _idNumber : null;
+            var nationality = _type == DealerType.Person ? _nationality : null;
+
             await DealerService.CreateDealerAsync(new CreateDealerRequest(
-                _type, _name, _gender, _idNumber, _companyRegNumber,
-                _nationality, _state, _county, _physicalAddress));
+                _type, _name, gender, idType, idTypeSpec, idNumber,
+                _companyRegNumber, nationality, _state, _county, _physicalAddress));
             Snackbar.Add("Dealer registered successfully", Severity.Success);
             MudDialog.Close(DialogResult.Ok(true));
         }

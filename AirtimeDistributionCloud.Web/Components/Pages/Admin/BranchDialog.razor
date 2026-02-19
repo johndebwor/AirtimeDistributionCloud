@@ -12,7 +12,7 @@
                       RequiredError="Location is required" Class="mb-3" />
         @if (IsEdit)
         {
-            <MudSwitch @bind-Value="Model.IsActive" Label="Active" Color="Color.Primary" />
+            <MudSwitch T="bool" @bind-Value="Model.IsActive" Label="Active" Color="Color.Primary" />
         }
     </DialogContent>
     <DialogActions>

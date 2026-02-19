@@ -3,16 +3,18 @@
 @using AirtimeDistributionCloud.Core.Entities
 @using AirtimeDistributionCloud.Core.Interfaces
 @using AirtimeDistributionCloud.Application.Services
+@using AirtimeDistributionCloud.Application.DTOs
 @inject IDealerService DealerService
 @inject IUnitOfWork UnitOfWork
 @inject ISnackbar Snackbar
+@inject IJSRuntime JS
 @rendermode InteractiveServer
 
 <PageTitle>Commissions - Airtime Distribution</PageTitle>
 
 <div class="page-header">
     <h1>Commissions</h1>
-    <p>View dealer commission rates and balances</p>
+    <p>View and manage dealer commission rates</p>
 </div>
 
 <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
@@ -32,8 +34,14 @@
         <Columns>
             <PropertyColumn Property="x => x.DealerName" Title="Dealer" />
             <PropertyColumn Property="x => x.ProductName" Title="Product" />
-            <PropertyColumn Property="x => x.CommissionRate" Title="Commission Rate %" Format="N6" />
-            <PropertyColumn Property="x => x.Balance" Title="Balance" Format="C6" />
+            <PropertyColumn Property="x => x.CommissionRate" Title="Commission Rate %" Format="N2" />
+            <PropertyColumn Property="x => x.Balance" Title="Balance" Format="C2" />
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary"
+                                   OnClick="@(() => OpenEditCommission(context.Item))" />
+                </CellTemplate>
+            </TemplateColumn>
         </Columns>
         <NoRecordsContent>
             <MudText>No commission data found. Select a dealer or register dealers with products first.</MudText>
@@ -41,17 +49,50 @@
     </MudDataGrid>
 </MudPaper>
 
+@if (_editingItem is not null && _editDialogOpen)
+{
+    <MudOverlay Visible="true" DarkBackground="true" ZIndex="9" AutoClose="false">
+        <MudPaper Class="pa-6" Style="min-width:380px; border-radius:12px;">
+            <MudText Typo="Typo.h6" Class="mb-1">Edit Commission</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+                @_editingItem.DealerName — @_editingItem.ProductName
+            </MudText>
+            <MudText Typo="Typo.caption" Class="mb-3">
+                Allowed range: @_minCommission% – @_maxCommission%
+            </MudText>
+            <div @ref="_editRateRef">
+                <MudTextField T="string" Value="@_editRateDisplay" ValueChanged="OnEditRateChanged"
+                              Label="Commission Rate (%)" Class="mb-4" />
+            </div>
+            <div class="d-flex justify-end gap-2">
+                <MudButton OnClick="@(() => _editDialogOpen = false)">Cancel</MudButton>
+                <MudButton Color="Color.Primary" Variant="Variant.Filled"
+                           OnClick="SaveCommission" Disabled="@_saving">Save</MudButton>
+            </div>
+        </MudPaper>
+    </MudOverlay>
+}
+
 @code {
-    private List<Application.DTOs.DealerDto> _dealers = new();
+    private List<DealerDto> _dealers = new();
     private List<DealerProductView> _dealerProducts = new();
     private int? _selectedDealerId;
     private bool _loading = true;
+    private bool _editDialogOpen;
+    private bool _saving;
+    private DealerProductView? _editingItem;
+    private decimal _editRate;
+    private string _editRateDisplay = "";
+    private decimal _minCommission = 0;
+    private decimal _maxCommission = 200;
+    private ElementReference _editRateRef;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
             _dealers = (await DealerService.GetAllDealersAsync()).ToList();
+            await LoadCommissionRange();
             await LoadDealerProducts();
         }
         catch (Exception ex)
@@ -62,6 +103,23 @@
         {
             _loading = false;
         }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_editDialogOpen)
+        {
+            await JS.InvokeVoidAsync("initNumericFormat", _editRateRef);
+        }
+    }
+
+    private async Task LoadCommissionRange()
+    {
+        var settings = await UnitOfWork.Repository<SystemSetting>().GetAllAsync();
+        var minSetting = settings.FirstOrDefault(s => s.Key == "CommissionMinPercentage");
+        var maxSetting = settings.FirstOrDefault(s => s.Key == "CommissionMaxPercentage");
+        if (minSetting is not null && decimal.TryParse(minSetting.Value, out var min)) _minCommission = min;
+        if (maxSetting is not null && decimal.TryParse(maxSetting.Value, out var max)) _maxCommission = max;
     }
 
     private async Task OnDealerChanged(int? dealerId)
@@ -75,8 +133,7 @@
         _loading = true;
         try
         {
-            var dpRepo = UnitOfWork.Repository<DealerProduct>();
-            var allDp = await dpRepo.GetAllAsync();
+            var allDp = await UnitOfWork.Repository<DealerProduct>().GetAllAsync();
             var products = (await UnitOfWork.Repository<Product>().GetAllAsync()).ToDictionary(p => p.Id);
             var dealerMap = _dealers.ToDictionary(d => d.Id);
 
@@ -86,6 +143,7 @@
 
             _dealerProducts = query.Select(dp => new DealerProductView
             {
+                DealerProductId = dp.Id,
                 DealerName = dealerMap.GetValueOrDefault(dp.DealerId)?.Name ?? "Unknown",
                 ProductName = products.GetValueOrDefault(dp.ProductId)?.Name ?? "Unknown",
                 CommissionRate = dp.CommissionRate,
@@ -102,8 +160,77 @@
         }
     }
 
+    private void OpenEditCommission(DealerProductView item)
+    {
+        _editingItem = item;
+        _editRate = item.CommissionRate;
+        _editRateDisplay = FormatNumber(_editRate.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        _editDialogOpen = true;
+    }
+
+    private void OnEditRateChanged(string value)
+    {
+        _editRateDisplay = FormatNumber(value);
+        _editRate = ParseNumber(value);
+    }
+
+    private async Task SaveCommission()
+    {
+        if (_editingItem is null) return;
+
+        var raw = await JS.InvokeAsync<string>("getNumericInputValue", _editRateRef);
+        _editRate = ParseNumber(raw);
+
+        if (_editRate < _minCommission || _editRate > _maxCommission)
+        {
+            Snackbar.Add($"Commission must be between {_minCommission}% and {_maxCommission}%", Severity.Warning);
+            return;
+        }
+        _saving = true;
+        try
+        {
+            await DealerService.UpdateCommissionAsync(new UpdateCommissionRequest(_editingItem.DealerProductId, _editRate));
+            _editingItem.CommissionRate = _editRate;
+            _editDialogOpen = false;
+            Snackbar.Add("Commission updated", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private static string FormatNumber(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return "";
+        var clean = "";
+        var hasDecimal = false;
+        foreach (var c in input)
+        {
+            if (char.IsDigit(c)) clean += c;
+            else if (c == '.' && !hasDecimal) { clean += c; hasDecimal = true; }
+        }
+        if (string.IsNullOrEmpty(clean)) return "";
+        var parts = clean.Split('.');
+        if (long.TryParse(parts[0], out var intPart))
+            parts[0] = intPart.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("en-US"));
+        return parts.Length > 1 ? $"{parts[0]}.{parts[1]}" : parts[0];
+    }
+
+    private static decimal ParseNumber(string formatted)
+    {
+        var clean = new string(formatted.Where(c => char.IsDigit(c) || c == '.').ToArray());
+        return decimal.TryParse(clean, System.Globalization.NumberStyles.Any,
+            System.Globalization.CultureInfo.InvariantCulture, out var val) ? val : 0;
+    }
+
     private class DealerProductView
     {
+        public int DealerProductId { get; set; }
         public string DealerName { get; set; } = "";
         public string ProductName { get; set; } = "";
         public decimal CommissionRate { get; set; }

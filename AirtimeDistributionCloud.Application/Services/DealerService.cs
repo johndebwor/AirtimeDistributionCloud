@@ -30,15 +30,15 @@ public class DealerService : IDealerService
     public async Task<IReadOnlyList<DealerDto>> GetAllDealersAsync(CancellationToken cancellationToken = default)
     {
         var dealers = await _dealerRepository.GetAllAsync(cancellationToken);
-        return dealers.Select(d => new DealerDto(d.Id, d.Type, d.Name, d.Gender, d.IDNumber,
-            d.CompanyRegNumber, d.Nationality, d.State, d.County, d.PhysicalAddress)).ToList();
+        return dealers.Select(d => new DealerDto(d.Id, d.Type, d.Name, d.Gender, d.IdType, d.IdTypeSpecification,
+            d.IDNumber, d.CompanyRegNumber, d.Nationality, d.State, d.County, d.PhysicalAddress)).ToList();
     }
 
     public async Task<DealerDto?> GetDealerByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var d = await _dealerRepository.GetByIdAsync(id, cancellationToken);
-        return d is null ? null : new DealerDto(d.Id, d.Type, d.Name, d.Gender, d.IDNumber,
-            d.CompanyRegNumber, d.Nationality, d.State, d.County, d.PhysicalAddress);
+        return d is null ? null : new DealerDto(d.Id, d.Type, d.Name, d.Gender, d.IdType, d.IdTypeSpecification,
+            d.IDNumber, d.CompanyRegNumber, d.Nationality, d.State, d.County, d.PhysicalAddress);
     }
 
     public async Task<DealerDto> CreateDealerAsync(CreateDealerRequest request, CancellationToken cancellationToken = default)
@@ -46,6 +46,7 @@ public class DealerService : IDealerService
         var dealer = new Dealer
         {
             Type = request.Type, Name = request.Name, Gender = request.Gender,
+            IdType = request.IdType, IdTypeSpecification = request.IdTypeSpecification,
             IDNumber = request.IDNumber, CompanyRegNumber = request.CompanyRegNumber,
             Nationality = request.Nationality, State = request.State,
             County = request.County, PhysicalAddress = request.PhysicalAddress
@@ -63,8 +64,16 @@ public class DealerService : IDealerService
         }
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new DealerDto(dealer.Id, dealer.Type, dealer.Name, dealer.Gender, dealer.IDNumber,
-            dealer.CompanyRegNumber, dealer.Nationality, dealer.State, dealer.County, dealer.PhysicalAddress);
+        return new DealerDto(dealer.Id, dealer.Type, dealer.Name, dealer.Gender, dealer.IdType, dealer.IdTypeSpecification,
+            dealer.IDNumber, dealer.CompanyRegNumber, dealer.Nationality, dealer.State, dealer.County, dealer.PhysicalAddress);
+    }
+
+    public async Task UpdateCommissionAsync(UpdateCommissionRequest request, CancellationToken cancellationToken = default)
+    {
+        var dp = await _unitOfWork.Repository<DealerProduct>().GetByIdAsync(request.DealerProductId, cancellationToken)
+            ?? throw new InvalidOperationException("Commission record not found");
+        dp.CommissionRate = request.CommissionRate;
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<decimal> GetDealerCashBalanceAsync(int dealerId, CancellationToken cancellationToken = default)

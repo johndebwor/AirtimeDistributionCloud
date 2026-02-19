@@ -3,6 +3,7 @@
 @using AirtimeDistributionCloud.Application.Services
 @inject ICashDepositService CashDepositService
 @inject ISnackbar Snackbar
+@inject IJSRuntime JS
 
 <MudDialog>
     <DialogContent>
@@ -20,8 +21,11 @@
                 <MudSelectItem T="int" Value="@d.Id">@d.Name</MudSelectItem>
             }
         </MudSelect>
-        <MudNumericField @bind-Value="_amount" Label="Amount" Min="0.01m" Format="N6"
-                         Required="true" RequiredError="Amount is required" Class="mb-3" />
+        <div @ref="_amountRef">
+            <MudTextField T="string" Value="@_amountDisplay" ValueChanged="OnAmountDisplayChanged"
+                          Label="Amount"
+                          Required="true" RequiredError="Amount is required" Class="mb-3" />
+        </div>
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
@@ -39,9 +43,28 @@
     private int _branchId;
     private int _dealerId;
     private decimal _amount;
+    private string _amountDisplay = "";
+    private ElementReference _amountRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("initNumericFormat", _amountRef);
+        }
+    }
+
+    private void OnAmountDisplayChanged(string value)
+    {
+        _amountDisplay = FormatNumber(value);
+        _amount = ParseNumber(value);
+    }
 
     private async Task Submit()
     {
+        var raw = await JS.InvokeAsync<string>("getNumericInputValue", _amountRef);
+        _amount = ParseNumber(raw);
+
         if (_branchId == 0 || _dealerId == 0 || _amount <= 0)
         {
             Snackbar.Add("Please fill in all required fields", Severity.Warning);
@@ -66,4 +89,28 @@
     }
 
     private void Cancel() => MudDialog.Cancel();
+
+    private static string FormatNumber(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return "";
+        var clean = "";
+        var hasDecimal = false;
+        foreach (var c in input)
+        {
+            if (char.IsDigit(c)) clean += c;
+            else if (c == '.' && !hasDecimal) { clean += c; hasDecimal = true; }
+        }
+        if (string.IsNullOrEmpty(clean)) return "";
+        var parts = clean.Split('.');
+        if (long.TryParse(parts[0], out var intPart))
+            parts[0] = intPart.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("en-US"));
+        return parts.Length > 1 ? $"{parts[0]}.{parts[1]}" : parts[0];
+    }
+
+    private static decimal ParseNumber(string formatted)
+    {
+        var clean = new string(formatted.Where(c => char.IsDigit(c) || c == '.').ToArray());
+        return decimal.TryParse(clean, System.Globalization.NumberStyles.Any,
+            System.Globalization.CultureInfo.InvariantCulture, out var val) ? val : 0;
+    }
 }

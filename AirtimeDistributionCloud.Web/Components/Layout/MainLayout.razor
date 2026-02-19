@@ -1,7 +1,7 @@
 @inherits LayoutComponentBase
 @inject NavigationManager Navigation
 
-<MudThemeProvider Theme="_theme" @bind-IsDarkMode="@_isDarkMode" />
+<MudThemeProvider @ref="_themeProvider" Theme="_theme" IsDarkMode="@_isDarkMode" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
@@ -89,8 +89,18 @@
 </div>
 
 @code {
+    private MudThemeProvider _themeProvider = null!;
     private bool _drawerOpen = true;
     private bool _isDarkMode;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _isDarkMode = await _themeProvider.GetSystemDarkModeAsync();
+            StateHasChanged();
+        }
+    }
 
     private readonly MudTheme _theme = new()
     {

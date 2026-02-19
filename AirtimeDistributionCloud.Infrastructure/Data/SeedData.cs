@@ -57,15 +57,25 @@ public static class SeedData
                 }
             }
 
-            // Seed system settings
-            if (!await context.SystemSettings.AnyAsync())
+            // Seed system settings (add any missing defaults)
+            var defaultSettings = new Dictionary<string, (string Value, string Description)>
             {
-                context.SystemSettings.Add(new SystemSetting
+                ["ExpenseApprovalThreshold"] = ("50000", "Expenses at or above this amount (SSP) require admin approval"),
+                ["CommissionMinPercentage"] = ("0", "Minimum allowed commission rate (%)"),
+                ["CommissionMaxPercentage"] = ("200", "Maximum allowed commission rate (%)"),
+            };
+            var existingKeys = context.SystemSettings.Select(s => s.Key).ToHashSet();
+            var settingsAdded = false;
+            foreach (var (key, (value, description)) in defaultSettings)
+            {
+                if (!existingKeys.Contains(key))
                 {
-                    Key = "ExpenseApprovalThreshold",
-                    Value = "50000",
-                    Description = "Expenses at or above this amount (SSP) require admin approval"
-                });
+                    context.SystemSettings.Add(new SystemSetting { Key = key, Value = value, Description = description });
+                    settingsAdded = true;
+                }
+            }
+            if (settingsAdded)
+            {
                 await context.SaveChangesAsync();
                 logger.LogInformation("Seeded default system settings");
             }

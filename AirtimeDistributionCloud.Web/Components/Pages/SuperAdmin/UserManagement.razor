@@ -1,5 +1,5 @@
 @page "/superadmin/users"
-@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "SuperAdministrator")]
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "SystemAdmin,SuperAdministrator")]
 @using AirtimeDistributionCloud.Application.Services
 @using Microsoft.AspNetCore.Identity
 @inject UserManager<ApplicationUser> UserManager
