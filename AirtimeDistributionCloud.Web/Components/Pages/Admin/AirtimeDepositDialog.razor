@@ -1,16 +1,18 @@
 @rendermode InteractiveServer
 @using AirtimeDistributionCloud.Application.DTOs
 @using AirtimeDistributionCloud.Application.Services
+@using AirtimeDistributionCloud.Core.Enums
 @using AirtimeDistributionCloud.Core.Interfaces
 @inject IAirtimeDepositService DepositService
 @inject ICurrentUserService CurrentUser
+@inject IUserPreferenceService UserPrefs
 @inject ISnackbar Snackbar
 @inject IJSRuntime JS
 
 <MudDialog>
     <DialogContent>
         <MudSelect T="int" @bind-Value="_selectedProductId" Label="Product" Required="true"
-                   RequiredError="Product is required" Class="mb-3">
+                   RequiredError="Product is required" Placeholder="-- Select Product --" Class="mb-3">
             @foreach (var product in Products)
             {
                 <MudSelectItem T="int" Value="@product.Id">@product.Name</MudSelectItem>
@@ -38,6 +40,17 @@
     private string _amountDisplay = "";
     private bool _saving;
     private ElementReference _amountRef;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var userId = CurrentUser.UserId;
+        if (userId is not null)
+        {
+            var lastProductId = await UserPrefs.GetIntAsync(userId, IUserPreferenceService.LastProductId);
+            if (lastProductId.HasValue && Products.Any(p => p.Id == lastProductId.Value))
+                _selectedProductId = lastProductId.Value;
+        }
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -73,10 +86,18 @@
         _saving = true;
         try
         {
-            await DepositService.CreateDepositAsync(
+            var result = await DepositService.CreateDepositAsync(
                 new CreateAirtimeDepositRequest(_selectedProductId, _amount),
                 CurrentUser.UserId ?? "");
-            Snackbar.Add("Deposit created successfully", Severity.Success);
+
+            var userId = CurrentUser.UserId;
+            if (userId is not null)
+                await UserPrefs.SetAsync(userId, IUserPreferenceService.LastProductId, _selectedProductId.ToString());
+
+            var message = result.Status == DepositStatus.Approved
+                ? "Deposit created and auto-approved"
+                : "Deposit submitted for approval";
+            Snackbar.Add(message, Severity.Success);
             MudDialog.Close(DialogResult.Ok(true));
         }
         catch (Exception ex)

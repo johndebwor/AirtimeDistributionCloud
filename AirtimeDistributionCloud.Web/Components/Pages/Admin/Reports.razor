@@ -1,0 +1,492 @@
+@page "/admin/reports"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@rendermode InteractiveServer
+@using AirtimeDistributionCloud.Application.DTOs
+@using AirtimeDistributionCloud.Application.Services
+@using AirtimeDistributionCloud.Core.Entities
+@using AirtimeDistributionCloud.Core.Enums
+@using AirtimeDistributionCloud.Core.Interfaces
+@using QuestPDF.Fluent
+@inject IProductService ProductService
+@inject IDealerService DealerService
+@inject IAirtimeTransferService TransferService
+@inject ICashDepositService CashDepositService
+@inject IAirtimeDepositService DepositService
+@inject IExpenseService ExpenseService
+@inject ISystemSettingRepository SettingsRepo
+@inject IJSRuntime JS
+@inject ISnackbar Snackbar
+@inject IWebHostEnvironment WebHostEnv
+@using Microsoft.AspNetCore.Hosting
+
+<PageTitle>Reports - RasidBase</PageTitle>
+
+<div class="page-header">
+    <h1>Reports</h1>
+    <p>Generate and download reports in PDF or Excel format</p>
+</div>
+
+<MudGrid Spacing="4">
+    <!-- Filters -->
+    <MudItem xs="12">
+        <MudPaper Elevation="0" Class="data-card pa-4">
+            <MudGrid>
+                <MudItem xs="12" sm="4">
+                    <MudSelect T="string" @bind-Value="_selectedReport" Label="Report Type" Variant="Variant.Outlined"
+                               Placeholder="-- Select Report --">
+                        <MudSelectItem T="string" Value="@("transfers")">Airtime Transfers</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("cash-deposits")">Cash Deposits</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("airtime-deposits")">Airtime Deposits</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("expenses")">Expenses</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("dealers")">Dealers</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="3">
+                    <MudDatePicker @bind-Date="_dateFrom" Label="From Date" Variant="Variant.Outlined" Clearable="true" />
+                </MudItem>
+                <MudItem xs="12" sm="3">
+                    <MudDatePicker @bind-Date="_dateTo" Label="To Date" Variant="Variant.Outlined" Clearable="true" />
+                </MudItem>
+                <MudItem xs="12" sm="2" Class="d-flex align-end gap-2">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.PictureAsPdf"
+                               OnClick="@(() => GenerateReport("pdf"))" Disabled="@(_generating || string.IsNullOrEmpty(_selectedReport))">
+                        PDF
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Success"
+                               StartIcon="@Icons.Material.Filled.TableChart"
+                               OnClick="@(() => GenerateReport("excel"))" Disabled="@(_generating || string.IsNullOrEmpty(_selectedReport))">
+                        Excel
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </MudItem>
+
+    @if (_generating)
+    {
+        <MudItem xs="12">
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+        </MudItem>
+    }
+
+    <!-- Report Cards -->
+    <MudItem xs="12" sm="6" md="4">
+        <MudCard Class="stat-card" Elevation="0" Style="border-left: 4px solid #0284C7 !important; cursor:pointer;"
+                 @onclick="@(() => { _selectedReport = "transfers"; })">
+            <MudCardContent>
+                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                    <div>
+                        <MudText Typo="Typo.subtitle1" Style="font-weight:600;">Airtime Transfers</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Transfer history with dealer, product, and commission details</MudText>
+                    </div>
+                    <MudAvatar Color="Color.Info" Variant="Variant.Outlined">
+                        <MudIcon Icon="@Icons.Material.Filled.SwapHoriz" />
+                    </MudAvatar>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="4">
+        <MudCard Class="stat-card" Elevation="0" Style="border-left: 4px solid #16A34A !important; cursor:pointer;"
+                 @onclick="@(() => { _selectedReport = "cash-deposits"; })">
+            <MudCardContent>
+                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                    <div>
+                        <MudText Typo="Typo.subtitle1" Style="font-weight:600;">Cash Deposits</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">All cash deposits by dealer and branch</MudText>
+                    </div>
+                    <MudAvatar Color="Color.Success" Variant="Variant.Outlined">
+                        <MudIcon Icon="@Icons.Material.Filled.AttachMoney" />
+                    </MudAvatar>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="4">
+        <MudCard Class="stat-card" Elevation="0" Style="border-left: 4px solid #D97706 !important; cursor:pointer;"
+                 @onclick="@(() => { _selectedReport = "expenses"; })">
+            <MudCardContent>
+                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                    <div>
+                        <MudText Typo="Typo.subtitle1" Style="font-weight:600;">Expenses</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Expense records with category and approval status</MudText>
+                    </div>
+                    <MudAvatar Color="Color.Warning" Variant="Variant.Outlined">
+                        <MudIcon Icon="@Icons.Material.Filled.Receipt" />
+                    </MudAvatar>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="4">
+        <MudCard Class="stat-card" Elevation="0" Style="border-left: 4px solid #3B82F6 !important; cursor:pointer;"
+                 @onclick="@(() => { _selectedReport = "airtime-deposits"; })">
+            <MudCardContent>
+                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                    <div>
+                        <MudText Typo="Typo.subtitle1" Style="font-weight:600;">Airtime Deposits</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Airtime deposit records with bonus and status</MudText>
+                    </div>
+                    <MudAvatar Color="Color.Primary" Variant="Variant.Outlined">
+                        <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" />
+                    </MudAvatar>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="4">
+        <MudCard Class="stat-card" Elevation="0" Style="border-left: 4px solid #F59E0B !important; cursor:pointer;"
+                 @onclick="@(() => { _selectedReport = "dealers"; })">
+            <MudCardContent>
+                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                    <div>
+                        <MudText Typo="Typo.subtitle1" Style="font-weight:600;">Dealers</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Complete dealer registration list</MudText>
+                    </div>
+                    <MudAvatar Color="Color.Secondary" Variant="Variant.Outlined">
+                        <MudIcon Icon="@Icons.Material.Filled.People" />
+                    </MudAvatar>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private string _selectedReport = "";
+    private DateTime? _dateFrom;
+    private DateTime? _dateTo;
+    private bool _generating;
+
+    private string _companyName = "";
+    private string _companyAddress = "";
+    private string _companyTel = "";
+    private string _logoPath = "";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        var nameSetting = await SettingsRepo.GetByKeyAsync("CompanyName");
+        _companyName = nameSetting?.Value ?? "Airtime Distribution";
+        var addrSetting = await SettingsRepo.GetByKeyAsync("CompanyAddress");
+        _companyAddress = addrSetting?.Value ?? "";
+        var telSetting = await SettingsRepo.GetByKeyAsync("CompanyTel1");
+        _companyTel = telSetting?.Value ?? "";
+        var logoSetting = await SettingsRepo.GetByKeyAsync("CompanyLogoPath");
+        _logoPath = logoSetting?.Value ?? "";
+        StateHasChanged();
+    }
+
+    private async Task GenerateReport(string format)
+    {
+        _generating = true;
+        StateHasChanged();
+        try
+        {
+            byte[] fileBytes;
+            string fileName;
+            string mimeType;
+            var reportTitle = _selectedReport switch
+            {
+                "transfers" => "Airtime Transfers Report",
+                "cash-deposits" => "Cash Deposits Report",
+                "airtime-deposits" => "Airtime Deposits Report",
+                "expenses" => "Expenses Report",
+                "dealers" => "Dealers Report",
+                _ => "Report"
+            };
+
+            var headers = GetHeaders();
+            var rows = await GetRows();
+
+            if (format == "excel")
+            {
+                fileBytes = GenerateExcel(reportTitle, headers, rows);
+                fileName = $"{_selectedReport}-{DateTime.Now:yyyyMMdd}.xlsx";
+                mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            }
+            else
+            {
+                fileBytes = GeneratePdf(reportTitle, headers, rows);
+                fileName = $"{_selectedReport}-{DateTime.Now:yyyyMMdd}.pdf";
+                mimeType = "application/pdf";
+            }
+
+            var base64 = Convert.ToBase64String(fileBytes);
+            await JS.InvokeVoidAsync("eval", $@"
+                var link = document.createElement('a');
+                link.href = 'data:{mimeType};base64,{base64}';
+                link.download = '{fileName}';
+                link.click();
+            ");
+            Snackbar.Add($"{reportTitle} downloaded", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _generating = false;
+        }
+    }
+
+    private string[] GetHeaders() => _selectedReport switch
+    {
+        "transfers" => ["#", "Date", "Dealer", "Product", "Branch", "Amount", "Commission", "Loan Amount", "Type", "Status"],
+        "cash-deposits" => ["#", "Date", "Dealer", "Branch", "Amount"],
+        "airtime-deposits" => ["#", "Date", "Product", "Amount", "Bonus %", "Bonus", "Total", "Status"],
+        "expenses" => ["#", "Date", "Branch", "Category", "Description", "Amount", "Status"],
+        "dealers" => ["#", "Dealer #", "Name", "Type", "Phone", "State", "County", "Status"],
+        _ => []
+    };
+
+    private async Task<List<string[]>> GetRows()
+    {
+        var rows = new List<string[]>();
+        switch (_selectedReport)
+        {
+            case "transfers":
+                var transfers = await TransferService.GetAllTransfersAsync();
+                var filteredTransfers = FilterByDate(transfers, t => t.CreatedDate);
+                int ti = 0;
+                foreach (var t in filteredTransfers)
+                    rows.Add([(++ti).ToString(), t.CreatedDate.ToString("dd/MM/yyyy"), t.DealerName, t.ProductName, t.BranchName,
+                        t.Amount.ToString("N2"), t.CommissionAmount.ToString("N2"), t.LoanAmount.ToString("N2"),
+                        t.TransferType.ToString(), t.Status.ToString()]);
+                break;
+
+            case "cash-deposits":
+                var cashDeps = await CashDepositService.GetAllDepositsAsync();
+                var filteredCash = FilterByDate(cashDeps, d => d.DepositDate);
+                int ci = 0;
+                foreach (var d in filteredCash)
+                    rows.Add([(++ci).ToString(), d.DepositDate.ToString("dd/MM/yyyy"), d.DealerName, d.BranchName, d.Amount.ToString("N2")]);
+                break;
+
+            case "airtime-deposits":
+                var airDeps = await DepositService.GetAllDepositsAsync();
+                var filteredAir = FilterByDate(airDeps, d => d.CreatedDate);
+                int ai = 0;
+                foreach (var d in filteredAir)
+                    rows.Add([(++ai).ToString(), d.CreatedDate.ToString("dd/MM/yyyy"), d.ProductName, d.Amount.ToString("N2"),
+                        d.BonusPercentage.ToString("N2"), d.BonusAmount.ToString("N2"), d.TotalAmount.ToString("N2"), d.Status.ToString()]);
+                break;
+
+            case "expenses":
+                var expenses = await ExpenseService.GetAllExpensesAsync();
+                var filteredExp = FilterByDate(expenses, e => e.ExpenseDate);
+                int ei = 0;
+                foreach (var e in filteredExp)
+                    rows.Add([(++ei).ToString(), e.ExpenseDate.ToString("dd/MM/yyyy"), e.BranchName, e.CategoryName,
+                        e.Description, e.Amount.ToString("N2"), e.Status.ToString()]);
+                break;
+
+            case "dealers":
+                var dealers = await DealerService.GetAllDealersAsync();
+                int di = 0;
+                foreach (var d in dealers)
+                    rows.Add([(++di).ToString(), d.DealerNumber, d.Name, d.Type.ToString(), d.PhoneNumber ?? "",
+                        d.State ?? "", d.County ?? "", d.IsActive ? "Active" : "Inactive"]);
+                break;
+        }
+        return rows;
+    }
+
+    private IEnumerable<T> FilterByDate<T>(IEnumerable<T> items, Func<T, DateTime> dateSelector)
+    {
+        if (_dateFrom.HasValue)
+            items = items.Where(i => dateSelector(i).Date >= _dateFrom.Value.Date);
+        if (_dateTo.HasValue)
+            items = items.Where(i => dateSelector(i).Date <= _dateTo.Value.Date);
+        return items;
+    }
+
+    private byte[] GenerateExcel(string title, string[] headers, List<string[]> rows)
+    {
+        using var workbook = new ClosedXML.Excel.XLWorkbook();
+        var ws = workbook.Worksheets.Add(title.Length > 31 ? title[..31] : title);
+
+        // Company logo - placed in column 1, text starts in column 2
+        bool hasLogo = false;
+        if (!string.IsNullOrEmpty(_logoPath))
+        {
+            var physicalPath = Path.Combine(WebHostEnv.WebRootPath, _logoPath.TrimStart('/'));
+            if (File.Exists(physicalPath))
+            {
+                var picture = ws.AddPicture(physicalPath).MoveTo(ws.Cell(1, 1));
+                picture.WithSize(60, 60);
+                ws.Column(1).Width = 10; // reserve space for logo
+                hasLogo = true;
+            }
+        }
+
+        int textCol = hasLogo ? 2 : 1;
+        int lastCol = hasLogo ? headers.Length + 1 : headers.Length;
+
+        ws.Cell(1, textCol).Value = string.IsNullOrEmpty(_companyName) ? "RasidBase" : _companyName;
+        ws.Cell(1, textCol).Style.Font.Bold = true;
+        ws.Cell(1, textCol).Style.Font.FontSize = 14;
+        ws.Cell(1, textCol).Style.Font.FontColor = ClosedXML.Excel.XLColor.FromHtml("#1E3A5F");
+        ws.Range(1, textCol, 1, lastCol).Merge();
+
+        if (!string.IsNullOrEmpty(_companyAddress))
+        {
+            ws.Cell(2, textCol).Value = _companyAddress;
+            ws.Cell(2, textCol).Style.Font.FontColor = ClosedXML.Excel.XLColor.FromHtml("#64748B");
+            ws.Range(2, textCol, 2, lastCol).Merge();
+        }
+
+        ws.Cell(3, textCol).Value = title;
+        ws.Cell(3, textCol).Style.Font.Bold = true;
+        ws.Cell(3, textCol).Style.Font.FontColor = ClosedXML.Excel.XLColor.FromHtml("#1E3A5F");
+        ws.Range(3, textCol, 3, lastCol).Merge();
+
+        var dateRange = "";
+        if (_dateFrom.HasValue || _dateTo.HasValue)
+            dateRange = $"Period: {_dateFrom?.ToString("dd/MM/yyyy") ?? "Start"} - {_dateTo?.ToString("dd/MM/yyyy") ?? "Present"}";
+        else
+            dateRange = $"Generated: {DateTime.Now:dd/MM/yyyy HH:mm}";
+        ws.Cell(4, textCol).Value = dateRange;
+        ws.Range(4, textCol, 4, lastCol).Merge();
+
+        // Headers
+        int headerRow = 6;
+        for (int c = 0; c < headers.Length; c++)
+        {
+            var cell = ws.Cell(headerRow, c + 1);
+            cell.Value = headers[c];
+            cell.Style.Font.Bold = true;
+            cell.Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.FromHtml("#1E3A5F");
+            cell.Style.Font.FontColor = ClosedXML.Excel.XLColor.White;
+            cell.Style.Border.BottomBorder = ClosedXML.Excel.XLBorderStyleValues.Thin;
+        }
+
+        // Data
+        for (int r = 0; r < rows.Count; r++)
+        {
+            for (int c = 0; c < rows[r].Length; c++)
+            {
+                var cell = ws.Cell(headerRow + 1 + r, c + 1);
+                if (decimal.TryParse(rows[r][c], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var numVal) && c > 0)
+                    cell.Value = numVal;
+                else
+                    cell.Value = rows[r][c];
+
+                if (r % 2 == 1)
+                    cell.Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.FromHtml("#F8FAFC");
+            }
+        }
+
+        ws.Columns().AdjustToContents();
+
+        using var ms = new MemoryStream();
+        workbook.SaveAs(ms);
+        return ms.ToArray();
+    }
+
+    private byte[] GeneratePdf(string title, string[] headers, List<string[]> rows)
+    {
+        QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
+        // Load company logo
+        byte[]? logoBytes = null;
+        if (!string.IsNullOrEmpty(_logoPath))
+        {
+            var physicalPath = Path.Combine(WebHostEnv.WebRootPath, _logoPath.TrimStart('/'));
+            if (File.Exists(physicalPath))
+                logoBytes = File.ReadAllBytes(physicalPath);
+        }
+
+        var doc = Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(297, 210, QuestPDF.Infrastructure.Unit.Millimetre);
+                page.Margin(30);
+                page.DefaultTextStyle(x => x.FontSize(9));
+
+                page.Header().Column(col =>
+                {
+                    col.Item().Row(row =>
+                    {
+                        // Company logo
+                        if (logoBytes is { Length: > 0 })
+                        {
+                            row.ConstantItem(60).Padding(2).Image(logoBytes);
+                        }
+
+                        row.RelativeItem().PaddingLeft(logoBytes is { Length: > 0 } ? 8 : 0).Column(c =>
+                        {
+                            c.Item().Text(string.IsNullOrEmpty(_companyName) ? "RasidBase" : _companyName)
+                                .Bold().FontSize(14).FontColor(QuestPDF.Helpers.Colors.Blue.Darken4);
+                            if (!string.IsNullOrEmpty(_companyAddress))
+                                c.Item().Text(_companyAddress).FontSize(8).FontColor(QuestPDF.Helpers.Colors.Grey.Darken2);
+                            if (!string.IsNullOrEmpty(_companyTel))
+                                c.Item().Text($"Tel: {_companyTel}").FontSize(8).FontColor(QuestPDF.Helpers.Colors.Grey.Darken2);
+                        });
+                        row.ConstantItem(150).AlignRight().Column(c =>
+                        {
+                            c.Item().Text(title).Bold().FontSize(11).FontColor(QuestPDF.Helpers.Colors.Blue.Darken4);
+                            var dateRange = "";
+                            if (_dateFrom.HasValue || _dateTo.HasValue)
+                                dateRange = $"{_dateFrom?.ToString("dd/MM/yyyy") ?? "Start"} - {_dateTo?.ToString("dd/MM/yyyy") ?? "Present"}";
+                            else
+                                dateRange = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
+                            c.Item().Text(dateRange).FontSize(8).FontColor(QuestPDF.Helpers.Colors.Grey.Darken1);
+                        });
+                    });
+                    col.Item().PaddingVertical(5).LineHorizontal(1).LineColor(QuestPDF.Helpers.Colors.Blue.Darken4);
+                });
+
+                page.Content().Table(table =>
+                {
+                    table.ColumnsDefinition(cd =>
+                    {
+                        for (int i = 0; i < headers.Length; i++)
+                            cd.RelativeColumn();
+                    });
+
+                    table.Header(header =>
+                    {
+                        foreach (var h in headers)
+                        {
+                            header.Cell().Background("#1E3A5F")
+                                .Padding(4).Text(h).FontColor(QuestPDF.Helpers.Colors.White).Bold().FontSize(8);
+                        }
+                    });
+
+                    for (int r = 0; r < rows.Count; r++)
+                    {
+                        var bgColor = r % 2 == 0 ? "#FFFFFF" : "#F8FAFC";
+                        foreach (var cell in rows[r])
+                        {
+                            table.Cell().Background(bgColor).BorderBottom(0.5f)
+                                .BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2)
+                                .Padding(3).Text(cell).FontSize(8);
+                        }
+                    }
+                });
+
+                page.Footer().AlignCenter().Text(text =>
+                {
+                    text.DefaultTextStyle(x => x.FontSize(8).FontColor(QuestPDF.Helpers.Colors.Grey.Darken1));
+                    text.Span("Page ");
+                    text.CurrentPageNumber();
+                    text.Span(" of ");
+                    text.TotalPages();
+                    text.Span($"  |  {(string.IsNullOrEmpty(_companyName) ? "RasidBase" : _companyName)}");
+                });
+            });
+        });
+
+        using var ms = new MemoryStream();
+        doc.GeneratePdf(ms);
+        return ms.ToArray();
+    }
+}

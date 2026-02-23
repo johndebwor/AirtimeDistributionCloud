@@ -11,17 +11,20 @@ public class AirtimeTransferService : IAirtimeTransferService
     private readonly IProductRepository _productRepository;
     private readonly IDealerRepository _dealerRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly INotificationService _notificationService;
 
     public AirtimeTransferService(
         IAirtimeTransferRepository transferRepository,
         IProductRepository productRepository,
         IDealerRepository dealerRepository,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        INotificationService notificationService)
     {
         _transferRepository = transferRepository;
         _productRepository = productRepository;
         _dealerRepository = dealerRepository;
         _unitOfWork = unitOfWork;
+        _notificationService = notificationService;
     }
 
     public async Task<IReadOnlyList<AirtimeTransferDto>> GetAllTransfersAsync(CancellationToken cancellationToken = default)
@@ -35,7 +38,7 @@ public class AirtimeTransferService : IAirtimeTransferService
             t.Id, t.BranchId, branches.GetValueOrDefault(t.BranchId)?.Name ?? "",
             t.ProductId, products.GetValueOrDefault(t.ProductId)?.Name ?? "",
             t.DealerId, dealers.GetValueOrDefault(t.DealerId)?.Name ?? "",
-            t.Amount, t.TransferType, t.Status, t.CreatedDate)).ToList();
+            t.Amount, t.LoanAmount, t.CommissionAmount, t.TransferType, t.Status, t.CreatedDate)).ToList();
     }
 
     public async Task<IReadOnlyList<AirtimeTransferDto>> GetTransfersByDealerAsync(int dealerId, CancellationToken cancellationToken = default)
@@ -43,7 +46,7 @@ public class AirtimeTransferService : IAirtimeTransferService
         var transfers = await _transferRepository.GetByDealerAsync(dealerId, cancellationToken);
         return transfers.Select(t => new AirtimeTransferDto(
             t.Id, t.BranchId, t.Branch?.Name ?? "", t.ProductId, t.Product?.Name ?? "",
-            t.DealerId, "", t.Amount, t.TransferType, t.Status, t.CreatedDate)).ToList();
+            t.DealerId, "", t.Amount, t.LoanAmount, t.CommissionAmount, t.TransferType, t.Status, t.CreatedDate)).ToList();
     }
 
     public async Task<IReadOnlyList<AirtimeTransferDto>> GetTransfersByStatusAsync(DepositStatus status, CancellationToken cancellationToken = default)
@@ -51,7 +54,7 @@ public class AirtimeTransferService : IAirtimeTransferService
         var transfers = await _transferRepository.GetByStatusAsync(status, cancellationToken);
         return transfers.Select(t => new AirtimeTransferDto(
             t.Id, t.BranchId, t.Branch?.Name ?? "", t.ProductId, t.Product?.Name ?? "",
-            t.DealerId, t.Dealer?.Name ?? "", t.Amount, t.TransferType, t.Status, t.CreatedDate)).ToList();
+            t.DealerId, t.Dealer?.Name ?? "", t.Amount, t.LoanAmount, t.CommissionAmount, t.TransferType, t.Status, t.CreatedDate)).ToList();
     }
 
     public async Task<AirtimeTransferDto> CreateTransferAsync(CreateAirtimeTransferRequest request, CancellationToken cancellationToken = default)
@@ -63,7 +66,15 @@ public class AirtimeTransferService : IAirtimeTransferService
         var branch = await _unitOfWork.Repository<Branch>().GetByIdAsync(request.BranchId, cancellationToken)
             ?? throw new KeyNotFoundException($"Branch not found");
 
-        if (product.AirtimeAccountBalance < request.Amount)
+        // Calculate commission split
+        var dealerProducts = await _unitOfWork.Repository<DealerProduct>()
+            .FindAsync(dp => dp.DealerId == request.DealerId && dp.ProductId == request.ProductId, cancellationToken);
+        var dealerProduct = dealerProducts.FirstOrDefault();
+        var commissionRate = dealerProduct?.CommissionRate ?? 0;
+        var loanAmount = commissionRate > 0 ? request.Amount / (1 + commissionRate / 100m) : request.Amount;
+        var commissionAmount = request.Amount - loanAmount;
+
+        if (product.AirtimeAccountBalance < loanAmount)
             throw new InvalidOperationException("Insufficient product airtime balance");
 
         var transfer = new AirtimeTransfer
@@ -72,6 +83,8 @@ public class AirtimeTransferService : IAirtimeTransferService
             ProductId = request.ProductId,
             DealerId = request.DealerId,
             Amount = request.Amount,
+            LoanAmount = loanAmount,
+            CommissionAmount = commissionAmount,
             TransferType = request.TransferType,
             Status = DepositStatus.Pending
         };
@@ -81,7 +94,8 @@ public class AirtimeTransferService : IAirtimeTransferService
 
         return new AirtimeTransferDto(transfer.Id, transfer.BranchId, branch.Name,
             transfer.ProductId, product.Name, transfer.DealerId, dealer.Name,
-            transfer.Amount, transfer.TransferType, transfer.Status, transfer.CreatedDate);
+            transfer.Amount, transfer.LoanAmount, transfer.CommissionAmount,
+            transfer.TransferType, transfer.Status, transfer.CreatedDate);
     }
 
     public async Task<AirtimeTransferDto> ApproveTransferAsync(int transferId, string approvedByUserId, string notes, CancellationToken cancellationToken = default)
@@ -95,7 +109,7 @@ public class AirtimeTransferService : IAirtimeTransferService
         var product = await _productRepository.GetByIdAsync(transfer.ProductId, cancellationToken)
             ?? throw new KeyNotFoundException("Product not found");
 
-        if (product.AirtimeAccountBalance < transfer.Amount)
+        if (product.AirtimeAccountBalance < transfer.LoanAmount)
             throw new InvalidOperationException("Insufficient product airtime balance");
 
         var dealer = await _dealerRepository.GetDealerWithProductsAsync(transfer.DealerId, cancellationToken)
@@ -105,20 +119,87 @@ public class AirtimeTransferService : IAirtimeTransferService
         transfer.ApprovedByUserId = approvedByUserId;
         transfer.ApprovalNotes = notes;
 
-        product.AirtimeAccountBalance -= transfer.Amount;
+        product.AirtimeAccountBalance -= transfer.LoanAmount;
 
         var dealerProduct = dealer.DealerProducts.FirstOrDefault(dp => dp.ProductId == transfer.ProductId);
         if (dealerProduct != null)
-            dealerProduct.Balance += transfer.Amount;
+        {
+            dealerProduct.Balance += transfer.LoanAmount;
+            dealerProduct.CommissionBalance += transfer.CommissionAmount;
+        }
 
         await _transferRepository.UpdateAsync(transfer, cancellationToken);
         await _productRepository.UpdateAsync(product, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        try
+        {
+            await _notificationService.SendTransferApprovalNotificationAsync(transfer.Id, cancellationToken);
+        }
+        catch
+        {
+            // Notification failure should not roll back the approval
+        }
+
         var branch = await _unitOfWork.Repository<Branch>().GetByIdAsync(transfer.BranchId, cancellationToken);
         return new AirtimeTransferDto(transfer.Id, transfer.BranchId, branch?.Name ?? "",
             transfer.ProductId, product.Name, transfer.DealerId, dealer.Name,
-            transfer.Amount, transfer.TransferType, transfer.Status, transfer.CreatedDate);
+            transfer.Amount, transfer.LoanAmount, transfer.CommissionAmount,
+            transfer.TransferType, transfer.Status, transfer.CreatedDate);
+    }
+
+    public async Task<AirtimeTransferDto> CancelTransferAsync(int transferId, string cancelledByUserId, string reason, CancellationToken cancellationToken = default)
+    {
+        var transfer = await _transferRepository.GetByIdAsync(transferId, cancellationToken)
+            ?? throw new KeyNotFoundException($"Transfer with Id {transferId} not found");
+
+        if (transfer.Status == DepositStatus.Cancelled)
+            throw new InvalidOperationException("Transfer is already cancelled");
+
+        if (transfer.Status == DepositStatus.Rejected)
+            throw new InvalidOperationException("Rejected transfers cannot be cancelled");
+
+        var wasApproved = transfer.Status == DepositStatus.Approved;
+
+        var product = await _productRepository.GetByIdAsync(transfer.ProductId, cancellationToken)
+            ?? throw new KeyNotFoundException("Product not found");
+        var dealer = await _dealerRepository.GetDealerWithProductsAsync(transfer.DealerId, cancellationToken)
+            ?? throw new KeyNotFoundException("Dealer not found");
+
+        if (wasApproved)
+        {
+            var dealerProduct = dealer.DealerProducts.FirstOrDefault(dp => dp.ProductId == transfer.ProductId);
+            if (dealerProduct != null)
+            {
+                if (dealerProduct.Balance < transfer.LoanAmount)
+                    throw new InvalidOperationException(
+                        $"Cannot cancel: dealer balance ({dealerProduct.Balance:C2}) is less than loan amount ({transfer.LoanAmount:C2})");
+
+                if (dealerProduct.CommissionBalance < transfer.CommissionAmount)
+                    throw new InvalidOperationException(
+                        $"Cannot cancel: dealer commission balance ({dealerProduct.CommissionBalance:C2}) is less than commission ({transfer.CommissionAmount:C2})");
+
+                dealerProduct.Balance -= transfer.LoanAmount;
+                dealerProduct.CommissionBalance -= transfer.CommissionAmount;
+            }
+
+            product.AirtimeAccountBalance += transfer.LoanAmount;
+            await _productRepository.UpdateAsync(product, cancellationToken);
+        }
+
+        transfer.Status = DepositStatus.Cancelled;
+        transfer.CancelledByUserId = cancelledByUserId;
+        transfer.CancelledDate = DateTime.UtcNow;
+        transfer.CancellationReason = reason;
+
+        await _transferRepository.UpdateAsync(transfer, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        var branch = await _unitOfWork.Repository<Branch>().GetByIdAsync(transfer.BranchId, cancellationToken);
+        return new AirtimeTransferDto(transfer.Id, transfer.BranchId, branch?.Name ?? "",
+            transfer.ProductId, product.Name, transfer.DealerId, dealer.Name,
+            transfer.Amount, transfer.LoanAmount, transfer.CommissionAmount,
+            transfer.TransferType, transfer.Status, transfer.CreatedDate);
     }
 
     public async Task<AirtimeTransferDto> RejectTransferAsync(int transferId, string rejectedByUserId, string notes, CancellationToken cancellationToken = default)
@@ -141,6 +222,7 @@ public class AirtimeTransferService : IAirtimeTransferService
         var branch = await _unitOfWork.Repository<Branch>().GetByIdAsync(transfer.BranchId, cancellationToken);
         return new AirtimeTransferDto(transfer.Id, transfer.BranchId, branch?.Name ?? "",
             transfer.ProductId, product?.Name ?? "", transfer.DealerId, dealer?.Name ?? "",
-            transfer.Amount, transfer.TransferType, transfer.Status, transfer.CreatedDate);
+            transfer.Amount, transfer.LoanAmount, transfer.CommissionAmount,
+            transfer.TransferType, transfer.Status, transfer.CreatedDate);
     }
 }

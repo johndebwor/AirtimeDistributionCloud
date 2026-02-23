@@ -4,24 +4,35 @@
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Identity
 @using AirtimeDistributionCloud.Core.Entities
+@using AirtimeDistributionCloud.Core.Interfaces
 
 @inject UserManager<ApplicationUser> UserManager
 @inject SignInManager<ApplicationUser> SignInManager
 @inject ILogger<Login> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
+@inject ISystemSettingRepository SettingsRepo
 
-<PageTitle>Sign In - Airtime Distribution</PageTitle>
+<PageTitle>Sign In - RasidBase</PageTitle>
 
 <div class="auth-page">
     <div class="auth-card">
         <div class="auth-brand">
-            <div class="auth-brand-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <path d="M7 4C4.79 4 3 5.79 3 8V16C3 18.21 4.79 20 7 20H9V18H7C5.9 18 5 17.1 5 16V8C5 6.9 5.9 6 7 6H9V4H7M15 4V6H17C18.1 6 19 6.9 19 8V16C19 17.1 18.1 18 17 18H15V20H17C19.21 20 21 18.21 21 16V8C21 5.79 19.21 4 17 4H15M12 8C10.9 8 10 8.9 10 10V14C10 15.1 10.9 16 12 16C13.1 16 14 15.1 14 14V10C14 8.9 13.1 8 12 8M12 10V14"/>
-                </svg>
-            </div>
-            <h1>Airtime Distribution</h1>
+            @if (!string.IsNullOrEmpty(_logoPath))
+            {
+                <div class="auth-brand-icon" style="background:transparent;width:168px;height:168px;">
+                    <img src="@_logoPath" alt="Logo" style="width:168px;height:168px;object-fit:contain;" />
+                </div>
+            }
+            else
+            {
+                <div class="auth-brand-icon" style="width:168px;height:168px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style="width:120px;height:120px;">
+                        <path d="M7 4C4.79 4 3 5.79 3 8V16C3 18.21 4.79 20 7 20H9V18H7C5.9 18 5 17.1 5 16V8C5 6.9 5.9 6 7 6H9V4H7M15 4V6H17C18.1 6 19 6.9 19 8V16C19 17.1 18.1 18 17 18H15V20H17C19.21 20 21 18.21 21 16V8C21 5.79 19.21 4 17 4H15M12 8C10.9 8 10 8.9 10 10V14C10 15.1 10.9 16 12 16C13.1 16 14 15.1 14 14V10C14 8.9 13.1 8 12 8M12 10V14"/>
+                    </svg>
+                </div>
+            }
+            <h1>RasidBase</h1>
             <p>Sign in to your account</p>
         </div>
 
@@ -73,6 +84,8 @@
 @code {
     private string? errorMessage;
     private EditContext editContext = default!;
+    private string _logoPath = "";
+    private string _companyName = "";
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -88,6 +101,11 @@
         Input ??= new();
 
         editContext = new EditContext(Input);
+
+        var logoSetting = await SettingsRepo.GetByKeyAsync("CompanyLogoPath");
+        _logoPath = logoSetting?.Value ?? "";
+        var nameSetting = await SettingsRepo.GetByKeyAsync("CompanyName");
+        _companyName = nameSetting?.Value ?? "";
 
         if (HttpMethods.IsGet(HttpContext.Request.Method))
         {

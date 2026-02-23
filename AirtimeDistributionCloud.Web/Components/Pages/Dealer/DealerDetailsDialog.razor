@@ -1,10 +1,16 @@
 @rendermode InteractiveServer
 @using AirtimeDistributionCloud.Application.DTOs
+@using AirtimeDistributionCloud.Core.Enums
+@inject IJSRuntime JS
 
 <MudDialog>
     <DialogContent>
         <MudSimpleTable Hover="true" Dense="true" Striped="true">
             <tbody>
+                <tr>
+                    <td><strong>Dealer #</strong></td>
+                    <td>@Dealer.DealerNumber</td>
+                </tr>
                 <tr>
                     <td><strong>Type</strong></td>
                     <td>@Dealer.Type</td>
@@ -13,22 +19,32 @@
                     <td><strong>Name</strong></td>
                     <td>@Dealer.Name</td>
                 </tr>
-                <tr>
-                    <td><strong>Gender</strong></td>
-                    <td>@(string.IsNullOrEmpty(Dealer.Gender) ? "-" : Dealer.Gender)</td>
-                </tr>
-                <tr>
-                    <td><strong>ID Number</strong></td>
-                    <td>@(string.IsNullOrEmpty(Dealer.IDNumber) ? "-" : Dealer.IDNumber)</td>
-                </tr>
-                <tr>
-                    <td><strong>Company Reg Number</strong></td>
-                    <td>@(string.IsNullOrEmpty(Dealer.CompanyRegNumber) ? "-" : Dealer.CompanyRegNumber)</td>
-                </tr>
-                <tr>
-                    <td><strong>Nationality</strong></td>
-                    <td>@(string.IsNullOrEmpty(Dealer.Nationality) ? "-" : Dealer.Nationality)</td>
-                </tr>
+                @if (Dealer.Type == DealerType.Person)
+                {
+                    <tr>
+                        <td><strong>Gender</strong></td>
+                        <td>@(string.IsNullOrEmpty(Dealer.Gender) ? "-" : Dealer.Gender)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ID Type</strong></td>
+                        <td>@(string.IsNullOrEmpty(Dealer.IdType) ? "-" : Dealer.IdType)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ID Number</strong></td>
+                        <td>@(string.IsNullOrEmpty(Dealer.IDNumber) ? "-" : Dealer.IDNumber)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Nationality</strong></td>
+                        <td>@(string.IsNullOrEmpty(Dealer.Nationality) ? "-" : Dealer.Nationality)</td>
+                    </tr>
+                }
+                @if (Dealer.Type == DealerType.Company)
+                {
+                    <tr>
+                        <td><strong>Company Reg Number</strong></td>
+                        <td>@(string.IsNullOrEmpty(Dealer.CompanyRegNumber) ? "-" : Dealer.CompanyRegNumber)</td>
+                    </tr>
+                }
                 <tr>
                     <td><strong>State</strong></td>
                     <td>@(string.IsNullOrEmpty(Dealer.State) ? "-" : Dealer.State)</td>
@@ -38,11 +54,57 @@
                     <td>@(string.IsNullOrEmpty(Dealer.County) ? "-" : Dealer.County)</td>
                 </tr>
                 <tr>
+                    <td><strong>Phone Number</strong></td>
+                    <td>@(string.IsNullOrEmpty(Dealer.PhoneNumber) ? "-" : Dealer.PhoneNumber)</td>
+                </tr>
+                <tr>
                     <td><strong>Physical Address</strong></td>
                     <td>@(string.IsNullOrEmpty(Dealer.PhysicalAddress) ? "-" : Dealer.PhysicalAddress)</td>
                 </tr>
             </tbody>
         </MudSimpleTable>
+
+        <!-- Attached Document -->
+        <MudText Typo="Typo.h6" Class="mt-4 mb-2">
+            @(Dealer.Type == DealerType.Company ? "Company Certificate" : "ID Document")
+        </MudText>
+        @if (!string.IsNullOrEmpty(Dealer.DocumentPath))
+        {
+            @if (IsImage(Dealer.DocumentPath))
+            {
+                <div style="text-align:center; margin-bottom:12px;">
+                    <MudImage Src="@Dealer.DocumentPath" Alt="Document" ObjectFit="ObjectFit.Contain"
+                              Style="max-width:100%; max-height:400px; border-radius:8px; border:1px solid #e0e0e0;" Elevation="1" />
+                </div>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true" Class="mb-3">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudIcon Icon="@Icons.Material.Filled.PictureAsPdf" />
+                        <MudText>@System.IO.Path.GetFileName(Dealer.DocumentPath)</MudText>
+                    </MudStack>
+                </MudAlert>
+            }
+            <MudStack Row="true" Spacing="2" Justify="Justify.Center">
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.OpenInNew"
+                           OnClick="@(() => OpenDocument())">
+                    View Document
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.Download"
+                           Href="@Dealer.DocumentPath" Target="_blank" download>
+                    Download
+                </MudButton>
+            </MudStack>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Normal" Variant="Variant.Outlined" Dense="true">
+                No document attached
+            </MudAlert>
+        }
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Close" Variant="Variant.Filled" Color="Color.Primary">Close</MudButton>
@@ -52,6 +114,17 @@
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
     [Parameter] public DealerDto Dealer { get; set; } = null!;
+
+    private static bool IsImage(string path)
+    {
+        var ext = System.IO.Path.GetExtension(path)?.ToLowerInvariant();
+        return ext is ".jpg" or ".jpeg" or ".png" or ".svg" or ".webp";
+    }
+
+    private async Task OpenDocument()
+    {
+        await JS.InvokeVoidAsync("open", Dealer.DocumentPath, "_blank");
+    }
 
     private void Close() => MudDialog.Close();
 }

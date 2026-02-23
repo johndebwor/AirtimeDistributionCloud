@@ -1,4 +1,4 @@
-﻿@page "/Account/Manage/Passkeys"
+@page "/Account/Manage/Passkeys"
 
 @using AirtimeDistributionCloud.Core.Entities
 @using Microsoft.AspNetCore.Identity
@@ -11,53 +11,61 @@
 
 <PageTitle>Manage your passkeys</PageTitle>
 
-<h3>Manage your passkeys</h3>
-
 <StatusMessage />
 
-@if (currentPasskeys is { Count: > 0 })
-{
-    <table class="table">
-        <tbody>
-            @foreach (var passkey in currentPasskeys)
-            {
-                <tr>
-                    <td>@(passkey.Name ?? "Unnamed passkey")</td>
-                    <td>
-                        @{
-                            var credentialId = Base64Url.EncodeToString(passkey.CredentialId);
-                        }
-                        <form @formname="@($"update-passkey-{credentialId}")" @onsubmit="UpdatePasskey" method="post">
-                            <AntiforgeryToken />
-                            <div>
-                                <input type="hidden" name="CredentialId" value="@credentialId" />
-                                <button type="submit" name="Action" value="rename" class="btn btn-primary" title="Rename this passkey">Rename</button>
-                                <button type="submit" name="Action" value="delete" class="btn btn-danger" title="Remove this passkey from your account">Delete</button>
-                            </div>
-                        </form>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
-else
-{
-    <p>No passkeys are registered.</p>
-}
+<MudPaper Class="data-card pa-6" Elevation="0">
+    <MudText Typo="Typo.h5" Class="mb-4">Passkeys</MudText>
+    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+        Passkeys let you sign in securely without a password using your fingerprint, face, or device PIN.
+    </MudText>
 
-<form @formname="add-passkey" @onsubmit="AddPasskey" method="post">
-    <AntiforgeryToken />
-    @if (currentPasskeys is { Count: >= MaxPasskeyCount })
+    @if (currentPasskeys is { Count: > 0 })
     {
-        <p class="text-danger">You have reached the maximum number of allowed passkeys. Please delete one before adding a new one.</p>
+        <MudTable Items="@currentPasskeys" Hover="true" Dense="true" Bordered="true" Class="mb-4">
+            <HeaderContent>
+                <MudTh>Name</MudTh>
+                <MudTh Style="width:200px;">Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                @{
+                    var credentialId = Base64Url.EncodeToString(context.CredentialId);
+                }
+                <MudTd DataLabel="Name">@(context.Name ?? "Unnamed passkey")</MudTd>
+                <MudTd DataLabel="Actions">
+                    <form @formname="@($"update-passkey-{credentialId}")" @onsubmit="UpdatePasskey" method="post">
+                        <AntiforgeryToken />
+                        <input type="hidden" name="CredentialId" value="@credentialId" />
+                        <MudButtonGroup Size="Size.Small">
+                            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Outlined" Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.Edit" name="Action" value="rename">Rename</MudButton>
+                            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Outlined" Color="Color.Error"
+                                       StartIcon="@Icons.Material.Filled.Delete" name="Action" value="delete">Delete</MudButton>
+                        </MudButtonGroup>
+                    </form>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
     }
     else
     {
-        <PasskeySubmit Operation="PasskeyOperation.Create" Name="Input" class="btn btn-primary">Add a new passkey</PasskeySubmit>
+        <MudAlert Severity="Severity.Info" Class="mb-4">No passkeys are registered yet. Add one below to enable passwordless sign-in.</MudAlert>
     }
 
-</form>
+    <form @formname="add-passkey" @onsubmit="AddPasskey" method="post">
+        <AntiforgeryToken />
+        @if (currentPasskeys is { Count: >= MaxPasskeyCount })
+        {
+            <MudAlert Severity="Severity.Warning">You have reached the maximum number of allowed passkeys. Please delete one before adding a new one.</MudAlert>
+        }
+        else
+        {
+            <PasskeySubmit Operation="PasskeyOperation.Create" Name="Input" class="btn btn-primary">
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Add">Add a new passkey</MudButton>
+            </PasskeySubmit>
+        }
+    </form>
+</MudPaper>
 
 @code {
     private const int MaxPasskeyCount = 100;

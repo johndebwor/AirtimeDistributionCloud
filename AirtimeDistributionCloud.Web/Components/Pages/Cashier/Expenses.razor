@@ -9,7 +9,7 @@
 @inject ISnackbar Snackbar
 @rendermode InteractiveServer
 
-<PageTitle>Expenses - Airtime Distribution</PageTitle>
+<PageTitle>Expenses - RasidBase</PageTitle>
 
 <div class="page-header">
     <h1>Expenses</h1>
@@ -38,7 +38,7 @@
             <PropertyColumn Property="x => x.Description" Title="Description" />
             <TemplateColumn Title="Category" Sortable="false">
                 <CellTemplate>
-                    <MudChip T="string" Color="Color.Info" Size="Size.Small">@context.Item.Category</MudChip>
+                    <MudChip T="string" Color="Color.Info" Size="Size.Small">@context.Item.CategoryName</MudChip>
                 </CellTemplate>
             </TemplateColumn>
             <PropertyColumn Property="x => x.Amount" Title="Amount" Format="C6" />
@@ -51,6 +51,7 @@
                             DepositStatus.Pending => Color.Warning,
                             DepositStatus.Approved => Color.Success,
                             DepositStatus.Rejected => Color.Error,
+                            DepositStatus.Cancelled => Color.Dark,
                             _ => Color.Default
                         };
                     }

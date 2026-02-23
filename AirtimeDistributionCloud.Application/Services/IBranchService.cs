@@ -8,4 +8,5 @@ public interface IBranchService
     Task<BranchDto?> GetBranchByIdAsync(int id, CancellationToken cancellationToken = default);
     Task<BranchDto> CreateBranchAsync(CreateBranchRequest request, CancellationToken cancellationToken = default);
     Task<BranchDto> UpdateBranchAsync(UpdateBranchRequest request, CancellationToken cancellationToken = default);
+    Task SetDefaultBranchAsync(int branchId, CancellationToken cancellationToken = default);
 }

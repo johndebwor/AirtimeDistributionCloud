@@ -29,7 +29,10 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<CashDeposit> CashDeposits => Set<CashDeposit>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<Expense> Expenses => Set<Expense>();
+    public DbSet<ExpenseCategory> ExpenseCategories => Set<ExpenseCategory>();
     public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
+    public DbSet<UserPreference> UserPreferences => Set<UserPreference>();
+    public DbSet<PagePermission> PagePermissions => Set<PagePermission>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -93,7 +96,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
 
         foreach (var entry in ChangeTracker.Entries())
         {
-            if (entry.Entity is AuditLog || entry.Entity is SystemSetting)
+            if (entry.Entity is AuditLog || entry.Entity is SystemSetting
+                || entry.Entity is UserPreference || entry.Entity is PagePermission)
                 continue;
 
             if (entry.State == EntityState.Detached || entry.State == EntityState.Unchanged)

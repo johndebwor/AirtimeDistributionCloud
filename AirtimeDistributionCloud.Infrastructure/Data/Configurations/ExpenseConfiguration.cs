@@ -12,7 +12,6 @@ public class ExpenseConfiguration : IEntityTypeConfiguration<Expense>
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Description).IsRequired().HasMaxLength(500);
         builder.Property(e => e.Amount).HasColumnType("decimal(18,2)");
-        builder.Property(e => e.Category).HasConversion<string>().HasMaxLength(50);
         builder.Property(e => e.Status).HasConversion<string>().HasMaxLength(20);
         builder.Property(e => e.CreatedBy).HasMaxLength(256);
         builder.Property(e => e.ModifiedBy).HasMaxLength(256);
@@ -23,6 +22,11 @@ public class ExpenseConfiguration : IEntityTypeConfiguration<Expense>
         builder.HasOne(e => e.Branch)
             .WithMany(b => b.Expenses)
             .HasForeignKey(e => e.BranchId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(e => e.ExpenseCategory)
+            .WithMany(c => c.Expenses)
+            .HasForeignKey(e => e.ExpenseCategoryId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

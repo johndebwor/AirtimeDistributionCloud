@@ -13,13 +13,13 @@ public class BranchService : IBranchService
     public async Task<IReadOnlyList<BranchDto>> GetAllBranchesAsync(CancellationToken cancellationToken = default)
     {
         var branches = await _unitOfWork.Repository<Branch>().GetAllAsync(cancellationToken);
-        return branches.Select(b => new BranchDto(b.Id, b.Name, b.Location, b.IsActive)).ToList();
+        return branches.Select(b => new BranchDto(b.Id, b.Name, b.Location, b.IsActive, b.IsDefault)).ToList();
     }
 
     public async Task<BranchDto?> GetBranchByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var b = await _unitOfWork.Repository<Branch>().GetByIdAsync(id, cancellationToken);
-        return b is null ? null : new BranchDto(b.Id, b.Name, b.Location, b.IsActive);
+        return b is null ? null : new BranchDto(b.Id, b.Name, b.Location, b.IsActive, b.IsDefault);
     }
 
     public async Task<BranchDto> CreateBranchAsync(CreateBranchRequest request, CancellationToken cancellationToken = default)
@@ -27,7 +27,7 @@ public class BranchService : IBranchService
         var branch = new Branch { Name = request.Name, Location = request.Location, IsActive = true };
         await _unitOfWork.Repository<Branch>().AddAsync(branch, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return new BranchDto(branch.Id, branch.Name, branch.Location, branch.IsActive);
+        return new BranchDto(branch.Id, branch.Name, branch.Location, branch.IsActive, branch.IsDefault);
     }
 
     public async Task<BranchDto> UpdateBranchAsync(UpdateBranchRequest request, CancellationToken cancellationToken = default)
@@ -39,6 +39,18 @@ public class BranchService : IBranchService
         branch.IsActive = request.IsActive;
         await _unitOfWork.Repository<Branch>().UpdateAsync(branch, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return new BranchDto(branch.Id, branch.Name, branch.Location, branch.IsActive);
+        return new BranchDto(branch.Id, branch.Name, branch.Location, branch.IsActive, branch.IsDefault);
+    }
+
+    public async Task SetDefaultBranchAsync(int branchId, CancellationToken cancellationToken = default)
+    {
+        var branches = await _unitOfWork.Repository<Branch>().GetAllAsync(cancellationToken);
+        foreach (var b in branches)
+        {
+            var tracked = await _unitOfWork.Repository<Branch>().GetByIdAsync(b.Id, cancellationToken);
+            if (tracked is null) continue;
+            tracked.IsDefault = tracked.Id == branchId;
+        }
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }

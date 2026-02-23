@@ -1,11 +1,11 @@
 {
-  "name": "Airtime Distribution Cloud",
-  "short_name": "AirtimeCloud",
+  "name": "RasidBase",
+  "short_name": "RasidBase",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FFFFFF",
-  "theme_color": "#1976D2",
-  "description": "Airtime Distribution Management System",
+  "theme_color": "#1E3A5F",
+  "description": "Smart Airtime Distribution",
   "icons": [
     {
       "src": "favicon.png",

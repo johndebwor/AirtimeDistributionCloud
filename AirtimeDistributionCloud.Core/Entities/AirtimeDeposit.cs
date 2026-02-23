@@ -16,4 +16,8 @@ public class AirtimeDeposit : BaseEntity
     public string CreatedByUserId { get; set; } = string.Empty;
     public string? ApprovedByUserId { get; set; }
     public string? ApprovalNotes { get; set; }
+
+    public string? CancelledByUserId { get; set; }
+    public DateTime? CancelledDate { get; set; }
+    public string? CancellationReason { get; set; }
 }

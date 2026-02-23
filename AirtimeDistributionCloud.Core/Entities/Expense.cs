@@ -8,7 +8,8 @@ public class Expense : BaseEntity
     public Branch Branch { get; set; } = null!;
 
     public string Description { get; set; } = string.Empty;
-    public ExpenseCategory Category { get; set; }
+    public int ExpenseCategoryId { get; set; }
+    public ExpenseCategory ExpenseCategory { get; set; } = null!;
     public decimal Amount { get; set; }
     public DateTime ExpenseDate { get; set; }
     public DepositStatus Status { get; set; } = DepositStatus.Pending;
@@ -16,4 +17,5 @@ public class Expense : BaseEntity
     public string? ApprovedByUserId { get; set; }
     public string? ApprovalNotes { get; set; }
     public string? ReceiptNumber { get; set; }
+    public string? ReceiptImagePath { get; set; }
 }

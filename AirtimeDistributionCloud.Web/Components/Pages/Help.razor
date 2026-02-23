@@ -1,0 +1,391 @@
+@page "/help"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@rendermode InteractiveServer
+
+<PageTitle>Help - RasidBase</PageTitle>
+
+<div class="page-header">
+    <h1>Help & Guide</h1>
+    <p>Learn how to use RasidBase — Smart Airtime Distribution</p>
+</div>
+
+<MudTextField @bind-Value="_search" Placeholder="Search help topics..." Variant="Variant.Outlined"
+              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+              Immediate="true" Class="mb-4" />
+
+<!-- Getting Started -->
+@if (MatchesSearch("Getting Started", "login", "dashboard", "overview", "navigate"))
+{
+    <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
+        <div class="d-flex align-center gap-2 mb-3">
+            <MudIcon Icon="@Icons.Material.Outlined.RocketLaunch" Color="Color.Primary" />
+            <MudText Typo="Typo.h6">Getting Started</MudText>
+        </div>
+        <MudExpansionPanels MultiExpansion="true" Elevation="0">
+            @if (MatchesSearch("What is RasidBase", "airtime distribution", "overview"))
+            {
+                <MudExpansionPanel Text="What is RasidBase?">
+                    <MudText Typo="Typo.body2">
+                        RasidBase is a smart airtime distribution management system. It helps you manage dealers,
+                        track airtime deposits and transfers, handle expenses, and generate reports — all from one place.
+                    </MudText>
+                </MudExpansionPanel>
+            }
+            @if (MatchesSearch("navigate", "sidebar", "menu", "pages"))
+            {
+                <MudExpansionPanel Text="How do I navigate the application?">
+                    <MudText Typo="Typo.body2">
+                        Use the sidebar on the left to access different sections. The sidebar shows only the pages
+                        you have permission to access based on your role. Click the menu icon (☰) in the top-left
+                        to collapse or expand the sidebar.
+                    </MudText>
+                </MudExpansionPanel>
+            }
+            @if (MatchesSearch("dark mode", "light mode", "theme"))
+            {
+                <MudExpansionPanel Text="How do I switch between light and dark mode?">
+                    <MudText Typo="Typo.body2">
+                        Click the theme icon in the top-right corner of the app bar. You can choose between
+                        <strong>Light</strong>, <strong>Dark</strong>, or <strong>Auto</strong> (follows your system preference).
+                        Your choice is saved and remembered across sessions.
+                    </MudText>
+                </MudExpansionPanel>
+            }
+        </MudExpansionPanels>
+    </MudPaper>
+}
+
+<!-- Dashboard -->
+@if (MatchesSearch("Dashboard", "summary", "chart", "statistics", "overview"))
+{
+    <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
+        <div class="d-flex align-center gap-2 mb-3">
+            <MudIcon Icon="@Icons.Material.Outlined.SpaceDashboard" Color="Color.Primary" />
+            <MudText Typo="Typo.h6">Dashboard</MudText>
+        </div>
+        <MudExpansionPanels MultiExpansion="true" Elevation="0">
+            @if (MatchesSearch("dashboard", "summary", "cards", "statistics"))
+            {
+                <MudExpansionPanel Text="What do the dashboard cards show?">
+                    <MudText Typo="Typo.body2">
+                        The dashboard provides a quick overview of your business:
+                    </MudText>
+                    <MudList T="string" Dense="true" Class="mt-2">
+                        <MudListItem Icon="@Icons.Material.Filled.Circle" IconColor="Color.Primary" IconSize="Size.Small">
+                            <strong>Total Airtime Balance</strong> — Current airtime stock across all products
+                        </MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.Circle" IconColor="Color.Success" IconSize="Size.Small">
+                            <strong>Active Dealers</strong> — Number of registered active dealers
+                        </MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.Circle" IconColor="Color.Warning" IconSize="Size.Small">
+                            <strong>Today's Transfers</strong> — Airtime transfers made today
+                        </MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.Circle" IconColor="Color.Error" IconSize="Size.Small">
+                            <strong>Pending Approvals</strong> — Items waiting for admin approval
+                        </MudListItem>
+                    </MudList>
+                </MudExpansionPanel>
+            }
+        </MudExpansionPanels>
+    </MudPaper>
+}
+
+<!-- Dealers -->
+@if (MatchesSearch("Dealer", "registration", "transfer", "commission", "dealer number"))
+{
+    <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
+        <div class="d-flex align-center gap-2 mb-3">
+            <MudIcon Icon="@Icons.Material.Outlined.PersonAdd" Style="color:#F59E0B;" />
+            <MudText Typo="Typo.h6">Dealers</MudText>
+        </div>
+        <MudExpansionPanels MultiExpansion="true" Elevation="0">
+            @if (MatchesSearch("register", "new dealer", "add dealer"))
+            {
+                <MudExpansionPanel Text="How do I register a new dealer?">
+                    <MudText Typo="Typo.body2">
+                        Go to <strong>Dealers → Registration</strong> and click the <strong>+ New Dealer</strong> button.
+                        Fill in the dealer's name, phone number, select their branch, and set the commission rate for each product.
+                        A unique dealer number (e.g. DLR-0001) is automatically generated.
+                    </MudText>
+                </MudExpansionPanel>
+            }
+            @if (MatchesSearch("transfer", "airtime", "send"))
+            {
+                <MudExpansionPanel Text="How do I create an airtime transfer?">
+                    <MudText Typo="Typo.body2">
+                        Go to <strong>Dealers → Transfers</strong> and click <strong>+ New Transfer</strong>.
+                        Select the dealer, product, and enter the amount. The system automatically calculates:
+                    </MudText>
+                    <MudList T="string" Dense="true" Class="mt-2">
+                        <MudListItem Icon="@Icons.Material.Filled.ArrowRight" IconSize="Size.Small">
+                            <strong>Airtime Amount</strong> — The actual airtime value transferred
+                        </MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.ArrowRight" IconSize="Size.Small">
+                            <strong>Commission</strong> — Dealer's commission based on their rate
+                        </MudListItem>
+                    </MudList>
+                    <MudText Typo="Typo.body2" Class="mt-2">
+                        Transfers require admin approval before they are finalized.
+                    </MudText>
+                </MudExpansionPanel>
+            }
+            @if (MatchesSearch("commission", "rate", "percentage"))
+            {
+                <MudExpansionPanel Text="How are commissions calculated?">
+                    <MudText Typo="Typo.body2">
+                        Each dealer has a commission rate per product (set during registration or editing).
+                        When a transfer is created, the formula splits the total amount into airtime and commission:
+                        <br /><br />
+                        <code>Airtime = Amount ÷ (1 + CommissionRate ÷ 100)</code><br />
+                        <code>Commission = Amount − Airtime</code>
+                    </MudText>
+                </MudExpansionPanel>
+            }
+        </MudExpansionPanels>
+    </MudPaper>
+}
+
+<!-- Deposits & Approvals -->
+@if (MatchesSearch("Deposit", "approval", "approve", "reject", "airtime stock"))
+{
+    <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
+        <div class="d-flex align-center gap-2 mb-3">
+            <MudIcon Icon="@Icons.Material.Outlined.AccountBalanceWallet" Style="color:#3B82F6;" />
+            <MudText Typo="Typo.h6">Deposits & Approvals</MudText>
+        </div>
+        <MudExpansionPanels MultiExpansion="true" Elevation="0">
+            @if (MatchesSearch("airtime deposit", "add stock", "deposit"))
+            {
+                <MudExpansionPanel Text="How do I add airtime stock (deposits)?">
+                    <MudText Typo="Typo.body2">
+                        Go to <strong>Admin → Deposits</strong> and click <strong>+ New Deposit</strong>.
+                        Select the product, enter the amount and optional bonus percentage.
+                        Depending on settings, the deposit may be auto-approved or require admin approval.
+                    </MudText>
+                </MudExpansionPanel>
+            }
+            @if (MatchesSearch("approve", "reject", "approval"))
+            {
+                <MudExpansionPanel Text="How do approvals work?">
+                    <MudText Typo="Typo.body2">
+                        Several operations require admin approval:
+                    </MudText>
+                    <MudList T="string" Dense="true" Class="mt-2">
+                        <MudListItem Icon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Success" IconSize="Size.Small">
+                            <strong>Deposit Approvals</strong> — Review and approve airtime deposits
+                        </MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Success" IconSize="Size.Small">
+                            <strong>Transfer Approvals</strong> — Review and approve dealer airtime transfers
+                        </MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Success" IconSize="Size.Small">
+                            <strong>Expense Approvals</strong> — Expenses above the threshold need approval
+                        </MudListItem>
+                    </MudList>
+                </MudExpansionPanel>
+            }
+        </MudExpansionPanels>
+    </MudPaper>
+}
+
+<!-- Cashier -->
+@if (MatchesSearch("Cashier", "cash deposit", "expense", "balance"))
+{
+    <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
+        <div class="d-flex align-center gap-2 mb-3">
+            <MudIcon Icon="@Icons.Material.Outlined.Paid" Style="color:#16A34A;" />
+            <MudText Typo="Typo.h6">Cashier Operations</MudText>
+        </div>
+        <MudExpansionPanels MultiExpansion="true" Elevation="0">
+            @if (MatchesSearch("cash deposit", "record payment"))
+            {
+                <MudExpansionPanel Text="How do I record a cash deposit from a dealer?">
+                    <MudText Typo="Typo.body2">
+                        Go to <strong>Cashier → Cash Deposits</strong> and click <strong>+ New Deposit</strong>.
+                        Select the dealer and enter the amount received. This records cash payments
+                        from dealers and updates their balance.
+                    </MudText>
+                </MudExpansionPanel>
+            }
+            @if (MatchesSearch("expense", "record expense", "petty cash"))
+            {
+                <MudExpansionPanel Text="How do I record an expense?">
+                    <MudText Typo="Typo.body2">
+                        Go to <strong>Cashier → Expenses</strong> and click <strong>+ New Expense</strong>.
+                        Select a category, enter the amount, and provide a description.
+                        Expenses above the approval threshold (configured in Settings) will require admin approval.
+                    </MudText>
+                </MudExpansionPanel>
+            }
+            @if (MatchesSearch("balance", "dealer balance", "outstanding"))
+            {
+                <MudExpansionPanel Text="How do I check dealer balances?">
+                    <MudText Typo="Typo.body2">
+                        Go to <strong>Cashier → Balances</strong> to see each dealer's outstanding balance.
+                        The balance reflects total airtime transferred minus cash deposits received.
+                    </MudText>
+                </MudExpansionPanel>
+            }
+        </MudExpansionPanels>
+    </MudPaper>
+}
+
+<!-- Reports -->
+@if (MatchesSearch("Report", "PDF", "Excel", "export", "print"))
+{
+    <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
+        <div class="d-flex align-center gap-2 mb-3">
+            <MudIcon Icon="@Icons.Material.Outlined.Assessment" Color="Color.Primary" />
+            <MudText Typo="Typo.h6">Reports</MudText>
+        </div>
+        <MudExpansionPanels MultiExpansion="true" Elevation="0">
+            @if (MatchesSearch("report", "generate", "PDF", "Excel"))
+            {
+                <MudExpansionPanel Text="How do I generate reports?">
+                    <MudText Typo="Typo.body2">
+                        Go to <strong>Admin → Reports</strong>. Select the report type, date range, and any filters.
+                        You can export reports as:
+                    </MudText>
+                    <MudList T="string" Dense="true" Class="mt-2">
+                        <MudListItem Icon="@Icons.Material.Filled.PictureAsPdf" IconColor="Color.Error" IconSize="Size.Small">
+                            <strong>PDF</strong> — Formatted for printing with company logo and branding
+                        </MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.TableChart" IconColor="Color.Success" IconSize="Size.Small">
+                            <strong>Excel</strong> — Spreadsheet format for further analysis
+                        </MudListItem>
+                    </MudList>
+                </MudExpansionPanel>
+            }
+        </MudExpansionPanels>
+    </MudPaper>
+}
+
+<!-- Settings -->
+@if (MatchesSearch("Settings", "company", "email", "SMTP", "notification", "permission"))
+{
+    <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
+        <div class="d-flex align-center gap-2 mb-3">
+            <MudIcon Icon="@Icons.Material.Outlined.Settings" Color="Color.Default" />
+            <MudText Typo="Typo.h6">Settings & Configuration</MudText>
+        </div>
+        <MudExpansionPanels MultiExpansion="true" Elevation="0">
+            @if (MatchesSearch("company profile", "logo", "stamp", "abbreviation"))
+            {
+                <MudExpansionPanel Text="How do I set up my company profile?">
+                    <MudText Typo="Typo.body2">
+                        Go to <strong>System Settings → Company Profile</strong>. Here you can configure:
+                    </MudText>
+                    <MudList T="string" Dense="true" Class="mt-2">
+                        <MudListItem Icon="@Icons.Material.Filled.ArrowRight" IconSize="Size.Small">Company name and abbreviation (shown in sidebar)</MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.ArrowRight" IconSize="Size.Small">Address and phone numbers</MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.ArrowRight" IconSize="Size.Small">Company logo (appears on login page and reports)</MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.ArrowRight" IconSize="Size.Small">Electronic stamp (for document signing)</MudListItem>
+                    </MudList>
+                </MudExpansionPanel>
+            }
+            @if (MatchesSearch("email", "SMTP", "configure email"))
+            {
+                <MudExpansionPanel Text="How do I configure email notifications?">
+                    <MudText Typo="Typo.body2">
+                        Go to <strong>System Settings → General Settings</strong> and scroll to the
+                        <strong>Email Configuration (SMTP)</strong> section. Enter your SMTP server details
+                        (host, port, username, password) and use the <strong>Send Test</strong> button to verify.
+                        <br /><br />
+                        For Gmail, use <code>smtp.gmail.com</code> on port <code>587</code> with an
+                        <strong>App Password</strong> (not your regular password).
+                    </MudText>
+                </MudExpansionPanel>
+            }
+            @if (MatchesSearch("notification", "transfer notification", "WhatsApp"))
+            {
+                <MudExpansionPanel Text="How do transfer notifications work?">
+                    <MudText Typo="Typo.body2">
+                        In <strong>General Settings → Transfer Notification Settings</strong>, you can:
+                    </MudText>
+                    <MudList T="string" Dense="true" Class="mt-2">
+                        <MudListItem Icon="@Icons.Material.Filled.ArrowRight" IconSize="Size.Small">Enable/disable notifications</MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.ArrowRight" IconSize="Size.Small">Choose channels: Email, Dealer WhatsApp, or WhatsApp Group</MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.ArrowRight" IconSize="Size.Small">Customize the notification message template with placeholders</MudListItem>
+                    </MudList>
+                </MudExpansionPanel>
+            }
+            @if (MatchesSearch("permission", "role", "access"))
+            {
+                <MudExpansionPanel Text="How do I manage user permissions?">
+                    <MudText Typo="Typo.body2">
+                        Go to <strong>System → Permissions</strong> (SystemAdmin only). Here you can control which pages
+                        each role (SuperAdministrator, Dealer, Cashier) can access. Toggle permissions on or off for each page.
+                    </MudText>
+                </MudExpansionPanel>
+            }
+        </MudExpansionPanels>
+    </MudPaper>
+}
+
+<!-- Keyboard Shortcuts / Tips -->
+@if (MatchesSearch("Tips", "shortcut", "tip", "quick"))
+{
+    <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
+        <div class="d-flex align-center gap-2 mb-3">
+            <MudIcon Icon="@Icons.Material.Outlined.Lightbulb" Color="Color.Warning" />
+            <MudText Typo="Typo.h6">Tips</MudText>
+        </div>
+        <MudExpansionPanels MultiExpansion="true" Elevation="0">
+            <MudExpansionPanel Text="Quick tips for using RasidBase">
+                <MudList T="string" Dense="true">
+                    <MudListItem Icon="@Icons.Material.Filled.TipsAndUpdates" IconColor="Color.Warning" IconSize="Size.Small">
+                        Use the search/filter fields on data tables to quickly find records
+                    </MudListItem>
+                    <MudListItem Icon="@Icons.Material.Filled.TipsAndUpdates" IconColor="Color.Warning" IconSize="Size.Small">
+                        Numbers are formatted automatically as you type in amount fields
+                    </MudListItem>
+                    <MudListItem Icon="@Icons.Material.Filled.TipsAndUpdates" IconColor="Color.Warning" IconSize="Size.Small">
+                        Export reports to Excel for custom analysis or PDF for printing
+                    </MudListItem>
+                    <MudListItem Icon="@Icons.Material.Filled.TipsAndUpdates" IconColor="Color.Warning" IconSize="Size.Small">
+                        Set up your company profile first — the logo appears on login and reports
+                    </MudListItem>
+                    <MudListItem Icon="@Icons.Material.Filled.TipsAndUpdates" IconColor="Color.Warning" IconSize="Size.Small">
+                        Configure email settings to enable transfer notifications to dealers
+                    </MudListItem>
+                </MudList>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
+    </MudPaper>
+}
+
+@if (!string.IsNullOrWhiteSpace(_search) && !_hasResults)
+{
+    <MudPaper Elevation="0" Class="data-card pa-6" Style="text-align:center;">
+        <MudIcon Icon="@Icons.Material.Outlined.SearchOff" Size="Size.Large" Color="Color.Secondary" />
+        <MudText Typo="Typo.h6" Color="Color.Secondary" Class="mt-2">No results found</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">Try different keywords</MudText>
+    </MudPaper>
+}
+
+<MudPaper Elevation="0" Class="data-card pa-4 mt-4" Style="text-align:center;">
+    <MudText Typo="Typo.body2" Color="Color.Secondary">
+        Need more help? Contact your system administrator.
+    </MudText>
+    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
+        RasidBase v0.1.0
+    </MudText>
+</MudPaper>
+
+@code {
+    private string _search = "";
+    private bool _hasResults => string.IsNullOrWhiteSpace(_search) || _matchCount > 0;
+    private int _matchCount;
+
+    private bool MatchesSearch(params string[] keywords)
+    {
+        if (string.IsNullOrWhiteSpace(_search))
+        {
+            _matchCount++;
+            return true;
+        }
+
+        var match = keywords.Any(k => k.Contains(_search, StringComparison.OrdinalIgnoreCase));
+        if (match) _matchCount++;
+        return match;
+    }
+}

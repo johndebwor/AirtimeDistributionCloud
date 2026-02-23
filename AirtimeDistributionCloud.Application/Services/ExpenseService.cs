@@ -25,19 +25,27 @@ public class ExpenseService : IExpenseService
     {
         var expenses = await _expenseRepository.GetAllAsync(cancellationToken);
         var branches = (await _unitOfWork.Repository<Branch>().GetAllAsync(cancellationToken)).ToDictionary(b => b.Id);
-        return expenses.Select(e => MapToDto(e, branches.GetValueOrDefault(e.BranchId)?.Name ?? "Unknown")).ToList();
+        var categories = (await _unitOfWork.Repository<ExpenseCategory>().GetAllAsync(cancellationToken)).ToDictionary(c => c.Id);
+        return expenses.Select(e => MapToDto(e,
+            branches.GetValueOrDefault(e.BranchId)?.Name ?? "Unknown",
+            categories.GetValueOrDefault(e.ExpenseCategoryId)?.Name ?? "Unknown")).ToList();
     }
 
     public async Task<IReadOnlyList<ExpenseDto>> GetExpensesByStatusAsync(DepositStatus status, CancellationToken cancellationToken = default)
     {
         var expenses = await _expenseRepository.GetByStatusAsync(status, cancellationToken);
-        return expenses.Select(e => MapToDto(e, e.Branch?.Name ?? "Unknown")).ToList();
+        var categories = (await _unitOfWork.Repository<ExpenseCategory>().GetAllAsync(cancellationToken)).ToDictionary(c => c.Id);
+        return expenses.Select(e => MapToDto(e, e.Branch?.Name ?? "Unknown",
+            categories.GetValueOrDefault(e.ExpenseCategoryId)?.Name ?? "Unknown")).ToList();
     }
 
     public async Task<ExpenseDto> CreateExpenseAsync(CreateExpenseRequest request, string userId, CancellationToken cancellationToken = default)
     {
         var branch = await _unitOfWork.Repository<Branch>().GetByIdAsync(request.BranchId, cancellationToken)
             ?? throw new KeyNotFoundException("Branch not found");
+
+        var category = await _unitOfWork.Repository<ExpenseCategory>().GetByIdAsync(request.ExpenseCategoryId, cancellationToken)
+            ?? throw new KeyNotFoundException("Expense category not found");
 
         var threshold = await _systemSettingRepository.GetByKeyAsync("ExpenseApprovalThreshold", cancellationToken);
         var thresholdValue = decimal.Parse(threshold?.Value ?? "50000");
@@ -46,17 +54,18 @@ public class ExpenseService : IExpenseService
         {
             BranchId = request.BranchId,
             Description = request.Description,
-            Category = request.Category,
+            ExpenseCategoryId = request.ExpenseCategoryId,
             Amount = request.Amount,
             ExpenseDate = DateTime.UtcNow,
             ReceiptNumber = request.ReceiptNumber,
+            ReceiptImagePath = request.ReceiptImagePath,
             Status = request.Amount < thresholdValue ? DepositStatus.Approved : DepositStatus.Pending
         };
 
         await _expenseRepository.AddAsync(expense, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return MapToDto(expense, branch.Name);
+        return MapToDto(expense, branch.Name, category.Name);
     }
 
     public async Task<ExpenseDto> ApproveExpenseAsync(int expenseId, string approvedByUserId, string notes, CancellationToken cancellationToken = default)
@@ -75,7 +84,8 @@ public class ExpenseService : IExpenseService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var branch = await _unitOfWork.Repository<Branch>().GetByIdAsync(expense.BranchId, cancellationToken);
-        return MapToDto(expense, branch?.Name ?? "Unknown");
+        var category = await _unitOfWork.Repository<ExpenseCategory>().GetByIdAsync(expense.ExpenseCategoryId, cancellationToken);
+        return MapToDto(expense, branch?.Name ?? "Unknown", category?.Name ?? "Unknown");
     }
 
     public async Task<ExpenseDto> RejectExpenseAsync(int expenseId, string rejectedByUserId, string notes, CancellationToken cancellationToken = default)
@@ -94,10 +104,11 @@ public class ExpenseService : IExpenseService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var branch = await _unitOfWork.Repository<Branch>().GetByIdAsync(expense.BranchId, cancellationToken);
-        return MapToDto(expense, branch?.Name ?? "Unknown");
+        var category = await _unitOfWork.Repository<ExpenseCategory>().GetByIdAsync(expense.ExpenseCategoryId, cancellationToken);
+        return MapToDto(expense, branch?.Name ?? "Unknown", category?.Name ?? "Unknown");
     }
 
-    private static ExpenseDto MapToDto(Expense e, string branchName) =>
-        new(e.Id, e.BranchId, branchName, e.Description, e.Category, e.Amount,
-            e.ExpenseDate, e.Status, e.ReceiptNumber, e.CreatedDate, e.CreatedBy);
+    private static ExpenseDto MapToDto(Expense e, string branchName, string categoryName) =>
+        new(e.Id, e.BranchId, branchName, e.Description, e.ExpenseCategoryId, categoryName,
+            e.Amount, e.ExpenseDate, e.Status, e.ReceiptNumber, e.ReceiptImagePath, e.CreatedDate, e.CreatedBy);
 }

@@ -30,15 +30,15 @@ public class DealerService : IDealerService
     public async Task<IReadOnlyList<DealerDto>> GetAllDealersAsync(CancellationToken cancellationToken = default)
     {
         var dealers = await _dealerRepository.GetAllAsync(cancellationToken);
-        return dealers.Select(d => new DealerDto(d.Id, d.Type, d.Name, d.Gender, d.IdType, d.IdTypeSpecification,
-            d.IDNumber, d.CompanyRegNumber, d.Nationality, d.State, d.County, d.PhysicalAddress)).ToList();
+        return dealers.Select(d => new DealerDto(d.Id, d.DealerNumber, d.Type, d.Name, d.Gender, d.IdType, d.IdTypeSpecification,
+            d.IDNumber, d.CompanyRegNumber, d.Nationality, d.State, d.County, d.PhysicalAddress, d.PhoneNumber, d.DocumentPath, d.IsActive)).ToList();
     }
 
     public async Task<DealerDto?> GetDealerByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var d = await _dealerRepository.GetByIdAsync(id, cancellationToken);
-        return d is null ? null : new DealerDto(d.Id, d.Type, d.Name, d.Gender, d.IdType, d.IdTypeSpecification,
-            d.IDNumber, d.CompanyRegNumber, d.Nationality, d.State, d.County, d.PhysicalAddress);
+        return d is null ? null : new DealerDto(d.Id, d.DealerNumber, d.Type, d.Name, d.Gender, d.IdType, d.IdTypeSpecification,
+            d.IDNumber, d.CompanyRegNumber, d.Nationality, d.State, d.County, d.PhysicalAddress, d.PhoneNumber, d.DocumentPath, d.IsActive);
     }
 
     public async Task<DealerDto> CreateDealerAsync(CreateDealerRequest request, CancellationToken cancellationToken = default)
@@ -49,11 +49,16 @@ public class DealerService : IDealerService
             IdType = request.IdType, IdTypeSpecification = request.IdTypeSpecification,
             IDNumber = request.IDNumber, CompanyRegNumber = request.CompanyRegNumber,
             Nationality = request.Nationality, State = request.State,
-            County = request.County, PhysicalAddress = request.PhysicalAddress
+            County = request.County, PhysicalAddress = request.PhysicalAddress,
+            PhoneNumber = request.PhoneNumber,
+            DocumentPath = request.DocumentPath
         };
 
         await _dealerRepository.AddAsync(dealer, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Auto-generate dealer number based on assigned Id
+        dealer.DealerNumber = $"DLR-{dealer.Id:D4}";
 
         // Auto-create DealerProduct for all active products
         var products = await _productRepository.GetActiveProductsAsync(cancellationToken);
@@ -64,8 +69,37 @@ public class DealerService : IDealerService
         }
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new DealerDto(dealer.Id, dealer.Type, dealer.Name, dealer.Gender, dealer.IdType, dealer.IdTypeSpecification,
-            dealer.IDNumber, dealer.CompanyRegNumber, dealer.Nationality, dealer.State, dealer.County, dealer.PhysicalAddress);
+        return new DealerDto(dealer.Id, dealer.DealerNumber, dealer.Type, dealer.Name, dealer.Gender, dealer.IdType, dealer.IdTypeSpecification,
+            dealer.IDNumber, dealer.CompanyRegNumber, dealer.Nationality, dealer.State, dealer.County, dealer.PhysicalAddress, dealer.PhoneNumber, dealer.DocumentPath, dealer.IsActive);
+    }
+
+    public async Task UpdateDealerAsync(UpdateDealerRequest request, CancellationToken cancellationToken = default)
+    {
+        var dealer = await _unitOfWork.Repository<Dealer>().GetByIdAsync(request.Id, cancellationToken)
+            ?? throw new InvalidOperationException("Dealer not found");
+        dealer.Type = request.Type;
+        dealer.Name = request.Name;
+        dealer.Gender = request.Gender;
+        dealer.IdType = request.IdType;
+        dealer.IdTypeSpecification = request.IdTypeSpecification;
+        dealer.IDNumber = request.IDNumber;
+        dealer.CompanyRegNumber = request.CompanyRegNumber;
+        dealer.Nationality = request.Nationality;
+        dealer.State = request.State;
+        dealer.County = request.County;
+        dealer.PhysicalAddress = request.PhysicalAddress;
+        dealer.PhoneNumber = request.PhoneNumber;
+        if (request.DocumentPath is not null)
+            dealer.DocumentPath = request.DocumentPath;
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task SetDealerActiveAsync(int dealerId, bool isActive, CancellationToken cancellationToken = default)
+    {
+        var dealer = await _unitOfWork.Repository<Dealer>().GetByIdAsync(dealerId, cancellationToken)
+            ?? throw new InvalidOperationException("Dealer not found");
+        dealer.IsActive = isActive;
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
     public async Task UpdateCommissionAsync(UpdateCommissionRequest request, CancellationToken cancellationToken = default)
@@ -81,6 +115,14 @@ public class DealerService : IDealerService
         var totalDeposits = await _cashDepositRepository.GetTotalDepositsByDealerAsync(dealerId, cancellationToken);
         var transfers = await _transferRepository.GetByDealerAsync(dealerId, cancellationToken);
         var cashTransfers = transfers.Where(t => t.TransferType == TransferType.Cash).Sum(t => t.Amount);
-        return totalDeposits - cashTransfers;
+        var dps = await _unitOfWork.Repository<DealerProduct>().FindAsync(dp => dp.DealerId == dealerId, cancellationToken);
+        var totalBalance = dps.Sum(dp => dp.Balance);
+        return totalDeposits - cashTransfers + totalBalance;
+    }
+
+    public async Task<IReadOnlyList<DealerProductRateDto>> GetAllDealerProductRatesAsync(CancellationToken cancellationToken = default)
+    {
+        var dps = await _unitOfWork.Repository<DealerProduct>().GetAllAsync(cancellationToken);
+        return dps.Select(dp => new DealerProductRateDto(dp.DealerId, dp.ProductId, dp.CommissionRate)).ToList();
     }
 }

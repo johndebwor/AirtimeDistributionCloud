@@ -33,7 +33,28 @@ public class Repository<T> : IRepository<T> where T : class
 
     public virtual Task UpdateAsync(T entity, CancellationToken cancellationToken = default)
     {
-        _dbSet.Update(entity);
+        var entry = _context.Entry(entity);
+        if (entry.State == EntityState.Detached)
+        {
+            var keyProps = _context.Model.FindEntityType(typeof(T))!
+                .FindPrimaryKey()!.Properties;
+            var tracked = _context.ChangeTracker.Entries<T>()
+                .FirstOrDefault(e => keyProps.All(kp =>
+                    Equals(e.Property(kp.Name).CurrentValue, entry.Property(kp.Name).CurrentValue)));
+            if (tracked is not null)
+            {
+                tracked.CurrentValues.SetValues(entity);
+                tracked.State = EntityState.Modified;
+            }
+            else
+            {
+                _dbSet.Update(entity);
+            }
+        }
+        else
+        {
+            entry.State = EntityState.Modified;
+        }
         return Task.CompletedTask;
     }
 

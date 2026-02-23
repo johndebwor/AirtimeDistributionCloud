@@ -10,7 +10,7 @@
 @inject IJSRuntime JS
 @rendermode InteractiveServer
 
-<PageTitle>Commissions - Airtime Distribution</PageTitle>
+<PageTitle>Commissions - RasidBase</PageTitle>
 
 <div class="page-header">
     <h1>Commissions</h1>
@@ -35,6 +35,7 @@
             <PropertyColumn Property="x => x.DealerName" Title="Dealer" />
             <PropertyColumn Property="x => x.ProductName" Title="Product" />
             <PropertyColumn Property="x => x.CommissionRate" Title="Commission Rate %" Format="N2" />
+            <PropertyColumn Property="x => x.CommissionBalance" Title="Commission Balance" Format="C2" />
             <PropertyColumn Property="x => x.Balance" Title="Balance" Format="C2" />
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
@@ -147,6 +148,7 @@
                 DealerName = dealerMap.GetValueOrDefault(dp.DealerId)?.Name ?? "Unknown",
                 ProductName = products.GetValueOrDefault(dp.ProductId)?.Name ?? "Unknown",
                 CommissionRate = dp.CommissionRate,
+                CommissionBalance = dp.CommissionBalance,
                 Balance = dp.Balance
             }).ToList();
         }
@@ -234,6 +236,7 @@
         public string DealerName { get; set; } = "";
         public string ProductName { get; set; } = "";
         public decimal CommissionRate { get; set; }
+        public decimal CommissionBalance { get; set; }
         public decimal Balance { get; set; }
     }
 }

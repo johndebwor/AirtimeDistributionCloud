@@ -7,7 +7,7 @@
 @inject ISnackbar Snackbar
 @rendermode InteractiveServer
 
-<PageTitle>Dealer Registration - Airtime Distribution</PageTitle>
+<PageTitle>Dealer Registration - RasidBase</PageTitle>
 
 <div class="page-header">
     <h1>Dealer Registration</h1>
@@ -27,7 +27,7 @@
                  Loading="@_loading" Dense="true" Hover="true" Striped="true"
                  QuickFilter="@(new Func<DealerDto, bool>(FilterFunc))">
         <Columns>
-            <PropertyColumn Property="x => x.Id" Title="ID" />
+            <PropertyColumn Property="x => x.DealerNumber" Title="Dealer #" />
             <PropertyColumn Property="x => x.Name" Title="Name" />
             <TemplateColumn Title="Type" Sortable="false">
                 <CellTemplate>
@@ -37,13 +37,30 @@
             </TemplateColumn>
             <PropertyColumn Property="x => x.Gender" Title="Gender" />
             <PropertyColumn Property="x => x.IDNumber" Title="ID Number" />
-            <PropertyColumn Property="x => x.Nationality" Title="Nationality" />
+            <PropertyColumn Property="x => x.PhoneNumber" Title="Phone" />
             <PropertyColumn Property="x => x.State" Title="State" />
-            <PropertyColumn Property="x => x.County" Title="County" />
-            <TemplateColumn Title="Details" Sortable="false">
+            <TemplateColumn Title="Status" Sortable="false">
                 <CellTemplate>
-                    <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Color="Color.Info"
-                                   OnClick="@(() => ViewDetails(context.Item))" />
+                    <MudChip T="string" Color="@(context.Item.IsActive ? Color.Success : Color.Error)"
+                             Size="Size.Small">@(context.Item.IsActive ? "Active" : "Inactive")</MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudTooltip Text="View Details">
+                        <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Color="Color.Info"
+                                       OnClick="@(() => ViewDetails(context.Item))" />
+                    </MudTooltip>
+                    <MudTooltip Text="Edit">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary"
+                                       OnClick="@(() => OpenEditDialog(context.Item))" />
+                    </MudTooltip>
+                    <MudTooltip Text="@(context.Item.IsActive ? "Deactivate" : "Activate")">
+                        <MudIconButton Icon="@(context.Item.IsActive ? Icons.Material.Filled.PersonOff : Icons.Material.Filled.PersonAdd)"
+                                       Size="Size.Small"
+                                       Color="@(context.Item.IsActive ? Color.Error : Color.Success)"
+                                       OnClick="@(() => ToggleActive(context.Item))" />
+                    </MudTooltip>
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
@@ -83,6 +100,7 @@
     private bool FilterFunc(DealerDto dealer) =>
         string.IsNullOrWhiteSpace(_searchString) ||
         dealer.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ||
+        dealer.DealerNumber.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ||
         (dealer.IDNumber?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false);
 
     private async Task OpenCreateDialog()
@@ -94,10 +112,36 @@
             await LoadDealers();
     }
 
+    private async Task OpenEditDialog(DealerDto dealer)
+    {
+        var parameters = new DialogParameters<DealerDialog> { { x => x.EditDealer, dealer } };
+        var dialog = await DialogService.ShowAsync<DealerDialog>($"Edit Dealer: {dealer.Name}", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+            await LoadDealers();
+    }
+
     private async Task ViewDetails(DealerDto dealer)
     {
         var parameters = new DialogParameters<DealerDetailsDialog> { { x => x.Dealer, dealer } };
         await DialogService.ShowAsync<DealerDetailsDialog>($"Dealer: {dealer.Name}", parameters,
             new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+    }
+
+    private async Task ToggleActive(DealerDto dealer)
+    {
+        var newState = !dealer.IsActive;
+        var action = newState ? "activate" : "deactivate";
+        try
+        {
+            await DealerService.SetDealerActiveAsync(dealer.Id, newState);
+            Snackbar.Add($"Dealer {(newState ? "activated" : "deactivated")} successfully", Severity.Success);
+            await LoadDealers();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to {action} dealer: {ex.Message}", Severity.Error);
+        }
     }
 }

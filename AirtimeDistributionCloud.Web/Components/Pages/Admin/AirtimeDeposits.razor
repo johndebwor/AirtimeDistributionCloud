@@ -10,7 +10,7 @@
 @inject ISnackbar Snackbar
 @rendermode InteractiveServer
 
-<PageTitle>Airtime Deposits - Airtime Distribution</PageTitle>
+<PageTitle>Airtime Deposits - RasidBase</PageTitle>
 
 <div class="page-header">
     <h1>Airtime Deposits</h1>
@@ -44,6 +44,7 @@
                             Core.Enums.DepositStatus.Pending => Color.Warning,
                             Core.Enums.DepositStatus.Approved => Color.Success,
                             Core.Enums.DepositStatus.Rejected => Color.Error,
+                            Core.Enums.DepositStatus.Cancelled => Color.Dark,
                             _ => Color.Default
                         };
                     }

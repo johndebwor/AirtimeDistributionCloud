@@ -37,7 +37,25 @@ public class SystemSettingRepository : ISystemSettingRepository
 
     public async Task UpdateAsync(SystemSetting setting, CancellationToken cancellationToken = default)
     {
-        _context.SystemSettings.Update(setting);
+        var entry = _context.Entry(setting);
+        if (entry.State == EntityState.Detached)
+        {
+            var tracked = _context.ChangeTracker.Entries<SystemSetting>()
+                .FirstOrDefault(e => e.Entity.Id == setting.Id);
+            if (tracked is not null)
+            {
+                tracked.CurrentValues.SetValues(setting);
+                tracked.State = EntityState.Modified;
+            }
+            else
+            {
+                _context.SystemSettings.Update(setting);
+            }
+        }
+        else
+        {
+            entry.State = EntityState.Modified;
+        }
         await _context.SaveChangesAsync(cancellationToken);
     }
 }

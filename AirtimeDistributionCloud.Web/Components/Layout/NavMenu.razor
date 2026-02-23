@@ -1,50 +1,168 @@
+@rendermode InteractiveServer
+@using AirtimeDistributionCloud.Application.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IPermissionService PermissionService
+
 <MudNavMenu Rounded="true" Margin="Margin.Dense" Color="Color.Primary">
 
     <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Outlined.SpaceDashboard">
         Dashboard
     </MudNavLink>
 
-    <AuthorizeView Roles="SystemAdmin,SuperAdministrator">
+    @if (_adminVisible)
+    {
         <div class="nav-label">
             <span class="dot" style="background:#3B82F6;"></span>
             Admin
         </div>
-        <MudNavLink Href="/admin/products" Icon="@Icons.Material.Outlined.Inventory2">Products</MudNavLink>
-        <MudNavLink Href="/admin/branches" Icon="@Icons.Material.Outlined.Store">Branches</MudNavLink>
-        <MudNavLink Href="/admin/deposits" Icon="@Icons.Material.Outlined.AccountBalanceWallet">Deposits</MudNavLink>
-        <MudNavLink Href="/admin/approvals" Icon="@Icons.Material.Outlined.FactCheck">Deposit Approvals</MudNavLink>
-        <MudNavLink Href="/admin/transfer-approvals" Icon="@Icons.Material.Outlined.SwapHorizontalCircle">Transfer Approvals</MudNavLink>
-        <MudNavLink Href="/admin/expense-approvals" Icon="@Icons.Material.Outlined.RuleFolder">Expense Approvals</MudNavLink>
-    </AuthorizeView>
+        @if (_allowed.Contains("admin.products"))
+        {
+            <MudNavLink Href="/admin/products" Icon="@Icons.Material.Outlined.Inventory2">Products</MudNavLink>
+        }
+        @if (_allowed.Contains("admin.branches"))
+        {
+            <MudNavLink Href="/admin/branches" Icon="@Icons.Material.Outlined.Store">Branches</MudNavLink>
+        }
+        @if (_allowed.Contains("admin.deposits"))
+        {
+            <MudNavLink Href="/admin/deposits" Icon="@Icons.Material.Outlined.AccountBalanceWallet">Deposits</MudNavLink>
+        }
+        @if (_allowed.Contains("admin.approvals"))
+        {
+            <MudNavLink Href="/admin/approvals" Icon="@Icons.Material.Outlined.FactCheck">Deposit Approvals</MudNavLink>
+        }
+        @if (_allowed.Contains("admin.transfer-approvals"))
+        {
+            <MudNavLink Href="/admin/transfer-approvals" Icon="@Icons.Material.Outlined.SwapHorizontalCircle">Transfer Approvals</MudNavLink>
+        }
+        @if (_allowed.Contains("admin.expense-approvals"))
+        {
+            <MudNavLink Href="/admin/expense-approvals" Icon="@Icons.Material.Outlined.RuleFolder">Expense Approvals</MudNavLink>
+        }
+        @if (_allowed.Contains("admin.reports"))
+        {
+            <MudNavLink Href="/admin/reports" Icon="@Icons.Material.Outlined.Assessment">Reports</MudNavLink>
+        }
+        @if (_settingsVisible)
+        {
+            <MudNavGroup Title="System Settings" Icon="@Icons.Material.Outlined.Settings" Expanded="false">
+                @if (_allowed.Contains("admin.settings"))
+                {
+                    <MudNavLink Href="/admin/settings" Icon="@Icons.Material.Outlined.Tune">General Settings</MudNavLink>
+                    <MudNavLink Href="/admin/company-profile" Icon="@Icons.Material.Outlined.Business">Company Profile</MudNavLink>
+                }
+                @if (_allowed.Contains("admin.expense-categories"))
+                {
+                    <MudNavLink Href="/admin/expense-categories" Icon="@Icons.Material.Outlined.Category">Expense Categories</MudNavLink>
+                }
+            </MudNavGroup>
+        }
+    }
 
-    <AuthorizeView Roles="SystemAdmin,SuperAdministrator,Dealer">
+    @if (_dealersVisible)
+    {
         <div class="nav-label">
             <span class="dot" style="background:#F59E0B;"></span>
             Dealers
         </div>
-        <MudNavLink Href="/dealer/registration" Icon="@Icons.Material.Outlined.PersonAdd">Registration</MudNavLink>
-        <MudNavLink Href="/dealer/transfers" Icon="@Icons.Material.Outlined.SwapHoriz">Transfers</MudNavLink>
-        <MudNavLink Href="/dealer/commissions" Icon="@Icons.Material.Outlined.Payments">Commissions</MudNavLink>
-    </AuthorizeView>
+        @if (_allowed.Contains("dealer.registration"))
+        {
+            <MudNavLink Href="/dealer/registration" Icon="@Icons.Material.Outlined.PersonAdd">Registration</MudNavLink>
+        }
+        @if (_allowed.Contains("dealer.transfers"))
+        {
+            <MudNavLink Href="/dealer/transfers" Icon="@Icons.Material.Outlined.SwapHoriz">Transfers</MudNavLink>
+        }
+        @if (_allowed.Contains("dealer.commissions"))
+        {
+            <MudNavLink Href="/dealer/commissions" Icon="@Icons.Material.Outlined.Payments">Commissions</MudNavLink>
+        }
+    }
 
-    <AuthorizeView Roles="SystemAdmin,Cashier">
+    @if (_cashierVisible)
+    {
         <div class="nav-label">
             <span class="dot" style="background:#16A34A;"></span>
             Cashier
         </div>
-        <MudNavLink Href="/cashier/deposits" Icon="@Icons.Material.Outlined.Paid">Cash Deposits</MudNavLink>
-        <MudNavLink Href="/cashier/balances" Icon="@Icons.Material.Outlined.AccountBalance">Balances</MudNavLink>
-        <MudNavLink Href="/cashier/expenses" Icon="@Icons.Material.Outlined.Receipt">Expenses</MudNavLink>
-    </AuthorizeView>
+        @if (_allowed.Contains("cashier.deposits"))
+        {
+            <MudNavLink Href="/cashier/deposits" Icon="@Icons.Material.Outlined.Paid">Cash Deposits</MudNavLink>
+        }
+        @if (_allowed.Contains("cashier.balances"))
+        {
+            <MudNavLink Href="/cashier/balances" Icon="@Icons.Material.Outlined.AccountBalance">Balances</MudNavLink>
+        }
+        @if (_allowed.Contains("cashier.expenses"))
+        {
+            <MudNavLink Href="/cashier/expenses" Icon="@Icons.Material.Outlined.Receipt">Expenses</MudNavLink>
+        }
+    }
 
-    <AuthorizeView Roles="SystemAdmin,SuperAdministrator">
+    @if (_systemVisible)
+    {
         <div class="nav-label">
             <span class="dot" style="background:#A855F7;"></span>
             System
         </div>
-        <MudNavLink Href="/superadmin/users" Icon="@Icons.Material.Outlined.Group">Users</MudNavLink>
-        <MudNavLink Href="/superadmin/audit" Icon="@Icons.Material.Outlined.History">Audit Logs</MudNavLink>
-        <MudNavLink Href="/admin/settings" Icon="@Icons.Material.Outlined.Settings">System Settings</MudNavLink>
-    </AuthorizeView>
+        @if (_allowed.Contains("system.users"))
+        {
+            <MudNavLink Href="/superadmin/users" Icon="@Icons.Material.Outlined.Group">Users</MudNavLink>
+        }
+        @if (_allowed.Contains("system.audit"))
+        {
+            <MudNavLink Href="/superadmin/audit" Icon="@Icons.Material.Outlined.History">Audit Logs</MudNavLink>
+        }
+        @if (_isSystemAdmin)
+        {
+            <MudNavLink Href="/admin/permissions" Icon="@Icons.Material.Outlined.AdminPanelSettings">Permissions</MudNavLink>
+        }
+    }
+
+    <MudNavLink Href="/help" Icon="@Icons.Material.Outlined.HelpOutline">Help</MudNavLink>
 
 </MudNavMenu>
+
+@code {
+    private HashSet<string> _allowed = new();
+    private bool _isSystemAdmin;
+    private bool _adminVisible;
+    private bool _settingsVisible;
+    private bool _dealersVisible;
+    private bool _cashierVisible;
+    private bool _systemVisible;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        _isSystemAdmin = user.IsInRole("SystemAdmin");
+
+        if (_isSystemAdmin)
+        {
+            // SystemAdmin always has full access
+            foreach (var key in IPermissionService.AllKeys)
+                _allowed.Add(key);
+        }
+        else
+        {
+            foreach (var role in IPermissionService.ManagedRoles)
+            {
+                if (!user.IsInRole(role)) continue;
+                foreach (var key in IPermissionService.AllKeys)
+                {
+                    if (await PermissionService.IsAllowedAsync(role, key))
+                        _allowed.Add(key);
+                }
+            }
+        }
+
+        _adminVisible = IPermissionService.AdminKeys.Any(k => _allowed.Contains(k));
+        _settingsVisible = _allowed.Contains("admin.settings") || _allowed.Contains("admin.expense-categories");
+        _dealersVisible = IPermissionService.DealerKeys.Any(k => _allowed.Contains(k));
+        _cashierVisible = IPermissionService.CashierKeys.Any(k => _allowed.Contains(k));
+        _systemVisible = _isSystemAdmin || IPermissionService.SystemKeys.Any(k => _allowed.Contains(k));
+    }
+}

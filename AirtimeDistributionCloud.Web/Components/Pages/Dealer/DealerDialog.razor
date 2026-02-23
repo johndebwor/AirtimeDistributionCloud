@@ -2,8 +2,11 @@
 @using AirtimeDistributionCloud.Application.DTOs
 @using AirtimeDistributionCloud.Application.Services
 @using AirtimeDistributionCloud.Core.Enums
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Hosting
 @inject IDealerService DealerService
 @inject ISnackbar Snackbar
+@inject IWebHostEnvironment Env
 
 <MudDialog>
     <DialogContent>
@@ -64,7 +67,7 @@
 
             <MudItem xs="12" sm="6">
                 <MudSelect T="string" Value="@_state" Label="State / Administrative Area"
-                           Clearable="true" Class="mb-3" ValueChanged="OnStateChanged">
+                           Clearable="true" Placeholder="-- Select State --" Class="mb-3" ValueChanged="OnStateChanged">
                     @foreach (var state in StatesAndCounties.Keys)
                     {
                         <MudSelectItem T="string" Value="@state">@state</MudSelectItem>
@@ -72,7 +75,8 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="12" sm="6">
-                <MudSelect T="string" @bind-Value="_county" Label="County" Clearable="true" Class="mb-3"
+                <MudSelect T="string" @bind-Value="_county" Label="County" Clearable="true"
+                           Placeholder="-- Select County --" Class="mb-3"
                            Disabled="@string.IsNullOrEmpty(_state)">
                     @foreach (var county in _counties)
                     {
@@ -80,8 +84,49 @@
                     }
                 </MudSelect>
             </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_phoneNumber" Label="Phone Number" Class="mb-3"
+                              Placeholder="+211..." />
+            </MudItem>
             <MudItem xs="12">
-                <MudTextField @bind-Value="_physicalAddress" Label="Physical Address" Lines="2" Class="mb-3" />
+                <MudTextField @bind-Value="_physicalAddress" Label="Physical Address" Lines="2" Class="mb-3"
+                              Required="true" RequiredError="Physical address is required" />
+            </MudItem>
+
+            <!-- Document Upload -->
+            <MudItem xs="12">
+                @if (_type == DealerType.Person && !string.IsNullOrEmpty(_idType))
+                {
+                    <MudFileUpload T="IBrowserFile" Accept=".pdf,.jpg,.jpeg,.png" MaximumFileCount="1"
+                                   FilesChanged="OnDocumentSelected">
+                        <ActivatorContent>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.CloudUpload" Class="mb-1">
+                                Upload @_idType Copy
+                            </MudButton>
+                        </ActivatorContent>
+                    </MudFileUpload>
+                }
+                else if (_type == DealerType.Company)
+                {
+                    <MudFileUpload T="IBrowserFile" Accept=".pdf,.jpg,.jpeg,.png" MaximumFileCount="1"
+                                   FilesChanged="OnDocumentSelected">
+                        <ActivatorContent>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.CloudUpload" Class="mb-1">
+                                Upload Company Certificate
+                            </MudButton>
+                        </ActivatorContent>
+                    </MudFileUpload>
+                }
+                @if (_selectedFile is not null)
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Success">@_selectedFile.Name (@($"{_selectedFile.Size / 1024.0:F0} KB"))</MudText>
+                }
+                else if (!string.IsNullOrEmpty(_existingDocumentPath))
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Document on file: @System.IO.Path.GetFileName(_existingDocumentPath)</MudText>
+                }
             </MudItem>
         </MudGrid>
     </DialogContent>
@@ -93,20 +138,46 @@
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public DealerDto? EditDealer { get; set; }
 
     private bool _saving;
     private DealerType _type = DealerType.Person;
     private string _name = "";
-    private string? _gender;
-    private string? _idType;
+    private string? _gender = "Male";
+    private string? _idType = "National ID";
     private string? _idTypeSpecification;
     private string? _idNumber;
     private string? _companyRegNumber;
     private string _nationality = "South Sudanese";
     private string? _state;
     private string? _county;
+    private string? _phoneNumber;
     private string? _physicalAddress;
+    private IBrowserFile? _selectedFile;
+    private string? _existingDocumentPath;
     private List<string> _counties = new();
+
+    protected override void OnParametersSet()
+    {
+        if (EditDealer is not null)
+        {
+            _type = EditDealer.Type;
+            _name = EditDealer.Name;
+            _gender = EditDealer.Gender;
+            _idType = EditDealer.IdType;
+            _idTypeSpecification = EditDealer.IdTypeSpecification;
+            _idNumber = EditDealer.IDNumber;
+            _companyRegNumber = EditDealer.CompanyRegNumber;
+            _nationality = EditDealer.Nationality ?? "South Sudanese";
+            _state = EditDealer.State;
+            _county = EditDealer.County;
+            _phoneNumber = EditDealer.PhoneNumber;
+            _physicalAddress = EditDealer.PhysicalAddress;
+            _existingDocumentPath = EditDealer.DocumentPath;
+            if (_state is not null && StatesAndCounties.TryGetValue(_state, out var c))
+                _counties = c;
+        }
+    }
 
     private string IdNumberLabel => _idType switch
     {
@@ -134,18 +205,47 @@
 
     private static readonly List<string> Nationalities = new()
     {
-        "South Sudanese", "Afghan", "Albanian", "Algerian", "American", "Angolan", "Argentine",
-        "Australian", "Austrian", "Bangladeshi", "Belgian", "Belarusian", "Bolivian", "Brazilian",
-        "British", "Bulgarian", "Burundian", "Cameroonian", "Canadian", "Central African", "Chadian",
-        "Chilean", "Chinese", "Colombian", "Congolese", "Croatian", "Cuban", "Czech", "Danish",
-        "Dutch", "Egyptian", "Eritrean", "Ethiopian", "Finnish", "French", "German", "Ghanaian",
-        "Greek", "Hungarian", "Indian", "Indonesian", "Iranian", "Iraqi", "Irish", "Israeli",
-        "Italian", "Japanese", "Jordanian", "Kenyan", "Korean", "Libyan", "Malaysian", "Mexican",
-        "Moroccan", "Mozambican", "Namibian", "Nigerian", "Norwegian", "Pakistani", "Philippine",
-        "Polish", "Portuguese", "Romanian", "Russian", "Rwandan", "Saudi Arabian", "Senegalese",
-        "Somalian", "South African", "Spanish", "Sri Lankan", "Sudanese", "Swedish", "Swiss",
-        "Syrian", "Tanzanian", "Thai", "Turkish", "Ugandan", "Ukrainian", "Venezuelan",
-        "Vietnamese", "Yemeni", "Zambian", "Zimbabwean"
+        "South Sudanese", "Afghan", "Albanian", "Algerian", "American", "Andorran", "Angolan",
+        "Antiguan", "Argentine", "Armenian", "Australian", "Austrian", "Azerbaijani",
+        "Bahamian", "Bahraini", "Bangladeshi", "Barbadian", "Belarusian", "Belgian", "Belizean",
+        "Beninese", "Bhutanese", "Bolivian", "Bosnian", "Botswanan", "Brazilian", "Bruneian",
+        "Bulgarian", "Burkinabe", "Burundian",
+        "Cabo Verdean", "Cambodian", "Cameroonian", "Canadian", "Central African", "Chadian",
+        "Chilean", "Chinese", "Colombian", "Comorian", "Congolese", "Costa Rican", "Croatian",
+        "Cuban", "Cypriot", "Czech",
+        "Danish", "Djiboutian", "Dominican", "Dutch",
+        "East Timorese", "Ecuadorian", "Egyptian", "Emirati", "Equatorial Guinean", "Eritrean",
+        "Estonian", "Eswatini", "Ethiopian",
+        "Fijian", "Filipino", "Finnish", "French",
+        "Gabonese", "Gambian", "Georgian", "German", "Ghanaian", "Greek", "Grenadian",
+        "Guatemalan", "Guinean", "Guinea-Bissauan", "Guyanese",
+        "Haitian", "Honduran", "Hungarian",
+        "Icelandic", "Indian", "Indonesian", "Iranian", "Iraqi", "Irish", "Israeli", "Italian",
+        "Ivorian",
+        "Jamaican", "Japanese", "Jordanian",
+        "Kazakh", "Kenyan", "Kiribati", "Korean", "Kosovar", "Kuwaiti", "Kyrgyz",
+        "Laotian", "Latvian", "Lebanese", "Liberian", "Libyan", "Liechtenstein", "Lithuanian",
+        "Luxembourgish",
+        "Malagasy", "Malawian", "Malaysian", "Maldivian", "Malian", "Maltese", "Marshallese",
+        "Mauritanian", "Mauritian", "Mexican", "Micronesian", "Moldovan", "Monacan", "Mongolian",
+        "Montenegrin", "Moroccan", "Mozambican", "Myanmar",
+        "Namibian", "Nauruan", "Nepalese", "New Zealander", "Nicaraguan", "Nigerien", "Nigerian",
+        "North Macedonian", "Norwegian",
+        "Omani",
+        "Pakistani", "Palauan", "Palestinian", "Panamanian", "Papua New Guinean", "Paraguayan",
+        "Peruvian", "Polish", "Portuguese",
+        "Qatari",
+        "Romanian", "Russian", "Rwandan",
+        "Saint Lucian", "Salvadoran", "Samoan", "Saudi Arabian", "Senegalese", "Serbian",
+        "Seychellois", "Sierra Leonean", "Singaporean", "Slovak", "Slovenian", "Solomon Islander",
+        "Somali", "South African", "Spanish", "Sri Lankan", "Sudanese", "Surinamese", "Swedish",
+        "Swiss", "Syrian",
+        "Tajik", "Tanzanian", "Thai", "Togolese", "Tongan", "Trinidadian", "Tunisian", "Turkish",
+        "Turkmen", "Tuvaluan",
+        "Ugandan", "Ukrainian", "Uruguayan", "Uzbek",
+        "Vanuatuan", "Venezuelan", "Vietnamese",
+        "Yemeni",
+        "Zambian", "Zimbabwean"
     };
 
     private Task<IEnumerable<string>> SearchNationality(string value, CancellationToken token)
@@ -169,11 +269,34 @@
         if (type != "Others") _idTypeSpecification = null;
     }
 
+    private void OnDocumentSelected(IBrowserFile file)
+    {
+        _selectedFile = file;
+    }
+
+    private async Task<string?> SaveUploadedFileAsync()
+    {
+        if (_selectedFile is null) return null;
+        var uploadsDir = Path.Combine(Env.WebRootPath, "uploads", "dealers");
+        Directory.CreateDirectory(uploadsDir);
+        var ext = Path.GetExtension(_selectedFile.Name);
+        var fileName = $"{Guid.NewGuid()}{ext}";
+        var filePath = Path.Combine(uploadsDir, fileName);
+        await using var stream = new FileStream(filePath, FileMode.Create);
+        await _selectedFile.OpenReadStream(5 * 1024 * 1024).CopyToAsync(stream); // 5MB max
+        return $"/uploads/dealers/{fileName}";
+    }
+
     private async Task Submit()
     {
         if (string.IsNullOrWhiteSpace(_name))
         {
             Snackbar.Add("Name is required", Severity.Warning);
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_physicalAddress))
+        {
+            Snackbar.Add("Physical address is required", Severity.Warning);
             return;
         }
 
@@ -186,10 +309,22 @@
             var idNumber = _type == DealerType.Person ? _idNumber : null;
             var nationality = _type == DealerType.Person ? _nationality : null;
 
-            await DealerService.CreateDealerAsync(new CreateDealerRequest(
-                _type, _name, gender, idType, idTypeSpec, idNumber,
-                _companyRegNumber, nationality, _state, _county, _physicalAddress));
-            Snackbar.Add("Dealer registered successfully", Severity.Success);
+            var documentPath = await SaveUploadedFileAsync();
+
+            if (EditDealer is not null)
+            {
+                await DealerService.UpdateDealerAsync(new UpdateDealerRequest(
+                    EditDealer.Id, _type, _name, gender, idType, idTypeSpec, idNumber,
+                    _companyRegNumber, nationality, _state, _county, _physicalAddress, _phoneNumber, documentPath));
+                Snackbar.Add("Dealer updated successfully", Severity.Success);
+            }
+            else
+            {
+                await DealerService.CreateDealerAsync(new CreateDealerRequest(
+                    _type, _name, gender, idType, idTypeSpec, idNumber,
+                    _companyRegNumber, nationality, _state, _county, _physicalAddress, _phoneNumber, documentPath));
+                Snackbar.Add("Dealer registered successfully", Severity.Success);
+            }
             MudDialog.Close(DialogResult.Ok(true));
         }
         catch (Exception ex)

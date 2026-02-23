@@ -16,6 +16,10 @@ public static class DependencyInjection
         services.AddScoped<Services.ICashDepositService, Services.CashDepositService>();
         services.AddScoped<Services.IAuditLogService, Services.AuditLogService>();
         services.AddScoped<Services.IExpenseService, Services.ExpenseService>();
+        services.AddScoped<Services.IUserPreferenceService, Services.UserPreferenceService>();
+        services.AddScoped<Services.IPermissionService, Services.PermissionService>();
+        services.AddScoped<Services.IExpenseCategoryService, Services.ExpenseCategoryService>();
+        services.AddScoped<Services.INotificationService, Services.NotificationService>();
 
         return services;
     }

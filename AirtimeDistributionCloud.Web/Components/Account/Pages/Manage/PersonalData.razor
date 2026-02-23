@@ -1,4 +1,4 @@
-﻿@page "/Account/Manage/PersonalData"
+@page "/Account/Manage/PersonalData"
 
 @using Microsoft.AspNetCore.Identity
 @using AirtimeDistributionCloud.Core.Entities
@@ -8,24 +8,37 @@
 
 <PageTitle>Personal Data</PageTitle>
 
-<StatusMessage />
-<h3>Personal Data</h3>
-
-<div class="row">
-    <div class="col-md-6">
-        <p>Your account contains personal data that you have given us. This page allows you to download or delete that data.</p>
-        <p>
-            <strong>Deleting this data will permanently remove your account, and this cannot be recovered.</strong>
-        </p>
-        <form action="Account/Manage/DownloadPersonalData" method="post">
-            <AntiforgeryToken />
-            <button class="btn btn-primary" type="submit">Download</button>
-        </form>
-        <p>
-            <a href="Account/Manage/DeletePersonalData" class="btn btn-danger">Delete</a>
-        </p>
-    </div>
+<div class="page-header">
+    <h1>Personal Data</h1>
+    <p>Manage your personal data</p>
 </div>
+
+<MudGrid Justify="Justify.Center">
+    <MudItem xs="12" sm="8" md="6">
+        <StatusMessage />
+        <MudPaper Elevation="0" Class="data-card pa-6">
+            <MudText Typo="Typo.body1" Class="mb-3">
+                Your account contains personal data that you have given us. This page allows you to download or delete that data.
+            </MudText>
+            <MudAlert Severity="Severity.Warning" Class="mb-4">
+                <strong>Deleting this data will permanently remove your account, and this cannot be recovered.</strong>
+            </MudAlert>
+            <div class="d-flex flex-wrap gap-3">
+                <form action="Account/Manage/DownloadPersonalData" method="post">
+                    <AntiforgeryToken />
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Download" Size="Size.Small">
+                        Download
+                    </MudButton>
+                </form>
+                <MudButton Href="Account/Manage/DeletePersonalData" Variant="Variant.Filled" Color="Color.Error"
+                           StartIcon="@Icons.Material.Filled.Delete" Size="Size.Small">
+                    Delete
+                </MudButton>
+            </div>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
 
 @code {
     [CascadingParameter]

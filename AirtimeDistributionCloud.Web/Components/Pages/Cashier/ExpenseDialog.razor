@@ -1,17 +1,21 @@
 @rendermode InteractiveServer
 @using AirtimeDistributionCloud.Application.DTOs
 @using AirtimeDistributionCloud.Application.Services
-@using AirtimeDistributionCloud.Core.Enums
 @using AirtimeDistributionCloud.Core.Interfaces
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Hosting
 @inject IExpenseService ExpenseService
+@inject IExpenseCategoryService CategoryService
 @inject ICurrentUserService CurrentUser
+@inject IUserPreferenceService UserPrefs
 @inject ISnackbar Snackbar
 @inject IJSRuntime JS
+@inject IWebHostEnvironment Env
 
 <MudDialog>
     <DialogContent>
         <MudSelect T="int" @bind-Value="_branchId" Label="Branch" Required="true"
-                   RequiredError="Branch is required" Class="mb-3">
+                   RequiredError="Branch is required" Placeholder="-- Select Branch --" Class="mb-3">
             @foreach (var b in Branches)
             {
                 <MudSelectItem T="int" Value="@b.Id">@b.Name</MudSelectItem>
@@ -19,11 +23,11 @@
         </MudSelect>
         <MudTextField @bind-Value="_description" Label="Description" Required="true"
                       RequiredError="Description is required" Lines="2" Class="mb-3" />
-        <MudSelect T="ExpenseCategory" @bind-Value="_category" Label="Category" Required="true"
-                   RequiredError="Category is required" Class="mb-3">
-            @foreach (ExpenseCategory cat in Enum.GetValues<ExpenseCategory>())
+        <MudSelect T="int" @bind-Value="_categoryId" Label="Category" Required="true"
+                   RequiredError="Category is required" Placeholder="-- Select Category --" Class="mb-3">
+            @foreach (var cat in _categories)
             {
-                <MudSelectItem T="ExpenseCategory" Value="@cat">@cat</MudSelectItem>
+                <MudSelectItem T="int" Value="@cat.Id">@cat.Name</MudSelectItem>
             }
         </MudSelect>
         <div @ref="_amountRef">
@@ -32,6 +36,19 @@
                           Required="true" RequiredError="Amount is required" Class="mb-3" />
         </div>
         <MudTextField @bind-Value="_receiptNumber" Label="Receipt Number (Optional)" Class="mb-3" />
+        <MudFileUpload T="IBrowserFile" Accept=".pdf,.jpg,.jpeg,.png" MaximumFileCount="1"
+                       FilesChanged="@(f => _receiptFile = f)">
+            <ActivatorContent>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Receipt" Class="mb-1">
+                    Upload Receipt (Optional)
+                </MudButton>
+            </ActivatorContent>
+        </MudFileUpload>
+        @if (_receiptFile is not null)
+        {
+            <MudText Typo="Typo.caption" Color="Color.Success">@_receiptFile.Name (@($"{_receiptFile.Size / 1024.0:F0} KB"))</MudText>
+        }
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
@@ -47,11 +64,35 @@
     private bool _saving;
     private int _branchId;
     private string _description = string.Empty;
-    private ExpenseCategory _category;
+    private int _categoryId;
+    private List<ExpenseCategoryDto> _categories = new();
     private decimal _amount;
     private string _amountDisplay = "";
     private string? _receiptNumber;
+    private IBrowserFile? _receiptFile;
     private ElementReference _amountRef;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _categories = (await CategoryService.GetActiveAsync()).ToList();
+        if (_categories.Any())
+            _categoryId = _categories.First().Id;
+
+        var userId = CurrentUser.UserId;
+        if (userId is not null)
+        {
+            var lastBranchId = await UserPrefs.GetIntAsync(userId, IUserPreferenceService.LastBranchId);
+            if (lastBranchId.HasValue && Branches.Any(b => b.Id == lastBranchId.Value))
+                _branchId = lastBranchId.Value;
+        }
+
+        if (_branchId == 0)
+        {
+            var defaultBranch = Branches.FirstOrDefault(b => b.IsDefault);
+            if (defaultBranch is not null)
+                _branchId = defaultBranch.Id;
+        }
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -72,7 +113,7 @@
         var raw = await JS.InvokeAsync<string>("getNumericInputValue", _amountRef);
         _amount = ParseNumber(raw);
 
-        if (_branchId == 0 || string.IsNullOrWhiteSpace(_description) || _amount <= 0)
+        if (_branchId == 0 || string.IsNullOrWhiteSpace(_description) || _categoryId == 0 || _amount <= 0)
         {
             Snackbar.Add("Please fill in all required fields", Severity.Warning);
             return;
@@ -81,9 +122,26 @@
         _saving = true;
         try
         {
+            string? receiptImagePath = null;
+            if (_receiptFile is not null)
+            {
+                var uploadsDir = Path.Combine(Env.WebRootPath, "uploads", "receipts");
+                Directory.CreateDirectory(uploadsDir);
+                var ext = Path.GetExtension(_receiptFile.Name);
+                var fileName = $"{Guid.NewGuid()}{ext}";
+                var filePath = Path.Combine(uploadsDir, fileName);
+                await using var stream = new FileStream(filePath, FileMode.Create);
+                await _receiptFile.OpenReadStream(5 * 1024 * 1024).CopyToAsync(stream);
+                receiptImagePath = $"/uploads/receipts/{fileName}";
+            }
+
             var result = await ExpenseService.CreateExpenseAsync(
-                new CreateExpenseRequest(_branchId, _description, _category, _amount, _receiptNumber),
+                new CreateExpenseRequest(_branchId, _description, _categoryId, _amount, _receiptNumber, receiptImagePath),
                 CurrentUser.UserId ?? "");
+
+            var userId = CurrentUser.UserId;
+            if (userId is not null)
+                await UserPrefs.SetAsync(userId, IUserPreferenceService.LastBranchId, _branchId.ToString());
 
             var message = result.Status == DepositStatus.Approved
                 ? "Expense recorded and auto-approved"

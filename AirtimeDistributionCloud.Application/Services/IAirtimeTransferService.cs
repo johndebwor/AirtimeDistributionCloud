@@ -11,4 +11,5 @@ public interface IAirtimeTransferService
     Task<AirtimeTransferDto> CreateTransferAsync(CreateAirtimeTransferRequest request, CancellationToken cancellationToken = default);
     Task<AirtimeTransferDto> ApproveTransferAsync(int transferId, string approvedByUserId, string notes, CancellationToken cancellationToken = default);
     Task<AirtimeTransferDto> RejectTransferAsync(int transferId, string rejectedByUserId, string notes, CancellationToken cancellationToken = default);
+    Task<AirtimeTransferDto> CancelTransferAsync(int transferId, string cancelledByUserId, string reason, CancellationToken cancellationToken = default);
 }

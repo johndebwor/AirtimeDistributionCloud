@@ -10,4 +10,5 @@ public class DealerProduct : BaseEntity
 
     public decimal CommissionRate { get; set; }
     public decimal Balance { get; set; }
+    public decimal CommissionBalance { get; set; }
 }

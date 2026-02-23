@@ -40,6 +40,15 @@ public class ProductService : IProductService
         await _productRepository.AddAsync(product, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        // Auto-create DealerProduct for all active dealers (mirrors CreateDealerAsync logic)
+        var dealers = await _unitOfWork.Repository<Dealer>().FindAsync(d => d.IsActive, cancellationToken);
+        foreach (var dealer in dealers)
+        {
+            var dp = new DealerProduct { DealerId = dealer.Id, ProductId = product.Id, CommissionRate = 0, Balance = 0, CommissionBalance = 0 };
+            await _unitOfWork.Repository<DealerProduct>().AddAsync(dp, cancellationToken);
+        }
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
         return new ProductDto(product.Id, product.Name, product.BonusPercentage, product.AirtimeAccountBalance, product.IsActive);
     }
 

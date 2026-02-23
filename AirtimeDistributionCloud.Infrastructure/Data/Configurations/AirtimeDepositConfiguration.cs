@@ -19,6 +19,8 @@ public class AirtimeDepositConfiguration : IEntityTypeConfiguration<AirtimeDepos
         builder.Property(ad => ad.CreatedByUserId).HasMaxLength(450);
         builder.Property(ad => ad.ApprovedByUserId).HasMaxLength(450);
         builder.Property(ad => ad.ApprovalNotes).HasMaxLength(1000);
+        builder.Property(ad => ad.CancelledByUserId).HasMaxLength(450);
+        builder.Property(ad => ad.CancellationReason).HasMaxLength(1000);
         builder.Property(ad => ad.Status).HasConversion<string>().HasMaxLength(20);
 
         builder.HasOne(ad => ad.Product)

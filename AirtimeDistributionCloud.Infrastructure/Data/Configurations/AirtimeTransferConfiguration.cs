@@ -11,12 +11,16 @@ public class AirtimeTransferConfiguration : IEntityTypeConfiguration<AirtimeTran
         builder.ToTable("AirtimeTransfers");
         builder.HasKey(at => at.Id);
         builder.Property(at => at.Amount).HasColumnType("decimal(18,2)");
+        builder.Property(at => at.LoanAmount).HasColumnType("decimal(18,2)");
+        builder.Property(at => at.CommissionAmount).HasColumnType("decimal(18,2)");
         builder.Property(at => at.CreatedBy).HasMaxLength(256);
         builder.Property(at => at.ModifiedBy).HasMaxLength(256);
         builder.Property(at => at.TransferType).HasConversion<string>().HasMaxLength(20);
         builder.Property(at => at.Status).HasConversion<string>().HasMaxLength(20);
         builder.Property(at => at.ApprovedByUserId).HasMaxLength(450);
         builder.Property(at => at.ApprovalNotes).HasMaxLength(1000);
+        builder.Property(at => at.CancelledByUserId).HasMaxLength(450);
+        builder.Property(at => at.CancellationReason).HasMaxLength(1000);
 
         builder.HasOne(at => at.Branch)
             .WithMany(b => b.AirtimeTransfers)

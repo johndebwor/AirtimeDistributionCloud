@@ -12,6 +12,7 @@ public class DealerProductConfiguration : IEntityTypeConfiguration<DealerProduct
         builder.HasKey(dp => dp.Id);
         builder.Property(dp => dp.CommissionRate).HasColumnType("decimal(18,2)");
         builder.Property(dp => dp.Balance).HasColumnType("decimal(18,2)");
+        builder.Property(dp => dp.CommissionBalance).HasColumnType("decimal(18,2)");
         builder.Property(dp => dp.CreatedBy).HasMaxLength(256);
         builder.Property(dp => dp.ModifiedBy).HasMaxLength(256);
 

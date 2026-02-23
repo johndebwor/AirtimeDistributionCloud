@@ -48,6 +48,16 @@
     private bool _saving;
     private bool _showPassword;
 
+    protected override void OnInitialized()
+    {
+        if (!IsEdit && Model.BranchId is null)
+        {
+            var defaultBranch = Branches.FirstOrDefault(b => b.IsDefault);
+            if (defaultBranch is not null)
+                Model.BranchId = defaultBranch.Id;
+        }
+    }
+
     private IEnumerable<string> _selectedRolesValues
     {
         get => Model.SelectedRoles;

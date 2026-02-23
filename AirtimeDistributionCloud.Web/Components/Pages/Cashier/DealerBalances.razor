@@ -6,7 +6,7 @@
 @inject ISnackbar Snackbar
 @rendermode InteractiveServer
 
-<PageTitle>Dealer Balances - Airtime Distribution</PageTitle>
+<PageTitle>Dealer Balances - RasidBase</PageTitle>
 
 <div class="page-header">
     <h1>Dealer Balances</h1>
@@ -23,7 +23,7 @@
             <PropertyColumn Property="x => x.DealerType" Title="Type" />
             <TemplateColumn Title="Cash Balance">
                 <CellTemplate>
-                    <MudText Color="@(context.Item.CashBalance >= 0 ? Color.Success : Color.Error)">
+                    <MudText Color="@(context.Item.CashBalance == 0 ? Color.Success : Color.Error)">
                         @context.Item.CashBalance.ToString("C6")
                     </MudText>
                 </CellTemplate>

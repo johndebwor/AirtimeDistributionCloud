@@ -15,6 +15,10 @@ public class Dealer : BaseEntity
     public string? State { get; set; }
     public string? County { get; set; }
     public string? PhysicalAddress { get; set; }
+    public bool IsActive { get; set; } = true;
+    public string DealerNumber { get; set; } = string.Empty;
+    public string? PhoneNumber { get; set; }
+    public string? DocumentPath { get; set; }
 
     public ICollection<DealerProduct> DealerProducts { get; set; } = new List<DealerProduct>();
     public ICollection<AirtimeTransfer> AirtimeTransfers { get; set; } = new List<AirtimeTransfer>();

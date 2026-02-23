@@ -1,4 +1,4 @@
-﻿@page "/Account/Manage/RenamePasskey/{Id}"
+@page "/Account/Manage/RenamePasskey/{Id}"
 
 @using AirtimeDistributionCloud.Core.Entities
 @using System.ComponentModel.DataAnnotations
@@ -8,27 +8,44 @@
 @inject UserManager<ApplicationUser> UserManager
 @inject IdentityRedirectManager RedirectManager
 
-<EditForm Model="Input" OnValidSubmit="Rename" FormName="rename-passkey" method="post">
-    <DataAnnotationsValidator />
-    @if (passkey?.Name is { } name)
-    {
-        <h4>Enter a new name for your "@name" passkey</h4>
-    }
-    else
-    {
-        <h4>Enter a name for your passkey</h4>
-    }
-    <hr />
-    <ValidationSummary class="text-danger" role="alert" />
-    <div class="form-floating mb-3">
-        <InputText @bind-Value="Input.Name" id="Input.Name" class="form-control" aria-required="true" placeholder="My passkey" />
-        <label for="Input.Name" class="form-label">Passkey name</label>
-        <ValidationMessage For="() => Input.Name" class="text-danger" />
-    </div>
-    <div>
-        <button type="submit" class="w-100 btn btn-lg btn-primary">Continue</button>
-    </div>
-</EditForm>
+<PageTitle>Rename Passkey - RasidBase</PageTitle>
+
+<div class="page-header">
+    <h1>Rename Passkey</h1>
+    <p>Give your passkey a recognizable name</p>
+</div>
+
+<MudGrid Justify="Justify.Center">
+    <MudItem xs="12" sm="8" md="5">
+        <MudPaper Elevation="0" Class="data-card pa-6">
+            <MudText Typo="Typo.body1" Class="mb-4">
+                @if (passkey?.Name is { } name)
+                {
+                    <span>Enter a new name for your "<strong>@name</strong>" passkey</span>
+                }
+                else
+                {
+                    <span>Enter a name for your passkey</span>
+                }
+            </MudText>
+            <EditForm Model="Input" OnValidSubmit="Rename" FormName="rename-passkey" method="post">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="text-danger" role="alert" />
+                <div class="mb-4">
+                    <label class="mud-input-label">Passkey Name</label>
+                    <InputText @bind-Value="Input.Name" id="Input.Name"
+                               class="form-control mud-input-root" aria-required="true"
+                               placeholder="e.g. My laptop, Work phone" />
+                    <ValidationMessage For="() => Input.Name" class="text-danger mud-input-helper-text" />
+                </div>
+                <button type="submit" class="mud-button-root mud-button mud-button-filled mud-button-filled-primary mud-button-filled-size-medium mud-ripple w-100"
+                        style="height:42px; font-size:0.9rem; letter-spacing:0.05em;">
+                    Save Name
+                </button>
+            </EditForm>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
 
 @code {
     private ApplicationUser? user;

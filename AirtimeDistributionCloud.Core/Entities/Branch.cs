@@ -5,6 +5,7 @@ public class Branch : BaseEntity
     public string Name { get; set; } = string.Empty;
     public string Location { get; set; } = string.Empty;
     public bool IsActive { get; set; } = true;
+    public bool IsDefault { get; set; }
 
     public ICollection<ApplicationUser> Users { get; set; } = new List<ApplicationUser>();
     public ICollection<AirtimeTransfer> AirtimeTransfers { get; set; } = new List<AirtimeTransfer>();

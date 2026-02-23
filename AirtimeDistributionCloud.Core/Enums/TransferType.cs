@@ -2,6 +2,6 @@ namespace AirtimeDistributionCloud.Core.Enums;
 
 public enum TransferType
 {
-    Loan = 0,
+    Airtime = 0,
     Cash = 1
 }

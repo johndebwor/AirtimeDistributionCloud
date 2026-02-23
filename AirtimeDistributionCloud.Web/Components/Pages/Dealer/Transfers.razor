@@ -11,7 +11,7 @@
 @inject ISnackbar Snackbar
 @rendermode InteractiveServer
 
-<PageTitle>Airtime Transfers - Airtime Distribution</PageTitle>
+<PageTitle>Airtime Transfers - RasidBase</PageTitle>
 
 <div class="page-header">
     <h1>Airtime Transfers</h1>
@@ -38,8 +38,8 @@
             <PropertyColumn Property="x => x.Amount" Title="Amount" Format="C6" />
             <TemplateColumn Title="Type" Sortable="false">
                 <CellTemplate>
-                    <MudChip T="string" Color="@(context.Item.TransferType == TransferType.Loan ? Color.Warning : Color.Success)"
-                             Size="Size.Small">@context.Item.TransferType</MudChip>
+                    <MudChip T="string" Color="@(context.Item.TransferType == TransferType.Airtime ? Color.Warning : Color.Success)"
+                             Size="Size.Small">@GetTransferTypeDisplay(context.Item.TransferType)</MudChip>
                 </CellTemplate>
             </TemplateColumn>
             <TemplateColumn Title="Status" Sortable="false">
@@ -50,6 +50,7 @@
                             DepositStatus.Pending => Color.Warning,
                             DepositStatus.Approved => Color.Success,
                             DepositStatus.Rejected => Color.Error,
+                            DepositStatus.Cancelled => Color.Dark,
                             _ => Color.Default
                         };
                     }
@@ -91,6 +92,12 @@
         }
     }
 
+    private static string GetTransferTypeDisplay(TransferType t) => t switch
+    {
+        TransferType.Cash => "Cash from Dealer Account",
+        _ => t.ToString()
+    };
+
     private bool FilterFunc(AirtimeTransferDto t) =>
         string.IsNullOrWhiteSpace(_searchString) ||
         t.DealerName.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ||
@@ -102,12 +109,14 @@
         var products = (await ProductService.GetAllProductsAsync()).Where(p => p.IsActive).ToList();
         var branches = (await BranchService.GetAllBranchesAsync()).Where(b => b.IsActive).ToList();
         var dealers = await DealerService.GetAllDealersAsync();
+        var dealerProductRates = (await DealerService.GetAllDealerProductRatesAsync()).ToList();
 
         var parameters = new DialogParameters<TransferDialog>
         {
             { x => x.Products, products },
             { x => x.Branches, branches },
-            { x => x.Dealers, dealers.ToList() }
+            { x => x.Dealers, dealers.ToList() },
+            { x => x.DealerProductRates, dealerProductRates }
         };
         var dialog = await DialogService.ShowAsync<TransferDialog>("New Airtime Transfer", parameters,
             new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });

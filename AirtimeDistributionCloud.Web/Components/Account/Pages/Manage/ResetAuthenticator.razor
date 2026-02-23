@@ -1,4 +1,4 @@
-﻿@page "/Account/Manage/ResetAuthenticator"
+@page "/Account/Manage/ResetAuthenticator"
 
 @using Microsoft.AspNetCore.Identity
 @using AirtimeDistributionCloud.Core.Entities
@@ -8,26 +8,34 @@
 @inject IdentityRedirectManager RedirectManager
 @inject ILogger<ResetAuthenticator> Logger
 
-<PageTitle>Reset authenticator key</PageTitle>
+<PageTitle>Reset Authenticator - RasidBase</PageTitle>
 
-<StatusMessage />
-<h3>Reset authenticator key</h3>
-<div class="alert alert-warning" role="alert">
-    <p>
-        <span class="glyphicon glyphicon-warning-sign"></span>
-        <strong>If you reset your authenticator key your authenticator app will not work until you reconfigure it.</strong>
-    </p>
-    <p>
-        This process disables 2FA until you verify your authenticator app.
-        If you do not complete your authenticator app configuration you may lose access to your account.
-    </p>
+<div class="page-header">
+    <h1>Reset Authenticator Key</h1>
+    <p>Reset your authenticator app configuration</p>
 </div>
-<div>
-    <form @formname="reset-authenticator" @onsubmit="OnSubmitAsync" method="post">
-        <AntiforgeryToken />
-        <button class="btn btn-danger" type="submit">Reset authenticator key</button>
-    </form>
-</div>
+
+<MudGrid Justify="Justify.Center">
+    <MudItem xs="12" sm="8" md="6">
+        <StatusMessage />
+        <MudPaper Elevation="0" Class="data-card pa-6">
+            <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-4">
+                <strong>If you reset your authenticator key your authenticator app will not work until you reconfigure it.</strong>
+                <MudText Typo="Typo.body2" Class="mt-1">
+                    This process disables 2FA until you verify your authenticator app.
+                    If you do not complete your authenticator app configuration you may lose access to your account.
+                </MudText>
+            </MudAlert>
+            <form @formname="reset-authenticator" @onsubmit="OnSubmitAsync" method="post">
+                <AntiforgeryToken />
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Error"
+                           FullWidth="true" StartIcon="@Icons.Material.Filled.RestartAlt">
+                    Reset Authenticator Key
+                </MudButton>
+            </form>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
 
 @code {
     [CascadingParameter]

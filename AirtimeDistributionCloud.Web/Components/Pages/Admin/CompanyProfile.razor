@@ -1,0 +1,303 @@
+@page "/admin/company-profile"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "SystemAdmin,SuperAdministrator")]
+@using AirtimeDistributionCloud.Core.Entities
+@using AirtimeDistributionCloud.Core.Interfaces
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Hosting
+@inject IUnitOfWork UnitOfWork
+@inject ISnackbar Snackbar
+@inject IWebHostEnvironment Env
+@rendermode InteractiveServer
+
+<PageTitle>Company Profile - RasidBase</PageTitle>
+
+<div class="page-header">
+    <h1>Company Profile</h1>
+    <p>Configure your company details for reports and documents</p>
+</div>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else
+{
+    <MudGrid Spacing="4">
+        <!-- Company Information -->
+        <MudItem xs="12" md="8">
+            <MudPaper Elevation="0" Class="data-card pa-6">
+                <MudText Typo="Typo.h6" Class="mb-4">Company Information</MudText>
+                <MudGrid>
+                    <MudItem xs="12" sm="8">
+                        <MudTextField @bind-Value="_companyName" Label="Company Name" Variant="Variant.Outlined"
+                                      Placeholder="Enter company name" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudTextField @bind-Value="_companyAbbreviation" Label="Abbreviation" Variant="Variant.Outlined"
+                                      Placeholder="e.g. RB" HelperText="Shown in sidebar navigation" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="_companyAddress" Label="Address" Variant="Variant.Outlined"
+                                      Lines="2" Placeholder="Enter company address" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudTextField @bind-Value="_tel1" Label="Tel 1 (Primary)" Variant="Variant.Outlined"
+                                      Placeholder="+211..." />
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudTextField @bind-Value="_tel2" Label="Tel 2" Variant="Variant.Outlined"
+                                      Placeholder="+211..." />
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudTextField @bind-Value="_tel3" Label="Tel 3" Variant="Variant.Outlined"
+                                      Placeholder="+211..." />
+                    </MudItem>
+                </MudGrid>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4"
+                           StartIcon="@Icons.Material.Filled.Save" OnClick="SaveCompanyInfo"
+                           Disabled="@_saving">
+                    Save Changes
+                </MudButton>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Logo & Stamp -->
+        <MudItem xs="12" md="4">
+            <!-- Company Logo -->
+            <MudPaper Elevation="0" Class="data-card pa-6 mb-4">
+                <MudText Typo="Typo.h6" Class="mb-3">Company Logo</MudText>
+                <div style="text-align:center; margin-bottom:16px;">
+                    @if (!string.IsNullOrEmpty(_logoPath))
+                    {
+                        <MudImage Src="@_logoPath" Alt="Company Logo" Width="160" Height="160"
+                                  ObjectFit="ObjectFit.Contain" Class="rounded" Elevation="1" />
+                    }
+                    else
+                    {
+                        <MudPaper Elevation="0" Style="width:160px;height:160px;margin:0 auto;display:flex;align-items:center;justify-content:center;border:2px dashed #ccc;border-radius:8px;">
+                            <MudIcon Icon="@Icons.Material.Outlined.Image" Size="Size.Large" Color="Color.Secondary" />
+                        </MudPaper>
+                    }
+                </div>
+                <MudFileUpload T="IBrowserFile" Accept=".png,.jpg,.jpeg,.svg" MaximumFileCount="1"
+                               FilesChanged="OnLogoSelected">
+                    <ActivatorContent>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true"
+                                   StartIcon="@Icons.Material.Filled.CloudUpload">
+                            Upload Logo
+                        </MudButton>
+                    </ActivatorContent>
+                </MudFileUpload>
+                @if (_logoFile is not null)
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Success" Class="mt-1">@_logoFile.Name selected</MudText>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-2"
+                               OnClick="SaveLogo" Disabled="@_saving"
+                               StartIcon="@Icons.Material.Filled.Save">Save Logo</MudButton>
+                }
+                @if (!string.IsNullOrEmpty(_logoPath))
+                {
+                    <MudButton Variant="Variant.Text" Color="Color.Error" FullWidth="true" Class="mt-1"
+                               OnClick="RemoveLogo" Disabled="@_saving"
+                               StartIcon="@Icons.Material.Filled.Delete">Remove Logo</MudButton>
+                }
+            </MudPaper>
+
+            <!-- Electronic Stamp -->
+            <MudPaper Elevation="0" Class="data-card pa-6">
+                <MudText Typo="Typo.h6" Class="mb-3">Electronic Stamp</MudText>
+                <div style="text-align:center; margin-bottom:16px;">
+                    @if (!string.IsNullOrEmpty(_stampPath))
+                    {
+                        <MudImage Src="@_stampPath" Alt="Electronic Stamp" Width="160" Height="160"
+                                  ObjectFit="ObjectFit.Contain" Class="rounded" Elevation="1" />
+                    }
+                    else
+                    {
+                        <MudPaper Elevation="0" Style="width:160px;height:160px;margin:0 auto;display:flex;align-items:center;justify-content:center;border:2px dashed #ccc;border-radius:8px;">
+                            <MudIcon Icon="@Icons.Material.Outlined.Verified" Size="Size.Large" Color="Color.Secondary" />
+                        </MudPaper>
+                    }
+                </div>
+                <MudFileUpload T="IBrowserFile" Accept=".png,.jpg,.jpeg,.svg" MaximumFileCount="1"
+                               FilesChanged="OnStampSelected">
+                    <ActivatorContent>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true"
+                                   StartIcon="@Icons.Material.Filled.CloudUpload">
+                            Upload Stamp
+                        </MudButton>
+                    </ActivatorContent>
+                </MudFileUpload>
+                @if (_stampFile is not null)
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Success" Class="mt-1">@_stampFile.Name selected</MudText>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-2"
+                               OnClick="SaveStamp" Disabled="@_saving"
+                               StartIcon="@Icons.Material.Filled.Save">Save Stamp</MudButton>
+                }
+                @if (!string.IsNullOrEmpty(_stampPath))
+                {
+                    <MudButton Variant="Variant.Text" Color="Color.Error" FullWidth="true" Class="mt-1"
+                               OnClick="RemoveStamp" Disabled="@_saving"
+                               StartIcon="@Icons.Material.Filled.Delete">Remove Stamp</MudButton>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    private bool _loading = true;
+    private bool _saving;
+
+    private string _companyName = "";
+    private string _companyAbbreviation = "";
+    private string _companyAddress = "";
+    private string _tel1 = "";
+    private string _tel2 = "";
+    private string _tel3 = "";
+    private string _logoPath = "";
+    private string _stampPath = "";
+
+    private IBrowserFile? _logoFile;
+    private IBrowserFile? _stampFile;
+
+    private Dictionary<string, SystemSetting> _settings = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        var allSettings = await UnitOfWork.Repository<SystemSetting>().GetAllAsync();
+        _settings = allSettings.ToDictionary(s => s.Key, s => s);
+
+        _companyName = GetValue("CompanyName");
+        _companyAbbreviation = GetValue("CompanyAbbreviation");
+        _companyAddress = GetValue("CompanyAddress");
+        _tel1 = GetValue("CompanyTel1");
+        _tel2 = GetValue("CompanyTel2");
+        _tel3 = GetValue("CompanyTel3");
+        _logoPath = GetValue("CompanyLogoPath");
+        _stampPath = GetValue("CompanyStampPath");
+
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private string GetValue(string key) =>
+        _settings.TryGetValue(key, out var s) ? s.Value : "";
+
+    private async Task SetValue(string key, string value)
+    {
+        if (_settings.TryGetValue(key, out var setting))
+        {
+            setting.Value = value;
+            await UnitOfWork.Repository<SystemSetting>().UpdateAsync(setting);
+        }
+        else
+        {
+            var newSetting = new SystemSetting { Key = key, Value = value, Description = "" };
+            await UnitOfWork.Repository<SystemSetting>().AddAsync(newSetting);
+            _settings[key] = newSetting;
+        }
+        await UnitOfWork.SaveChangesAsync();
+    }
+
+    private async Task SaveCompanyInfo()
+    {
+        _saving = true;
+        try
+        {
+            await SetValue("CompanyName", _companyName);
+            await SetValue("CompanyAbbreviation", _companyAbbreviation);
+            await SetValue("CompanyAddress", _companyAddress);
+            await SetValue("CompanyTel1", _tel1);
+            await SetValue("CompanyTel2", _tel2);
+            await SetValue("CompanyTel3", _tel3);
+            Snackbar.Add("Company information saved", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private void OnLogoSelected(IBrowserFile file) => _logoFile = file;
+    private void OnStampSelected(IBrowserFile file) => _stampFile = file;
+
+    private async Task SaveLogo()
+    {
+        if (_logoFile is null) return;
+        _saving = true;
+        try
+        {
+            _logoPath = await SaveUploadedFile(_logoFile, "company");
+            await SetValue("CompanyLogoPath", _logoPath);
+            _logoFile = null;
+            Snackbar.Add("Logo saved", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally { _saving = false; }
+    }
+
+    private async Task SaveStamp()
+    {
+        if (_stampFile is null) return;
+        _saving = true;
+        try
+        {
+            _stampPath = await SaveUploadedFile(_stampFile, "company");
+            await SetValue("CompanyStampPath", _stampPath);
+            _stampFile = null;
+            Snackbar.Add("Stamp saved", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally { _saving = false; }
+    }
+
+    private async Task RemoveLogo()
+    {
+        _saving = true;
+        try
+        {
+            _logoPath = "";
+            await SetValue("CompanyLogoPath", "");
+            Snackbar.Add("Logo removed", Severity.Success);
+        }
+        finally { _saving = false; }
+    }
+
+    private async Task RemoveStamp()
+    {
+        _saving = true;
+        try
+        {
+            _stampPath = "";
+            await SetValue("CompanyStampPath", "");
+            Snackbar.Add("Stamp removed", Severity.Success);
+        }
+        finally { _saving = false; }
+    }
+
+    private async Task<string> SaveUploadedFile(IBrowserFile file, string folder)
+    {
+        var uploadsDir = Path.Combine(Env.WebRootPath, "uploads", folder);
+        Directory.CreateDirectory(uploadsDir);
+        var ext = Path.GetExtension(file.Name);
+        var fileName = $"{Guid.NewGuid()}{ext}";
+        var filePath = Path.Combine(uploadsDir, fileName);
+        await using var stream = new FileStream(filePath, FileMode.Create);
+        await file.OpenReadStream(5 * 1024 * 1024).CopyToAsync(stream);
+        return $"/uploads/{folder}/{fileName}";
+    }
+}

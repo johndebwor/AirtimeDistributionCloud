@@ -10,7 +10,7 @@
 @inject ISnackbar Snackbar
 @rendermode InteractiveServer
 
-<PageTitle>Approvals - Airtime Distribution</PageTitle>
+<PageTitle>Approvals - RasidBase</PageTitle>
 
 <div class="page-header">
     <h1>Approvals</h1>
@@ -22,8 +22,17 @@
         <MudChip T="string" Value="@("Pending")" Default="true" Color="Color.Warning" Variant="Variant.Outlined">Pending</MudChip>
         <MudChip T="string" Value="@("Approved")" Color="Color.Success" Variant="Variant.Outlined">Approved</MudChip>
         <MudChip T="string" Value="@("Rejected")" Color="Color.Error" Variant="Variant.Outlined">Rejected</MudChip>
+        <MudChip T="string" Value="@("Cancelled")" Color="Color.Dark" Variant="Variant.Outlined">Cancelled</MudChip>
         <MudChip T="string" Value="@("All")" Variant="Variant.Outlined">All</MudChip>
     </MudChipSet>
+    @if (_pendingCount > 0 && _currentFilter == "Pending")
+    {
+        <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Small"
+                   StartIcon="@Icons.Material.Filled.DoneAll" OnClick="ApproveAll"
+                   Disabled="@_approvingAll">
+            Approve All (@_pendingCount)
+        </MudButton>
+    }
 </div>
 
 <MudPaper Elevation="0" Class="data-card pa-4">
@@ -43,6 +52,7 @@
                             DepositStatus.Pending => Color.Warning,
                             DepositStatus.Approved => Color.Success,
                             DepositStatus.Rejected => Color.Error,
+                            DepositStatus.Cancelled => Color.Dark,
                             _ => Color.Default
                         };
                     }
@@ -52,17 +62,23 @@
             <PropertyColumn Property="x => x.CreatedDate" Title="Date" Format="dd MMM yyyy HH:mm" />
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
-                    @if (context.Item.Status == DepositStatus.Pending)
-                    {
-                        <MudStack Row="true" Spacing="1">
+                    <MudStack Row="true" Spacing="1">
+                        @if (context.Item.Status == DepositStatus.Pending)
+                        {
                             <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Success"
                                        StartIcon="@Icons.Material.Filled.Check"
                                        OnClick="@(() => ApproveDeposit(context.Item))">Approve</MudButton>
                             <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Error"
                                        StartIcon="@Icons.Material.Filled.Close"
                                        OnClick="@(() => RejectDeposit(context.Item))">Reject</MudButton>
-                        </MudStack>
-                    }
+                        }
+                        @if (context.Item.Status == DepositStatus.Pending || context.Item.Status == DepositStatus.Approved)
+                        {
+                            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Dark"
+                                       StartIcon="@Icons.Material.Filled.Cancel"
+                                       OnClick="@(() => CancelDeposit(context.Item))">Cancel</MudButton>
+                        }
+                    </MudStack>
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
@@ -77,6 +93,8 @@
     private List<AirtimeDepositDto> _filteredDeposits = new();
     private string _currentFilter = "Pending";
     private bool _loading = true;
+    private bool _approvingAll;
+    private int _pendingCount => _allDeposits.Count(d => d.Status == DepositStatus.Pending);
 
     protected override async Task OnInitializedAsync()
     {
@@ -114,6 +132,7 @@
             "Pending" => _allDeposits.Where(d => d.Status == DepositStatus.Pending).ToList(),
             "Approved" => _allDeposits.Where(d => d.Status == DepositStatus.Approved).ToList(),
             "Rejected" => _allDeposits.Where(d => d.Status == DepositStatus.Rejected).ToList(),
+            "Cancelled" => _allDeposits.Where(d => d.Status == DepositStatus.Cancelled).ToList(),
             _ => _allDeposits.ToList()
         };
     }
@@ -168,5 +187,63 @@
                 Snackbar.Add($"Error: {ex.Message}", Severity.Error);
             }
         }
+    }
+
+    private async Task CancelDeposit(AirtimeDepositDto deposit)
+    {
+        var parameters = new DialogParameters<ApprovalNotesDialog>
+        {
+            { x => x.Title, $"Cancel Deposit #{deposit.Id}" },
+            { x => x.ActionLabel, "Cancel Deposit" },
+            { x => x.ActionColor, Color.Dark }
+        };
+        var dialog = await DialogService.ShowAsync<ApprovalNotesDialog>("Cancel Deposit", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is { Canceled: false, Data: string notes })
+        {
+            try
+            {
+                await DepositService.CancelDepositAsync(deposit.Id, CurrentUser.UserId ?? "", notes);
+                Snackbar.Add("Deposit cancelled successfully", Severity.Info);
+                await LoadDeposits();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private async Task ApproveAll()
+    {
+        var pending = _allDeposits.Where(d => d.Status == DepositStatus.Pending).ToList();
+        if (pending.Count == 0) return;
+
+        var confirm = await DialogService.ShowMessageBox(
+            "Approve All Deposits",
+            $"Are you sure you want to approve all {pending.Count} pending deposit(s)?",
+            yesText: "Approve All", cancelText: "Cancel");
+        if (confirm != true) return;
+
+        _approvingAll = true;
+        StateHasChanged();
+        var approved = 0;
+        var failed = 0;
+        foreach (var deposit in pending)
+        {
+            try
+            {
+                await DepositService.ApproveDepositAsync(deposit.Id, CurrentUser.UserId ?? "", "Bulk approved");
+                approved++;
+            }
+            catch
+            {
+                failed++;
+            }
+        }
+        _approvingAll = false;
+        Snackbar.Add($"{approved} deposit(s) approved" + (failed > 0 ? $", {failed} failed" : ""), failed > 0 ? Severity.Warning : Severity.Success);
+        await LoadDeposits();
     }
 }

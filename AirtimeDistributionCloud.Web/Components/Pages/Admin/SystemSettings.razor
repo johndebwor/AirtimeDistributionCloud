@@ -6,22 +6,39 @@
 @inject ISnackbar Snackbar
 @rendermode InteractiveServer
 
-<PageTitle>System Settings - Airtime Distribution</PageTitle>
+<PageTitle>System Settings - RasidBase</PageTitle>
 
 <div class="page-header">
     <h1>System Settings</h1>
     <p>Configure application-wide settings</p>
 </div>
 
-<MudPaper Elevation="0" Class="data-card pa-4">
-    @if (_loading)
-    {
-        <MudProgressLinear Indeterminate="true" />
-    }
-    else
-    {
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else
+{
+    <!-- General Settings -->
+    <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
+        <MudText Typo="Typo.h6" Class="mb-3">General Settings</MudText>
         <MudGrid>
-            @foreach (var setting in _settings)
+            <!-- Airtime Deposit Auto Approve Toggle -->
+            <MudItem xs="12">
+                <MudPaper Elevation="1" Class="pa-4" Style="border-radius:8px;">
+                    <div class="d-flex align-center justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.subtitle2">Airtime Deposit Auto Approve</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                Automatically approve new airtime deposits without admin review
+                            </MudText>
+                        </div>
+                        <MudSwitch T="bool" Value="_autoApproveDeposit" ValueChanged="OnAutoApproveChanged"
+                                   Color="Color.Primary" Disabled="@_saving" />
+                    </div>
+                </MudPaper>
+            </MudItem>
+            @foreach (var setting in GetGeneralSettings())
             {
                 <MudItem xs="12" sm="6">
                     <MudPaper Elevation="1" Class="pa-4 mb-2" Style="border-radius:8px;">
@@ -51,8 +68,246 @@
                 </MudItem>
             }
         </MudGrid>
+    </MudPaper>
+
+    <!-- Transfer Notification Settings -->
+    <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
+        <div class="d-flex align-center gap-2 mb-3">
+            <MudIcon Icon="@Icons.Material.Outlined.Notifications" />
+            <MudText Typo="Typo.h6">Transfer Notification Settings</MudText>
+        </div>
+
+        <MudGrid>
+            <!-- Enabled Toggle -->
+            <MudItem xs="12">
+                <MudPaper Elevation="1" Class="pa-4" Style="border-radius:8px;">
+                    <div class="d-flex align-center justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.subtitle2">Transfer Notification Enabled</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                Enable dealer notifications when airtime transfers are approved
+                            </MudText>
+                        </div>
+                        <MudSwitch T="bool" Value="_notificationEnabled" ValueChanged="OnNotificationEnabledChanged"
+                                   Color="Color.Primary" Disabled="@_saving" />
+                    </div>
+                </MudPaper>
+            </MudItem>
+
+            <!-- Notification Methods -->
+            <MudItem xs="12" sm="6">
+                <MudPaper Elevation="1" Class="pa-4" Style="border-radius:8px; height:100%;">
+                    <MudText Typo="Typo.subtitle2" Class="mb-1">Transfer Notification Method</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-3">
+                        Select one or more notification channels
+                    </MudText>
+                    <MudCheckBox T="bool" Value="_emailChecked" ValueChanged="OnEmailChanged"
+                                 Label="Email" Color="Color.Primary"
+                                 Disabled="@(!_notificationEnabled || _saving)" Class="mb-1" />
+                    <MudCheckBox T="bool" Value="_dealerWhatsAppChecked" ValueChanged="OnDealerWhatsAppChanged"
+                                 Label="Dealer WhatsApp" Color="Color.Primary"
+                                 Disabled="@(!_notificationEnabled || _saving)" Class="mb-1" />
+                    <MudCheckBox T="bool" Value="_whatsAppGroupChecked" ValueChanged="OnWhatsAppGroupChanged"
+                                 Label="WhatsApp Group" Color="Color.Primary"
+                                 Disabled="@(!_notificationEnabled || _saving)" />
+                </MudPaper>
+            </MudItem>
+
+            <!-- WhatsApp Group URL -->
+            <MudItem xs="12" sm="6">
+                <MudPaper Elevation="1" Class="pa-4" Style="border-radius:8px; height:100%;">
+                    <MudText Typo="Typo.subtitle2" Class="mb-1">Transfer Notification to WhatsApp Group Url</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-3">
+                        WhatsApp group invite URL (used when WhatsApp Group method is selected)
+                    </MudText>
+                    <div class="d-flex align-center gap-2">
+                        @if (_editingWhatsAppUrl)
+                        {
+                            <MudTextField @bind-Value="_whatsAppGroupUrl" Variant="Variant.Outlined"
+                                          Margin="Margin.Dense" Style="flex:1"
+                                          Placeholder="https://chat.whatsapp.com/..."
+                                          Disabled="@(!_notificationEnabled)" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Check" Color="Color.Success"
+                                           Size="Size.Small" OnClick="SaveWhatsAppGroupUrl"
+                                           Disabled="@(!_notificationEnabled || _saving)" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default"
+                                           Size="Size.Small" OnClick="@(() => _editingWhatsAppUrl = false)" />
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.body1" Style="flex:1; font-weight:600; word-break:break-all;">
+                                @(string.IsNullOrEmpty(_whatsAppGroupUrl) ? "(not set)" : _whatsAppGroupUrl)
+                            </MudText>
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary"
+                                           Size="Size.Small" OnClick="@(() => _editingWhatsAppUrl = true)"
+                                           Disabled="@(!_notificationEnabled)" />
+                        }
+                    </div>
+                </MudPaper>
+            </MudItem>
+
+            <!-- Template Editor with Preview -->
+            <MudItem xs="12">
+                <MudPaper Elevation="1" Class="pa-4" Style="border-radius:8px;">
+                    <MudText Typo="Typo.subtitle2" Class="mb-1">Transfer Notification Template</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-3">
+                        Available placeholders:
+                        <code>@("{{Name}}")</code>, <code>@("{{DealerNumber}}")</code>, <code>@("{{AirtimeTransferId}}")</code>,
+                        <code>@("{{Product}}")</code>, <code>@("{{AirtimeAmount}}")</code>, <code>@("{{CommissionAmount}}")</code>,
+                        <code>@("{{Branch}}")</code>, <code>@("{{CreatedDate}}")</code>, <code>@("{{TotalBalance}}")</code>
+                    </MudText>
+                    <MudGrid>
+                        <MudItem xs="12" md="6">
+                            <MudText Typo="Typo.body2" Class="mb-2" Style="font-weight:600;">Editor</MudText>
+                            <MudTextField @bind-Value="_templateValue" Variant="Variant.Outlined"
+                                          Lines="12" Immediate="true"
+                                          Disabled="@(!_notificationEnabled)"
+                                          Style="font-family:monospace; font-size:0.85rem;" />
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                                       Class="mt-2" OnClick="SaveTemplate"
+                                       Disabled="@(!_notificationEnabled || _saving)"
+                                       StartIcon="@Icons.Material.Filled.Save">Save Template</MudButton>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudText Typo="Typo.body2" Class="mb-2" Style="font-weight:600;">Preview</MudText>
+                            <MudPaper Elevation="0" Class="pa-4"
+                                      Style="border-radius:8px; border: 1px solid var(--mud-palette-divider); background: var(--mud-palette-background); min-height: 260px; font-size: 0.85rem;">
+                                @((MarkupString)GetTemplatePreview())
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <!-- Email Configuration -->
+    <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
+        <div class="d-flex align-center gap-2 mb-3">
+            <MudIcon Icon="@Icons.Material.Outlined.Email" />
+            <MudText Typo="Typo.h6">Email Configuration (SMTP)</MudText>
+        </div>
+
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_smtpHost" Label="SMTP Server" Variant="Variant.Outlined"
+                              Margin="Margin.Dense" Placeholder="smtp.gmail.com" />
+            </MudItem>
+            <MudItem xs="12" sm="3">
+                <MudTextField @bind-Value="_smtpPort" Label="Port" Variant="Variant.Outlined"
+                              Margin="Margin.Dense" Placeholder="587" />
+            </MudItem>
+            <MudItem xs="12" sm="3">
+                <MudPaper Elevation="0" Class="d-flex align-center" Style="height:100%;">
+                    <MudSwitch T="bool" @bind-Value="_smtpUseSsl" Label="Use SSL/TLS" Color="Color.Primary" />
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_smtpUsername" Label="Username" Variant="Variant.Outlined"
+                              Margin="Margin.Dense" Placeholder="user@example.com" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_smtpPassword" Label="Password" Variant="Variant.Outlined"
+                              Margin="Margin.Dense" Placeholder="••••••••"
+                              InputType="@(_showPassword ? InputType.Text : InputType.Password)"
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@(_showPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                              OnAdornmentClick="@(() => _showPassword = !_showPassword)" />
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_smtpSenderEmail" Label="Sender Email (From)" Variant="Variant.Outlined"
+                              Margin="Margin.Dense" Placeholder="noreply@company.com" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_smtpSenderName" Label="Sender Name" Variant="Variant.Outlined"
+                              Margin="Margin.Dense" Placeholder="RasidBase" />
+            </MudItem>
+
+            <MudItem xs="12">
+                <div class="d-flex align-center gap-2">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                               OnClick="SaveEmailSettings" Disabled="@_savingEmail"
+                               StartIcon="@Icons.Material.Filled.Save">
+                        @(_savingEmail ? "Saving..." : "Save Email Settings")
+                    </MudButton>
+                </div>
+            </MudItem>
+
+            <!-- Test Email -->
+            <MudItem xs="12">
+                <MudPaper Elevation="1" Class="pa-4" Style="border-radius:8px;">
+                    <MudText Typo="Typo.subtitle2" Class="mb-1">Send Test Email</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-3">
+                        Save settings first, then send a test email to verify the configuration
+                    </MudText>
+                    <div class="d-flex align-center gap-2">
+                        <MudTextField @bind-Value="_testEmailAddress" Label="Recipient Email" Variant="Variant.Outlined"
+                                      Margin="Margin.Dense" Style="max-width:360px;" Placeholder="test@example.com" />
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                                   OnClick="SendTestEmail" Disabled="@(_sendingTest || string.IsNullOrWhiteSpace(_testEmailAddress))"
+                                   StartIcon="@Icons.Material.Filled.Send">
+                            @(_sendingTest ? "Sending..." : "Send Test")
+                        </MudButton>
+                    </div>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <!-- Danger Zone (Formulas) -->
+    @if (_settings.Any(s => IsDangerSetting(s.Key)))
+    {
+        <MudPaper Elevation="0" Class="data-card pa-4">
+            <MudPaper Elevation="1" Class="pa-4" Style="border: 2px solid var(--mud-palette-error); border-radius: 8px;">
+                <div class="d-flex align-center gap-2 mb-2">
+                    <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" />
+                    <MudText Typo="Typo.h6" Color="Color.Error">Danger Zone</MudText>
+                </div>
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+                    These formulas define how airtime calculations are performed. Edit with caution — changes serve as documentation for all future transactions.
+                </MudText>
+                <MudGrid>
+                    @foreach (var setting in _settings.Where(s => IsDangerSetting(s.Key)))
+                    {
+                        <MudItem xs="12">
+                            <MudPaper Elevation="1" Class="pa-4 mb-2" Style="border-radius:8px; border-left: 4px solid var(--mud-palette-error);">
+                                <MudText Typo="Typo.subtitle2" Class="mb-1">@FormatKey(setting.Key)</MudText>
+                                @if (!string.IsNullOrEmpty(setting.Description))
+                                {
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-2">@setting.Description</MudText>
+                                }
+                                <div class="d-flex align-center gap-2">
+                                    @if (_editingId == setting.Id)
+                                    {
+                                        <MudTextField @bind-Value="_editValue" Variant="Variant.Outlined"
+                                                      Margin="Margin.Dense" Style="flex:1; font-family:monospace;" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.Check" Color="Color.Success"
+                                                       Size="Size.Small" OnClick="@(() => SaveSetting(setting))" Disabled="@_saving" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default"
+                                                       Size="Size.Small" OnClick="CancelEdit" />
+                                    }
+                                    else
+                                    {
+                                        <MudText Typo="Typo.body1" Style="flex:1; font-weight:600; font-family:monospace;">@setting.Value</MudText>
+                                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Error"
+                                                       Size="Size.Small" OnClick="@(() => StartEdit(setting))" />
+                                    }
+                                </div>
+                            </MudPaper>
+                        </MudItem>
+                    }
+                </MudGrid>
+                <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small"
+                           Class="mt-3" OnClick="ResetFormulasToDefault"
+                           StartIcon="@Icons.Material.Filled.RestartAlt" Disabled="@_saving">
+                    Reset to Default
+                </MudButton>
+            </MudPaper>
+        </MudPaper>
     }
-</MudPaper>
+}
 
 @code {
     private List<SystemSetting> _settings = new();
@@ -60,6 +315,50 @@
     private bool _saving;
     private int? _editingId;
     private string _editValue = "";
+
+    // General state
+    private bool _autoApproveDeposit;
+
+    // Notification state
+    private bool _notificationEnabled;
+    private bool _emailChecked;
+    private bool _dealerWhatsAppChecked;
+    private bool _whatsAppGroupChecked;
+    private string _whatsAppGroupUrl = "";
+    private string _templateValue = "";
+    private bool _editingWhatsAppUrl;
+
+    // Email configuration state
+    private string _smtpHost = "";
+    private string _smtpPort = "587";
+    private string _smtpUsername = "";
+    private string _smtpPassword = "";
+    private string _smtpSenderEmail = "";
+    private string _smtpSenderName = "";
+    private bool _smtpUseSsl = true;
+    private bool _savingEmail;
+    private bool _sendingTest;
+    private string _testEmailAddress = "";
+    private bool _showPassword;
+
+    // General settings display order (AirtimeDepositAutoApprove handled as toggle above)
+    private static readonly string[] GeneralSettingsOrder =
+        ["ExpenseApprovalThreshold", "CommissionMinPercentage", "CommissionMaxPercentage"];
+
+    private static readonly HashSet<string> ToggleKeys =
+        ["AirtimeDepositAutoApprove"];
+
+    private static readonly HashSet<string> NotificationKeys =
+        ["TransferNotificationEnabled", "TransferNotificationMethod",
+         "TransferNotificationWhatsAppGroupUrl", "TransferNotificationTemplate"];
+
+    private static readonly HashSet<string> EmailKeys =
+        ["SmtpHost", "SmtpPort", "SmtpUsername", "SmtpPassword",
+         "SmtpSenderEmail", "SmtpSenderName", "SmtpUseSsl"];
+
+    private static readonly HashSet<string> CompanyKeys =
+        ["CompanyName", "CompanyAbbreviation", "CompanyAddress", "CompanyTel1", "CompanyTel2", "CompanyTel3",
+         "CompanyLogoPath", "CompanyStampPath"];
 
     protected override async Task OnInitializedAsync()
     {
@@ -72,6 +371,7 @@
         try
         {
             _settings = (await UnitOfWork.Repository<SystemSetting>().GetAllAsync()).ToList();
+            InitializeNotificationState();
         }
         catch (Exception ex)
         {
@@ -82,6 +382,58 @@
             _loading = false;
         }
     }
+
+    private void InitializeNotificationState()
+    {
+        var dict = _settings.ToDictionary(s => s.Key, s => s.Value);
+
+        _autoApproveDeposit = dict.TryGetValue("AirtimeDepositAutoApprove", out var aa) &&
+                              string.Equals(aa, "Yes", StringComparison.OrdinalIgnoreCase);
+
+        _notificationEnabled = dict.TryGetValue("TransferNotificationEnabled", out var en) &&
+                               string.Equals(en, "Yes", StringComparison.OrdinalIgnoreCase);
+
+        if (dict.TryGetValue("TransferNotificationMethod", out var methods))
+        {
+            var parts = methods.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            _emailChecked = parts.Contains("Email");
+            _dealerWhatsAppChecked = parts.Contains("DealerWhatsApp");
+            _whatsAppGroupChecked = parts.Contains("WhatsAppGroup");
+        }
+
+        _whatsAppGroupUrl = dict.GetValueOrDefault("TransferNotificationWhatsAppGroupUrl", "");
+        _templateValue = dict.GetValueOrDefault("TransferNotificationTemplate", "");
+
+        // Email configuration
+        _smtpHost = dict.GetValueOrDefault("SmtpHost", "");
+        _smtpPort = dict.GetValueOrDefault("SmtpPort", "587");
+        _smtpUsername = dict.GetValueOrDefault("SmtpUsername", "");
+        _smtpPassword = dict.GetValueOrDefault("SmtpPassword", "");
+        _smtpSenderEmail = dict.GetValueOrDefault("SmtpSenderEmail", "");
+        _smtpSenderName = dict.GetValueOrDefault("SmtpSenderName", "");
+        _smtpUseSsl = !dict.TryGetValue("SmtpUseSsl", out var ssl) ||
+                      string.Equals(ssl, "Yes", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private IEnumerable<SystemSetting> GetGeneralSettings()
+    {
+        var dict = _settings.ToDictionary(s => s.Key);
+        foreach (var key in GeneralSettingsOrder)
+        {
+            if (dict.TryGetValue(key, out var setting))
+                yield return setting;
+        }
+        // Any additional non-notification, non-formula, non-toggle, non-company settings
+        foreach (var s in _settings.Where(s => !NotificationKeys.Contains(s.Key) &&
+                                               !IsDangerSetting(s.Key) &&
+                                               !GeneralSettingsOrder.Contains(s.Key) &&
+                                               !ToggleKeys.Contains(s.Key) &&
+                                               !CompanyKeys.Contains(s.Key) &&
+                                               !EmailKeys.Contains(s.Key)))
+            yield return s;
+    }
+
+    // --- General settings edit ---
 
     private void StartEdit(SystemSetting setting)
     {
@@ -113,6 +465,220 @@
         finally
         {
             _saving = false;
+        }
+    }
+
+    // --- Notification settings ---
+
+    private async Task SaveNotificationSetting(string key, string value)
+    {
+        _saving = true;
+        try
+        {
+            var setting = _settings.FirstOrDefault(s => s.Key == key);
+            if (setting is not null)
+            {
+                setting.Value = value;
+                await UnitOfWork.Repository<SystemSetting>().UpdateAsync(setting);
+                await UnitOfWork.SaveChangesAsync();
+                Snackbar.Add("Setting updated", Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task OnAutoApproveChanged(bool value)
+    {
+        _autoApproveDeposit = value;
+        await SaveNotificationSetting("AirtimeDepositAutoApprove", value ? "Yes" : "No");
+    }
+
+    private async Task OnNotificationEnabledChanged(bool value)
+    {
+        _notificationEnabled = value;
+        await SaveNotificationSetting("TransferNotificationEnabled", value ? "Yes" : "No");
+    }
+
+    private async Task OnEmailChanged(bool value)
+    {
+        _emailChecked = value;
+        await SaveMethodSettings();
+    }
+
+    private async Task OnDealerWhatsAppChanged(bool value)
+    {
+        _dealerWhatsAppChecked = value;
+        await SaveMethodSettings();
+    }
+
+    private async Task OnWhatsAppGroupChanged(bool value)
+    {
+        _whatsAppGroupChecked = value;
+        await SaveMethodSettings();
+    }
+
+    private async Task SaveMethodSettings()
+    {
+        var methods = new List<string>();
+        if (_emailChecked) methods.Add("Email");
+        if (_dealerWhatsAppChecked) methods.Add("DealerWhatsApp");
+        if (_whatsAppGroupChecked) methods.Add("WhatsAppGroup");
+        await SaveNotificationSetting("TransferNotificationMethod", string.Join(",", methods));
+    }
+
+    private async Task SaveWhatsAppGroupUrl()
+    {
+        await SaveNotificationSetting("TransferNotificationWhatsAppGroupUrl", _whatsAppGroupUrl);
+        _editingWhatsAppUrl = false;
+    }
+
+    private async Task SaveTemplate()
+    {
+        await SaveNotificationSetting("TransferNotificationTemplate", _templateValue);
+    }
+
+    // --- Template preview ---
+
+    private string GetTemplatePreview()
+    {
+        if (string.IsNullOrWhiteSpace(_templateValue))
+            return "<em style='color:var(--mud-palette-text-secondary)'>(No template configured)</em>";
+
+        var preview = System.Net.WebUtility.HtmlEncode(_templateValue)
+            .Replace("{{Name}}", "<strong>John Okoth</strong>")
+            .Replace("{{DealerNumber}}", "<strong>DLR-0001</strong>")
+            .Replace("{{AirtimeTransferId}}", "<strong>1042</strong>")
+            .Replace("{{Product}}", "<strong>MTN Airtime</strong>")
+            .Replace("{{AirtimeAmount}}", "<strong>50,000.00</strong>")
+            .Replace("{{CommissionAmount}}", "<strong>5,000.00</strong>")
+            .Replace("{{Branch}}", "<strong>Main Branch</strong>")
+            .Replace("{{CreatedDate}}", $"<strong>{DateTime.Now:dd/MM/yyyy HH:mm}</strong>")
+            .Replace("{{TotalBalance}}", "<strong>150,000.00</strong>")
+            .Replace("\n", "<br />");
+
+        return preview;
+    }
+
+    private static readonly Dictionary<string, string> DefaultFormulas = new()
+    {
+        ["AirtimeDepositFormula"] = "TotalAmount = Amount + (Amount × BonusPercentage ÷ 100)",
+        ["AirtimeTransferFormula"] = "AirtimeAmount = Amount ÷ (1 + CommissionRate ÷ 100); CommissionAmount = Amount − AirtimeAmount"
+    };
+
+    private async Task ResetFormulasToDefault()
+    {
+        _saving = true;
+        try
+        {
+            foreach (var setting in _settings.Where(s => IsDangerSetting(s.Key)))
+            {
+                if (DefaultFormulas.TryGetValue(setting.Key, out var defaultValue))
+                {
+                    setting.Value = defaultValue;
+                    await UnitOfWork.Repository<SystemSetting>().UpdateAsync(setting);
+                }
+            }
+            await UnitOfWork.SaveChangesAsync();
+            Snackbar.Add("Formulas reset to default", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private static bool IsDangerSetting(string key) => key.EndsWith("Formula");
+
+    // --- Email configuration ---
+
+    private async Task SaveEmailSettings()
+    {
+        _savingEmail = true;
+        try
+        {
+            var emailSettings = new Dictionary<string, string>
+            {
+                ["SmtpHost"] = _smtpHost,
+                ["SmtpPort"] = _smtpPort,
+                ["SmtpUsername"] = _smtpUsername,
+                ["SmtpPassword"] = _smtpPassword,
+                ["SmtpSenderEmail"] = _smtpSenderEmail,
+                ["SmtpSenderName"] = _smtpSenderName,
+                ["SmtpUseSsl"] = _smtpUseSsl ? "Yes" : "No"
+            };
+
+            foreach (var (key, value) in emailSettings)
+            {
+                var setting = _settings.FirstOrDefault(s => s.Key == key);
+                if (setting is not null)
+                {
+                    setting.Value = value;
+                    await UnitOfWork.Repository<SystemSetting>().UpdateAsync(setting);
+                }
+            }
+            await UnitOfWork.SaveChangesAsync();
+            Snackbar.Add("Email settings saved", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _savingEmail = false;
+        }
+    }
+
+    private async Task SendTestEmail()
+    {
+        _sendingTest = true;
+        try
+        {
+            if (string.IsNullOrWhiteSpace(_smtpHost))
+            {
+                Snackbar.Add("Please configure SMTP server first", Severity.Warning);
+                return;
+            }
+
+            using var smtp = new System.Net.Mail.SmtpClient(_smtpHost);
+            smtp.Port = int.TryParse(_smtpPort, out var port) ? port : 587;
+            smtp.EnableSsl = _smtpUseSsl;
+            if (!string.IsNullOrWhiteSpace(_smtpUsername))
+                smtp.Credentials = new System.Net.NetworkCredential(_smtpUsername, _smtpPassword);
+
+            var from = new System.Net.Mail.MailAddress(
+                string.IsNullOrWhiteSpace(_smtpSenderEmail) ? _smtpUsername : _smtpSenderEmail,
+                string.IsNullOrWhiteSpace(_smtpSenderName) ? "RasidBase" : _smtpSenderName);
+
+            var message = new System.Net.Mail.MailMessage(from, new System.Net.Mail.MailAddress(_testEmailAddress))
+            {
+                Subject = "RasidBase - Test Email",
+                Body = "This is a test email from RasidBase to verify your SMTP configuration is working correctly.\n\nIf you received this, your email settings are configured properly.",
+                IsBodyHtml = false
+            };
+
+            await smtp.SendMailAsync(message);
+            Snackbar.Add($"Test email sent to {_testEmailAddress}", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to send: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _sendingTest = false;
+            await InvokeAsync(StateHasChanged);
         }
     }
 

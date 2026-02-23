@@ -21,5 +21,8 @@ public class DealerConfiguration : IEntityTypeConfiguration<Dealer>
         builder.Property(d => d.CreatedBy).HasMaxLength(256);
         builder.Property(d => d.ModifiedBy).HasMaxLength(256);
         builder.Property(d => d.Type).HasConversion<string>().HasMaxLength(20);
+        builder.Property(d => d.DealerNumber).IsRequired().HasMaxLength(20);
+        builder.HasIndex(d => d.DealerNumber).IsUnique();
+        builder.Property(d => d.PhoneNumber).HasMaxLength(20);
     }
 }

@@ -1,0 +1,144 @@
+@page "/admin/permissions"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "SystemAdmin")]
+@using AirtimeDistributionCloud.Application.Services
+@inject IPermissionService PermissionService
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>Permissions - RasidBase</PageTitle>
+
+<div class="page-header">
+    <h1>Permissions</h1>
+    <p>Manage role access to pages and features</p>
+</div>
+
+<MudPaper Elevation="0" Class="data-card pa-4">
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" />
+    }
+    else
+    {
+        <MudTable Items="@_rows" Dense="true" Hover="true" Striped="true" Elevation="0">
+            <HeaderContent>
+                <MudTh>Page</MudTh>
+                <MudTh Style="text-align:center; min-width:140px;">
+                    <MudText>SystemAdmin</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Always full access</MudText>
+                </MudTh>
+                @foreach (var role in IPermissionService.ManagedRoles)
+                {
+                    <MudTh Style="text-align:center; min-width:140px;">@role</MudTh>
+                }
+            </HeaderContent>
+            <RowTemplate>
+                @if (context.IsSection)
+                {
+                    <MudTd colspan="5">
+                        <div style="display:flex; align-items:center; gap:8px; padding: 8px 0 4px 0;">
+                            <span style="width:10px; height:10px; border-radius:50%; display:inline-block; background:@context.SectionColor;"></span>
+                            <MudText Typo="Typo.subtitle2" Style="font-weight:700; text-transform:uppercase; letter-spacing:0.05em;">
+                                @context.Label
+                            </MudText>
+                        </div>
+                    </MudTd>
+                }
+                else
+                {
+                    <MudTd>
+                        <MudText Typo="Typo.body2" Class="ml-4">@context.Label</MudText>
+                    </MudTd>
+                    <MudTd Style="text-align:center;">
+                        <MudCheckBox T="bool" Value="true" Disabled="true" Color="Color.Primary" />
+                    </MudTd>
+                    @foreach (var role in IPermissionService.ManagedRoles)
+                    {
+                        var pageKey = context.PageKey!;
+                        var roleName = role;
+                        <MudTd Style="text-align:center;">
+                            <MudCheckBox T="bool"
+                                         Value="@GetPermission(roleName, pageKey)"
+                                         ValueChanged="@((bool v) => OnPermissionChanged(roleName, pageKey, v))"
+                                         Color="Color.Primary" />
+                        </MudTd>
+                    }
+                }
+            </RowTemplate>
+        </MudTable>
+    }
+</MudPaper>
+
+@code {
+    private bool _loading = true;
+    private Dictionary<string, Dictionary<string, bool>> _permissions = new();
+    private List<PermissionRow> _rows = new();
+
+    private record PermissionRow(string Label, string? PageKey, bool IsSection, string SectionColor = "");
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        try
+        {
+            _permissions = await PermissionService.GetAllPermissionsAsync();
+            BuildRows();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading permissions: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void BuildRows()
+    {
+        _rows.Clear();
+
+        _rows.Add(new("Admin", null, true, "#3B82F6"));
+        foreach (var key in IPermissionService.AdminKeys)
+            _rows.Add(new(IPermissionService.PageDisplayNames[key], key, false));
+
+        _rows.Add(new("Dealers", null, true, "#F59E0B"));
+        foreach (var key in IPermissionService.DealerKeys)
+            _rows.Add(new(IPermissionService.PageDisplayNames[key], key, false));
+
+        _rows.Add(new("Cashier", null, true, "#16A34A"));
+        foreach (var key in IPermissionService.CashierKeys)
+            _rows.Add(new(IPermissionService.PageDisplayNames[key], key, false));
+
+        _rows.Add(new("System", null, true, "#A855F7"));
+        foreach (var key in IPermissionService.SystemKeys)
+            _rows.Add(new(IPermissionService.PageDisplayNames[key], key, false));
+    }
+
+    private bool GetPermission(string role, string pageKey)
+    {
+        return _permissions.TryGetValue(role, out var pages)
+            && pages.TryGetValue(pageKey, out var allowed)
+            && allowed;
+    }
+
+    private async Task OnPermissionChanged(string role, string pageKey, bool value)
+    {
+        // Optimistically update local state
+        if (!_permissions.ContainsKey(role))
+            _permissions[role] = new Dictionary<string, bool>();
+        _permissions[role][pageKey] = value;
+
+        try
+        {
+            await PermissionService.SetPermissionAsync(role, pageKey, value);
+            Snackbar.Add($"{IPermissionService.PageDisplayNames[pageKey]} {(value ? "granted to" : "revoked from")} {role}", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            // Revert on failure
+            _permissions[role][pageKey] = !value;
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            StateHasChanged();
+        }
+    }
+}
