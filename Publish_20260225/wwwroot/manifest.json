@@ -1,0 +1,16 @@
+{
+  "name": "RasidBase",
+  "short_name": "RasidBase",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#1E3A5F",
+  "description": "Smart Airtime Distribution",
+  "icons": [
+    {
+      "src": "favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
