@@ -10,28 +10,28 @@
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
-<PageTitle>Asset Registry - RasidBase</PageTitle>
+<PageTitle>@(Lang?.T("Assets_Title") ?? "Asset Registry") - RasidBase</PageTitle>
 
 <div class="page-header">
-    <h1>Asset Registry</h1>
-    <p>Track and manage company assets across all branches</p>
+    <h1>@(Lang?.T("Assets_Title") ?? "Asset Registry")</h1>
+    <p>@(Lang?.T("Assets_Subtitle") ?? "Track and manage company assets across all branches")</p>
 </div>
 
 <div class="page-toolbar">
-    <MudTextField @bind-Value="_searchString" Placeholder="Search assets..." Adornment="Adornment.Start"
+    <MudTextField @bind-Value="_searchString" Placeholder="@(Lang?.T("Assets_Search") ?? "Search assets...")" Adornment="Adornment.Start"
                   AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
                   Immediate="true" Style="max-width: 300px;" />
     <MudChipSet T="string" SelectionMode="SelectionMode.SingleSelection" SelectedValue="_selectedStatus"
                 SelectedValueChanged="OnStatusFilterChanged" Class="ms-4">
-        <MudChip T="string" Value="@("All")" Default="true" Variant="Variant.Outlined">All</MudChip>
-        <MudChip T="string" Value="@("Active")" Color="Color.Success" Variant="Variant.Outlined">Active</MudChip>
-        <MudChip T="string" Value="@("InMaintenance")" Color="Color.Warning" Variant="Variant.Outlined">In Maintenance</MudChip>
-        <MudChip T="string" Value="@("Disposed")" Color="Color.Error" Variant="Variant.Outlined">Disposed</MudChip>
-        <MudChip T="string" Value="@("WrittenOff")" Color="Color.Dark" Variant="Variant.Outlined">Written Off</MudChip>
+        <MudChip T="string" Value="@("All")" Default="true" Variant="Variant.Outlined">@(Lang?.T("All") ?? "All")</MudChip>
+        <MudChip T="string" Value="@("Active")" Color="Color.Success" Variant="Variant.Outlined">@(Lang?.T("Active") ?? "Active")</MudChip>
+        <MudChip T="string" Value="@("InMaintenance")" Color="Color.Warning" Variant="Variant.Outlined">@(Lang?.T("Assets_InMaintenance") ?? "In Maintenance")</MudChip>
+        <MudChip T="string" Value="@("Disposed")" Color="Color.Error" Variant="Variant.Outlined">@(Lang?.T("Assets_Disposed") ?? "Disposed")</MudChip>
+        <MudChip T="string" Value="@("WrittenOff")" Color="Color.Dark" Variant="Variant.Outlined">@(Lang?.T("Assets_WrittenOff") ?? "Written Off")</MudChip>
     </MudChipSet>
     <MudSpacer />
     <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
-               OnClick="OpenCreateDialog">New Asset</MudButton>
+               OnClick="OpenCreateDialog">@(Lang?.T("Assets_New") ?? "New Asset")</MudButton>
 </div>
 
 <MudPaper Elevation="0" Class="data-card pa-4">
@@ -44,15 +44,15 @@
                  QuickFilter="@(new Func<AssetDto, bool>(FilterFunc))">
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="ID" />
-            <PropertyColumn Property="x => x.Name" Title="Name" />
-            <TemplateColumn Title="Category" Sortable="false">
+            <PropertyColumn Property="x => x.Name" Title="@(Lang?.T("Name") ?? "Name")" />
+            <TemplateColumn Title="@(Lang?.T("Category") ?? "Category")" Sortable="false">
                 <CellTemplate>
                     <MudChip T="string" Color="Color.Info" Size="Size.Small">@context.Item.CategoryName</MudChip>
                 </CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.SerialNumber" Title="Serial #" />
-            <PropertyColumn Property="x => x.BranchName" Title="Branch" />
-            <TemplateColumn Title="Condition" Sortable="false">
+            <PropertyColumn Property="x => x.SerialNumber" Title="@(Lang?.T("Assets_SerialNum") ?? "Serial #")" />
+            <PropertyColumn Property="x => x.BranchName" Title="@(Lang?.T("Branch") ?? "Branch")" />
+            <TemplateColumn Title="@(Lang?.T("Assets_Condition") ?? "Condition")" Sortable="false">
                 <CellTemplate>
                     @{
                         var condColor = context.Item.Condition switch
@@ -67,7 +67,7 @@
                     <MudChip T="string" Color="@condColor" Size="Size.Small">@context.Item.Condition</MudChip>
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn Title="Status" Sortable="false">
+            <TemplateColumn Title="@(Lang?.T("Status") ?? "Status")" Sortable="false">
                 <CellTemplate>
                     @{
                         var statusColor = context.Item.Status switch
@@ -82,12 +82,12 @@
                     <MudChip T="string" Color="@statusColor" Size="Size.Small">@context.Item.Status</MudChip>
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn Title="Purchase Value" Sortable="true">
+            <TemplateColumn Title="@(Lang?.T("Assets_PurchaseValue") ?? "Purchase Value")" Sortable="true">
                 <CellTemplate>
                     @context.Item.PurchaseValue.ToString("N2")
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn Title="Book Value" Sortable="true">
+            <TemplateColumn Title="@(Lang?.T("Assets_BookValue") ?? "Book Value")" Sortable="true">
                 <CellTemplate>
                     @context.Item.BookValue.ToString("N2")
                 </CellTemplate>
@@ -95,19 +95,21 @@
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary"
-                                   OnClick="@(() => OpenEditDialog(context.Item))" Title="Edit" />
+                                   OnClick="@(() => OpenEditDialog(context.Item))" Title="@(Lang?.T("Edit") ?? "Edit")" />
                     <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Color="Color.Info"
-                                   OnClick="@(() => ViewAsset(context.Item.Id))" Title="View Details" />
+                                   OnClick="@(() => ViewAsset(context.Item.Id))" Title="@(Lang?.T("ViewDetails") ?? "View Details")" />
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
         <NoRecordsContent>
-            <MudText>No assets found.</MudText>
+            <MudText>@(Lang?.T("Assets_NotFound") ?? "No assets found.")</MudText>
         </NoRecordsContent>
     </MudDataGrid>
 </MudPaper>
 
 @code {
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
+
     private List<AssetDto> _assets = new();
     private List<AssetDto> _filteredAssets = new();
     private string _searchString = "";
@@ -129,7 +131,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error loading assets: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("ErrorLoading") ?? "Error loading assets"}: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -177,7 +179,7 @@
             { x => x.Branches, branches },
             { x => x.Categories, categories }
         };
-        var dialog = await DialogService.ShowAsync<AssetDialog>("New Asset", parameters,
+        var dialog = await DialogService.ShowAsync<AssetDialog>(Lang?.T("NewAsset") ?? "New Asset", parameters,
             new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
         var result = await dialog.Result;
         if (result is { Canceled: false })
@@ -195,7 +197,7 @@
             { x => x.Branches, branches },
             { x => x.Categories, categories }
         };
-        var dialog = await DialogService.ShowAsync<AssetDialog>("Edit Asset", parameters,
+        var dialog = await DialogService.ShowAsync<AssetDialog>(Lang?.T("EditAsset") ?? "Edit Asset", parameters,
             new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
         var result = await dialog.Result;
         if (result is { Canceled: false })

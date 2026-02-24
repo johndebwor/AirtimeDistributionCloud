@@ -45,13 +45,13 @@ window.chartInterop = {
                             padding: 16,
                             usePointStyle: true,
                             pointStyleWidth: 10,
-                            font: { size: 12, family: 'Inter, Roboto, sans-serif' }
+                            font: { size: 12, family: "'Inter', 'Roboto', 'Noto Sans Arabic', sans-serif" }
                         }
                     },
                     tooltip: {
                         backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                        titleFont: { family: 'Inter, Roboto, sans-serif' },
-                        bodyFont: { family: 'Inter, Roboto, sans-serif' },
+                        titleFont: { family: "'Inter', 'Roboto', 'Noto Sans Arabic', sans-serif" },
+                        bodyFont: { family: "'Inter', 'Roboto', 'Noto Sans Arabic', sans-serif" },
                         padding: 10,
                         cornerRadius: 8
                     }
@@ -83,13 +83,13 @@ window.chartInterop = {
                     x: {
                         stacked: stacked || false,
                         grid: { display: false },
-                        ticks: { font: { size: 11, family: 'Inter, Roboto, sans-serif' } }
+                        ticks: { font: { size: 11, family: "'Inter', 'Roboto', 'Noto Sans Arabic', sans-serif" } }
                     },
                     y: {
                         stacked: stacked || false,
                         beginAtZero: true,
                         grid: { color: 'rgba(0,0,0,0.06)' },
-                        ticks: { font: { size: 11, family: 'Inter, Roboto, sans-serif' } }
+                        ticks: { font: { size: 11, family: "'Inter', 'Roboto', 'Noto Sans Arabic', sans-serif" } }
                     }
                 },
                 plugins: {
@@ -99,7 +99,7 @@ window.chartInterop = {
                         labels: {
                             padding: 16,
                             usePointStyle: true,
-                            font: { size: 12, family: 'Inter, Roboto, sans-serif' }
+                            font: { size: 12, family: "'Inter', 'Roboto', 'Noto Sans Arabic', sans-serif" }
                         }
                     },
                     tooltip: {
@@ -137,12 +137,12 @@ window.chartInterop = {
                 scales: {
                     x: {
                         grid: { display: false },
-                        ticks: { font: { size: 11, family: 'Inter, Roboto, sans-serif' } }
+                        ticks: { font: { size: 11, family: "'Inter', 'Roboto', 'Noto Sans Arabic', sans-serif" } }
                     },
                     y: {
                         beginAtZero: true,
                         grid: { color: 'rgba(0,0,0,0.06)' },
-                        ticks: { font: { size: 11, family: 'Inter, Roboto, sans-serif' } }
+                        ticks: { font: { size: 11, family: "'Inter', 'Roboto', 'Noto Sans Arabic', sans-serif" } }
                     }
                 },
                 plugins: {
@@ -152,7 +152,7 @@ window.chartInterop = {
                         labels: {
                             padding: 16,
                             usePointStyle: true,
-                            font: { size: 12, family: 'Inter, Roboto, sans-serif' }
+                            font: { size: 12, family: "'Inter', 'Roboto', 'Noto Sans Arabic', sans-serif" }
                         }
                     },
                     tooltip: {

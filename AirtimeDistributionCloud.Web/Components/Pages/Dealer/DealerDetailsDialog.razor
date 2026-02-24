@@ -1,5 +1,6 @@
 @rendermode InteractiveServer
 @using AirtimeDistributionCloud.Application.DTOs
+@using AirtimeDistributionCloud.Application.Services
 @using AirtimeDistributionCloud.Core.Enums
 @inject IJSRuntime JS
 
@@ -8,57 +9,57 @@
         <MudSimpleTable Hover="true" Dense="true" Striped="true">
             <tbody>
                 <tr>
-                    <td><strong>Dealer #</strong></td>
+                    <td><strong>@(Lang?.T("Registration_DealerNum") ?? "Dealer #")</strong></td>
                     <td>@Dealer.DealerNumber</td>
                 </tr>
                 <tr>
-                    <td><strong>Type</strong></td>
+                    <td><strong>@(Lang?.T("Type") ?? "Type")</strong></td>
                     <td>@Dealer.Type</td>
                 </tr>
                 <tr>
-                    <td><strong>Name</strong></td>
+                    <td><strong>@(Lang?.T("Name") ?? "Name")</strong></td>
                     <td>@Dealer.Name</td>
                 </tr>
                 @if (Dealer.Type == DealerType.Person)
                 {
                     <tr>
-                        <td><strong>Gender</strong></td>
+                        <td><strong>@(Lang?.T("Registration_Gender") ?? "Gender")</strong></td>
                         <td>@(string.IsNullOrEmpty(Dealer.Gender) ? "-" : Dealer.Gender)</td>
                     </tr>
                     <tr>
-                        <td><strong>ID Type</strong></td>
+                        <td><strong>@(Lang?.T("DealerDialog_IDType") ?? "ID Type")</strong></td>
                         <td>@(string.IsNullOrEmpty(Dealer.IdType) ? "-" : Dealer.IdType)</td>
                     </tr>
                     <tr>
-                        <td><strong>ID Number</strong></td>
+                        <td><strong>@(Lang?.T("Registration_IDNumber") ?? "ID Number")</strong></td>
                         <td>@(string.IsNullOrEmpty(Dealer.IDNumber) ? "-" : Dealer.IDNumber)</td>
                     </tr>
                     <tr>
-                        <td><strong>Nationality</strong></td>
+                        <td><strong>@(Lang?.T("DealerDialog_Nationality") ?? "Nationality")</strong></td>
                         <td>@(string.IsNullOrEmpty(Dealer.Nationality) ? "-" : Dealer.Nationality)</td>
                     </tr>
                 }
                 @if (Dealer.Type == DealerType.Company)
                 {
                     <tr>
-                        <td><strong>Company Reg Number</strong></td>
+                        <td><strong>@(Lang?.T("DealerDialog_CompanyRegNum") ?? "Company Reg Number")</strong></td>
                         <td>@(string.IsNullOrEmpty(Dealer.CompanyRegNumber) ? "-" : Dealer.CompanyRegNumber)</td>
                     </tr>
                 }
                 <tr>
-                    <td><strong>State</strong></td>
+                    <td><strong>@(Lang?.T("Registration_State") ?? "State")</strong></td>
                     <td>@(string.IsNullOrEmpty(Dealer.State) ? "-" : Dealer.State)</td>
                 </tr>
                 <tr>
-                    <td><strong>County</strong></td>
+                    <td><strong>@(Lang?.T("DealerDialog_County") ?? "County")</strong></td>
                     <td>@(string.IsNullOrEmpty(Dealer.County) ? "-" : Dealer.County)</td>
                 </tr>
                 <tr>
-                    <td><strong>Phone Number</strong></td>
+                    <td><strong>@(Lang?.T("PhoneNumber") ?? "Phone Number")</strong></td>
                     <td>@(string.IsNullOrEmpty(Dealer.PhoneNumber) ? "-" : Dealer.PhoneNumber)</td>
                 </tr>
                 <tr>
-                    <td><strong>Physical Address</strong></td>
+                    <td><strong>@(Lang?.T("DealerDialog_PhysicalAddress") ?? "Physical Address")</strong></td>
                     <td>@(string.IsNullOrEmpty(Dealer.PhysicalAddress) ? "-" : Dealer.PhysicalAddress)</td>
                 </tr>
             </tbody>
@@ -66,14 +67,14 @@
 
         <!-- Attached Document -->
         <MudText Typo="Typo.h6" Class="mt-4 mb-2">
-            @(Dealer.Type == DealerType.Company ? "Company Certificate" : "ID Document")
+            @(Dealer.Type == DealerType.Company ? (Lang?.T("DealerDetails_CompanyCert") ?? "Company Certificate") : (Lang?.T("DealerDetails_IDDocument") ?? "ID Document"))
         </MudText>
         @if (!string.IsNullOrEmpty(Dealer.DocumentPath))
         {
             @if (IsImage(Dealer.DocumentPath))
             {
                 <div style="text-align:center; margin-bottom:12px;">
-                    <MudImage Src="@Dealer.DocumentPath" Alt="Document" ObjectFit="ObjectFit.Contain"
+                    <MudImage Src="@Dealer.DocumentPath" Alt="@(Lang?.T("Document") ?? "Document")" ObjectFit="ObjectFit.Contain"
                               Style="max-width:100%; max-height:400px; border-radius:8px; border:1px solid #e0e0e0;" Elevation="1" />
                 </div>
             }
@@ -90,29 +91,30 @@
                 <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
                            StartIcon="@Icons.Material.Filled.OpenInNew"
                            OnClick="@(() => OpenDocument())">
-                    View Document
+                    @(Lang?.T("DealerDetails_ViewDocument") ?? "View Document")
                 </MudButton>
                 <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small"
                            StartIcon="@Icons.Material.Filled.Download"
                            Href="@Dealer.DocumentPath" Target="_blank" download>
-                    Download
+                    @(Lang?.T("Download") ?? "Download")
                 </MudButton>
             </MudStack>
         }
         else
         {
             <MudAlert Severity="Severity.Normal" Variant="Variant.Outlined" Dense="true">
-                No document attached
+                @(Lang?.T("DealerDetails_NoDocument") ?? "No document attached")
             </MudAlert>
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Close" Variant="Variant.Filled" Color="Color.Primary">Close</MudButton>
+        <MudButton OnClick="Close" Variant="Variant.Filled" Color="Color.Primary">@(Lang?.T("Close") ?? "Close")</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
     [Parameter] public DealerDto Dealer { get; set; } = null!;
 
     private static bool IsImage(string path)

@@ -10,17 +10,17 @@
 @inject IJSRuntime JS
 @rendermode InteractiveServer
 
-<PageTitle>Commissions - RasidBase</PageTitle>
+<PageTitle>@(Lang?.T("Commissions_Title") ?? "Commissions") - RasidBase</PageTitle>
 
 <div class="page-header">
-    <h1>Commissions</h1>
-    <p>View and manage dealer commission rates</p>
+    <h1>@(Lang?.T("Commissions_Title") ?? "Commissions")</h1>
+    <p>@(Lang?.T("Commissions_Subtitle") ?? "View and manage dealer commission rates")</p>
 </div>
 
 <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
-    <MudSelect T="int?" Value="_selectedDealerId" Label="Select Dealer" Class="mb-4"
+    <MudSelect T="int?" Value="_selectedDealerId" Label="@(Lang?.T("Commissions_SelectDealer") ?? "Select Dealer")" Class="mb-4"
                ValueChanged="@((int? v) => OnDealerChanged(v))">
-        <MudSelectItem T="int?" Value="@((int?)null)">-- All Dealers --</MudSelectItem>
+        <MudSelectItem T="int?" Value="@((int?)null)">@(Lang?.T("Commissions_AllDealers") ?? "-- All Dealers --")</MudSelectItem>
         @foreach (var dealer in _dealers)
         {
             <MudSelectItem T="int?" Value="@((int?)dealer.Id)">@dealer.Name</MudSelectItem>
@@ -32,12 +32,12 @@
     <MudDataGrid T="DealerProductView" Items="@_dealerProducts" Loading="@_loading"
                  Dense="true" Hover="true" Striped="true" Filterable="false">
         <Columns>
-            <PropertyColumn Property="x => x.DealerName" Title="Dealer" />
-            <PropertyColumn Property="x => x.ProductName" Title="Product" />
-            <PropertyColumn Property="x => x.CommissionRate" Title="Commission Rate %" Format="N2" />
-            <PropertyColumn Property="x => x.CommissionBalance" Title="Commission Balance" Format="C2" />
-            <PropertyColumn Property="x => x.Balance" Title="Balance" Format="C2" />
-            <TemplateColumn Title="Actions" Sortable="false">
+            <PropertyColumn Property="x => x.DealerName" Title="@(Lang?.T("Dealer") ?? "Dealer")" />
+            <PropertyColumn Property="x => x.ProductName" Title="@(Lang?.T("Product") ?? "Product")" />
+            <PropertyColumn Property="x => x.CommissionRate" Title="@(Lang?.T("Commissions_RatePercent") ?? "Commission Rate %")" Format="N2" />
+            <PropertyColumn Property="x => x.CommissionBalance" Title="@(Lang?.T("Commissions_Balance") ?? "Commission Balance")" Format="C2" />
+            <PropertyColumn Property="x => x.Balance" Title="@(Lang?.T("Balance") ?? "Balance")" Format="C2" />
+            <TemplateColumn Title="@(Lang?.T("Actions") ?? "Actions")" Sortable="false">
                 <CellTemplate>
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary"
                                    OnClick="@(() => OpenEditCommission(context.Item))" />
@@ -45,7 +45,7 @@
             </TemplateColumn>
         </Columns>
         <NoRecordsContent>
-            <MudText>No commission data found. Select a dealer or register dealers with products first.</MudText>
+            <MudText>@(Lang?.T("Commissions_NotFound") ?? "No commission data found. Select a dealer or register dealers with products first.")</MudText>
         </NoRecordsContent>
     </MudDataGrid>
 </MudPaper>
@@ -54,7 +54,7 @@
 {
     <MudOverlay Visible="true" DarkBackground="true" ZIndex="9" AutoClose="false">
         <MudPaper Class="pa-6" Style="min-width:380px; border-radius:12px;">
-            <MudText Typo="Typo.h6" Class="mb-1">Edit Commission</MudText>
+            <MudText Typo="Typo.h6" Class="mb-1">@(Lang?.T("Commissions_EditTitle") ?? "Edit Commission")</MudText>
             <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
                 @_editingItem.DealerName — @_editingItem.ProductName
             </MudText>
@@ -63,18 +63,20 @@
             </MudText>
             <div @ref="_editRateRef">
                 <MudTextField T="string" Value="@_editRateDisplay" ValueChanged="OnEditRateChanged"
-                              Label="Commission Rate (%)" Class="mb-4" />
+                              Label="@(Lang?.T("Commissions_RateLabel") ?? "Commission Rate (%)")" Class="mb-4" />
             </div>
             <div class="d-flex justify-end gap-2">
-                <MudButton OnClick="@(() => _editDialogOpen = false)">Cancel</MudButton>
+                <MudButton OnClick="@(() => _editDialogOpen = false)">@(Lang?.T("Cancel") ?? "Cancel")</MudButton>
                 <MudButton Color="Color.Primary" Variant="Variant.Filled"
-                           OnClick="SaveCommission" Disabled="@_saving">Save</MudButton>
+                           OnClick="SaveCommission" Disabled="@_saving">@(Lang?.T("Save") ?? "Save")</MudButton>
             </div>
         </MudPaper>
     </MudOverlay>
 }
 
 @code {
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
+
     private List<DealerDto> _dealers = new();
     private List<DealerProductView> _dealerProducts = new();
     private int? _selectedDealerId;
@@ -98,7 +100,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("ErrorLoading") ?? "Error"}: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -154,7 +156,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error loading commissions: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("ErrorLoading") ?? "Error loading commissions"}: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -185,7 +187,7 @@
 
         if (_editRate < _minCommission || _editRate > _maxCommission)
         {
-            Snackbar.Add($"Commission must be between {_minCommission}% and {_maxCommission}%", Severity.Warning);
+            Snackbar.Add(string.Format(Lang?.T("Commissions_RangeError") ?? "Commission must be between {0}% and {1}%", _minCommission, _maxCommission), Severity.Warning);
             return;
         }
         _saving = true;
@@ -194,11 +196,11 @@
             await DealerService.UpdateCommissionAsync(new UpdateCommissionRequest(_editingItem.DealerProductId, _editRate));
             _editingItem.CommissionRate = _editRate;
             _editDialogOpen = false;
-            Snackbar.Add("Commission updated", Severity.Success);
+            Snackbar.Add(Lang?.T("Commissions_Updated") ?? "Commission updated", Severity.Success);
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
         }
         finally
         {

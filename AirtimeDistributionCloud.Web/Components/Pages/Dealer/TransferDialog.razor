@@ -13,8 +13,8 @@
     <DialogContent>
         <MudGrid>
             <MudItem xs="12" sm="6">
-                <MudSelect T="int" @bind-Value="_branchId" Label="Branch" Required="true"
-                           RequiredError="Branch is required" Placeholder="-- Select Branch --" Class="mb-3">
+                <MudSelect T="int" @bind-Value="_branchId" Label="@(Lang?.T("Branch") ?? "Branch")" Required="true"
+                           RequiredError="@(Lang?.T("BranchRequired") ?? "Branch is required")" Placeholder="@(Lang?.T("SelectBranch") ?? "-- Select Branch --")" Class="mb-3">
                     @foreach (var branch in Branches)
                     {
                         <MudSelectItem T="int" Value="@branch.Id">@branch.Name</MudSelectItem>
@@ -24,8 +24,8 @@
             <MudItem xs="12" sm="6">
                 <MudSelect T="int" Value="@_productId"
                            ValueChanged="@((int v) => { _productId = v; UpdateCommissionBreakdown(); })"
-                           Label="Product" Required="true"
-                           RequiredError="Product is required" Placeholder="-- Select Product --" Class="mb-3">
+                           Label="@(Lang?.T("Product") ?? "Product")" Required="true"
+                           RequiredError="@(Lang?.T("ProductRequired") ?? "Product is required")" Placeholder="@(Lang?.T("SelectProduct") ?? "-- Select Product --")" Class="mb-3">
                     @foreach (var product in Products)
                     {
                         <MudSelectItem T="int" Value="@product.Id">@product.Name</MudSelectItem>
@@ -35,8 +35,8 @@
             <MudItem xs="12" sm="6">
                 <MudSelect T="int" Value="@_dealerId"
                            ValueChanged="@((int v) => { _dealerId = v; UpdateCommissionBreakdown(); })"
-                           Label="Dealer" Required="true"
-                           RequiredError="Dealer is required" Placeholder="-- Select Dealer --" Class="mb-3">
+                           Label="@(Lang?.T("Dealer") ?? "Dealer")" Required="true"
+                           RequiredError="@(Lang?.T("DealerRequired") ?? "Dealer is required")" Placeholder="@(Lang?.T("SelectDealer") ?? "-- Select Dealer --")" Class="mb-3">
                     @foreach (var dealer in Dealers)
                     {
                         <MudSelectItem T="int" Value="@dealer.Id">@dealer.Name</MudSelectItem>
@@ -46,34 +46,34 @@
             <MudItem xs="12" sm="6">
                 <div @ref="_amountRef">
                     <MudTextField T="string" Value="@_amountDisplay" ValueChanged="OnAmountDisplayChanged"
-                                  Label="Amount"
-                                  Required="true" RequiredError="Amount is required" Class="mb-3" />
+                                  Label="@(Lang?.T("Amount") ?? "Amount")"
+                                  Required="true" RequiredError="@(Lang?.T("AmountRequired") ?? "Amount is required")" Class="mb-3" />
                 </div>
             </MudItem>
             <MudItem xs="12" sm="6">
-                <MudSelect T="TransferType" @bind-Value="_transferType" Label="Transfer Type" Required="true"
-                           RequiredError="Transfer type is required" Class="mb-3">
+                <MudSelect T="TransferType" @bind-Value="_transferType" Label="@(Lang?.T("Transfers_TransferType") ?? "Transfer Type")" Required="true"
+                           RequiredError="@(Lang?.T("TransferTypeRequired") ?? "Transfer type is required")" Class="mb-3">
                     <MudSelectItem T="TransferType" Value="TransferType.Airtime">Airtime</MudSelectItem>
-                    <MudSelectItem T="TransferType" Value="TransferType.Cash">Cash from Dealer Account</MudSelectItem>
+                    <MudSelectItem T="TransferType" Value="TransferType.Cash">@(Lang?.T("Transfers_CashFromDealer") ?? "Cash from Dealer Account")</MudSelectItem>
                 </MudSelect>
             </MudItem>
             @if (_amount > 0 && _dealerId > 0 && _productId > 0)
             {
                 <MudItem xs="12" sm="6">
                     <MudTextField T="string" Value="@FormatNumber(_loanAmount.ToString("F2"))"
-                                  Label="Airtime Amount" ReadOnly="true" Class="mb-3"
+                                  Label="@(Lang?.T("Transfers_Airtime") ?? "Airtime Amount")" ReadOnly="true" Class="mb-3"
                                   Variant="Variant.Filled" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudTextField T="string" Value="@FormatNumber(_commissionAmount.ToString("F2"))"
-                                  Label="@($"Commission ({_commissionRate}%)")" ReadOnly="true" Class="mb-3"
+                                  Label="@($"{Lang?.T("Commission") ?? "Commission"} ({_commissionRate}%)")" ReadOnly="true" Class="mb-3"
                                   Variant="Variant.Filled" />
                 </MudItem>
                 @if (_hasZeroCommission)
                 {
                     <MudItem xs="12">
                         <MudAlert Severity="Severity.Warning" Class="mb-2">
-                            This dealer has 0% commission for this product. You can proceed or cancel and update the commission rate first.
+                            @(Lang?.T("Transfers_ZeroCommission") ?? "This dealer has 0% commission for this product. You can proceed or cancel and update the commission rate first.")
                         </MudAlert>
                     </MudItem>
                 }
@@ -81,13 +81,14 @@
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="@_saving">Save</MudButton>
+        <MudButton OnClick="Cancel">@(Lang?.T("Cancel") ?? "Cancel")</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="@_saving">@(Lang?.T("Save") ?? "Save")</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
     [Parameter] public List<ProductDto> Products { get; set; } = new();
     [Parameter] public List<BranchDto> Branches { get; set; } = new();
     [Parameter] public List<DealerDto> Dealers { get; set; } = new();
@@ -173,16 +174,16 @@
 
         if (_branchId == 0 || _productId == 0 || _dealerId == 0 || _amount <= 0)
         {
-            Snackbar.Add("Please fill in all required fields", Severity.Warning);
+            Snackbar.Add(Lang?.T("FillRequiredFields") ?? "Please fill in all required fields", Severity.Warning);
             return;
         }
 
         if (_hasZeroCommission)
         {
             var confirmed = await DialogService.ShowMessageBox(
-                "0% Commission",
-                "This dealer's commission for this product is 0%. Proceed with the transfer anyway?",
-                yesText: "Proceed", cancelText: "Cancel");
+                Lang?.T("Transfers_ZeroCommTitle") ?? "0% Commission",
+                Lang?.T("Transfers_ZeroCommMsg") ?? "This dealer's commission for this product is 0%. Proceed with the transfer anyway?",
+                yesText: Lang?.T("Proceed") ?? "Proceed", cancelText: Lang?.T("Cancel") ?? "Cancel");
             if (confirmed != true) return;
         }
 
@@ -199,12 +200,12 @@
                 await UserPrefs.SetAsync(userId, IUserPreferenceService.LastProductId, _productId.ToString());
             }
 
-            Snackbar.Add("Transfer submitted for approval", Severity.Success);
+            Snackbar.Add(Lang?.T("Transfers_Submitted") ?? "Transfer submitted for approval", Severity.Success);
             MudDialog.Close(DialogResult.Ok(true));
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
         }
         finally
         {

@@ -6,24 +6,25 @@
 
 <MudDialog>
     <DialogContent>
-        <MudTextField @bind-Value="_name" Label="Category Name" Required="true"
-                      RequiredError="Name is required" Class="mb-3" />
-        <MudTextField @bind-Value="_description" Label="Description (Optional)"
+        <MudTextField @bind-Value="_name" Label="@(Lang?.T("Name") ?? "Category Name")" Required="true"
+                      RequiredError="@(Lang?.T("ExpCat_NameRequired") ?? "Name is required")" Class="mb-3" />
+        <MudTextField @bind-Value="_description" Label="@(Lang?.T("ExpCat_DescOptional") ?? "Description (Optional)")"
                       Lines="2" Class="mb-3" />
         @if (Category is not null)
         {
-            <MudSwitch @bind-Value="_isActive" Color="Color.Success" Label="Active" />
+            <MudSwitch @bind-Value="_isActive" Color="Color.Success" Label="@(Lang?.T("Active") ?? "Active")" />
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton OnClick="Cancel">@(Lang?.T("Cancel") ?? "Cancel")</MudButton>
         <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit"
-                   Disabled="@_saving">Save</MudButton>
+                   Disabled="@_saving">@(Lang?.T("Save") ?? "Save")</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
     [Parameter] public AssetCategoryDto? Category { get; set; }
 
     private bool _saving;
@@ -45,7 +46,7 @@
     {
         if (string.IsNullOrWhiteSpace(_name))
         {
-            Snackbar.Add("Category name is required", Severity.Warning);
+            Snackbar.Add(Lang?.T("ExpCat_NameRequired") ?? "Category name is required", Severity.Warning);
             return;
         }
 
@@ -55,18 +56,18 @@
             if (Category is null)
             {
                 await AssetService.CreateCategoryAsync(new CreateAssetCategoryRequest(_name, _description));
-                Snackbar.Add("Category created successfully", Severity.Success);
+                Snackbar.Add(Lang?.T("ExpCat_Created") ?? "Category created successfully", Severity.Success);
             }
             else
             {
                 await AssetService.UpdateCategoryAsync(new UpdateAssetCategoryRequest(Category.Id, _name, _description, _isActive));
-                Snackbar.Add("Category updated successfully", Severity.Success);
+                Snackbar.Add(Lang?.T("ExpCat_Updated") ?? "Category updated successfully", Severity.Success);
             }
             MudDialog.Close(DialogResult.Ok(true));
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
         }
         finally
         {

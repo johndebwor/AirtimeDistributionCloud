@@ -1,4 +1,5 @@
 @rendermode InteractiveServer
+@implements IDisposable
 @using AirtimeDistributionCloud.Application.Services
 @using Microsoft.AspNetCore.Components.Authorization
 @inject AuthenticationStateProvider AuthStateProvider
@@ -7,66 +8,66 @@
 <MudNavMenu Rounded="true" Margin="Margin.Dense" Color="Color.Primary">
 
     <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Outlined.SpaceDashboard">
-        Dashboard
+        @(Lang?.T("Nav_Dashboard") ?? "Dashboard")
     </MudNavLink>
 
     @if (_adminVisible)
     {
         <div class="nav-label">
             <span class="dot" style="background:#3B82F6;"></span>
-            Admin
+            @(Lang?.T("Nav_Admin") ?? "Admin")
         </div>
         @if (_allowed.Contains("admin.products"))
         {
-            <MudNavLink Href="/admin/products" Icon="@Icons.Material.Outlined.Inventory2">Products</MudNavLink>
+            <MudNavLink Href="/admin/products" Icon="@Icons.Material.Outlined.Inventory2">@(Lang?.T("Nav_Products") ?? "Products")</MudNavLink>
         }
         @if (_allowed.Contains("admin.branches"))
         {
-            <MudNavLink Href="/admin/branches" Icon="@Icons.Material.Outlined.Store">Branches</MudNavLink>
+            <MudNavLink Href="/admin/branches" Icon="@Icons.Material.Outlined.Store">@(Lang?.T("Nav_Branches") ?? "Branches")</MudNavLink>
         }
         @if (_allowed.Contains("admin.deposits"))
         {
-            <MudNavLink Href="/admin/deposits" Icon="@Icons.Material.Outlined.AccountBalanceWallet">Deposits</MudNavLink>
+            <MudNavLink Href="/admin/deposits" Icon="@Icons.Material.Outlined.AccountBalanceWallet">@(Lang?.T("Nav_Deposits") ?? "Deposits")</MudNavLink>
         }
         @if (_allowed.Contains("admin.approvals"))
         {
-            <MudNavLink Href="/admin/approvals" Icon="@Icons.Material.Outlined.FactCheck">Deposit Approvals</MudNavLink>
+            <MudNavLink Href="/admin/approvals" Icon="@Icons.Material.Outlined.FactCheck">@(Lang?.T("Nav_DepositApprovals") ?? "Deposit Approvals")</MudNavLink>
         }
         @if (_allowed.Contains("admin.transfer-approvals"))
         {
-            <MudNavLink Href="/admin/transfer-approvals" Icon="@Icons.Material.Outlined.SwapHorizontalCircle">Transfer Approvals</MudNavLink>
+            <MudNavLink Href="/admin/transfer-approvals" Icon="@Icons.Material.Outlined.SwapHorizontalCircle">@(Lang?.T("Nav_TransferApprovals") ?? "Transfer Approvals")</MudNavLink>
         }
         @if (_allowed.Contains("admin.expense-approvals"))
         {
-            <MudNavLink Href="/admin/expense-approvals" Icon="@Icons.Material.Outlined.RuleFolder">Expense Approvals</MudNavLink>
+            <MudNavLink Href="/admin/expense-approvals" Icon="@Icons.Material.Outlined.RuleFolder">@(Lang?.T("Nav_ExpenseApprovals") ?? "Expense Approvals")</MudNavLink>
         }
         @if (_allowed.Contains("admin.reports"))
         {
-            <MudNavLink Href="/admin/reports" Icon="@Icons.Material.Outlined.Assessment">Reports</MudNavLink>
+            <MudNavLink Href="/admin/reports" Icon="@Icons.Material.Outlined.Assessment">@(Lang?.T("Nav_Reports") ?? "Reports")</MudNavLink>
         }
         @if (_allowed.Contains("admin.analytics"))
         {
-            <MudNavLink Href="/admin/analytics" Icon="@Icons.Material.Outlined.TrendingUp">Sales & Capital</MudNavLink>
+            <MudNavLink Href="/admin/analytics" Icon="@Icons.Material.Outlined.TrendingUp">@(Lang?.T("Nav_SalesCapital") ?? "Sales & Capital")</MudNavLink>
         }
         @if (_allowed.Contains("admin.assets"))
         {
-            <MudNavLink Href="/admin/assets" Icon="@Icons.Material.Outlined.Inventory">Asset Registry</MudNavLink>
+            <MudNavLink Href="/admin/assets" Icon="@Icons.Material.Outlined.Inventory">@(Lang?.T("Nav_AssetRegistry") ?? "Asset Registry")</MudNavLink>
         }
         @if (_settingsVisible)
         {
-            <MudNavGroup Title="System Settings" Icon="@Icons.Material.Outlined.Settings" Expanded="false">
+            <MudNavGroup Title="@(Lang?.T("Nav_SystemSettings") ?? "System Settings")" Icon="@Icons.Material.Outlined.Settings" Expanded="false">
                 @if (_allowed.Contains("admin.settings"))
                 {
-                    <MudNavLink Href="/admin/settings" Icon="@Icons.Material.Outlined.Tune">General Settings</MudNavLink>
-                    <MudNavLink Href="/admin/company-profile" Icon="@Icons.Material.Outlined.Business">Company Profile</MudNavLink>
+                    <MudNavLink Href="/admin/settings" Icon="@Icons.Material.Outlined.Tune">@(Lang?.T("Nav_GeneralSettings") ?? "General Settings")</MudNavLink>
+                    <MudNavLink Href="/admin/company-profile" Icon="@Icons.Material.Outlined.Business">@(Lang?.T("Nav_CompanyProfile") ?? "Company Profile")</MudNavLink>
                 }
                 @if (_allowed.Contains("admin.expense-categories"))
                 {
-                    <MudNavLink Href="/admin/expense-categories" Icon="@Icons.Material.Outlined.Category">Expense Categories</MudNavLink>
+                    <MudNavLink Href="/admin/expense-categories" Icon="@Icons.Material.Outlined.Category">@(Lang?.T("Nav_ExpenseCategories") ?? "Expense Categories")</MudNavLink>
                 }
                 @if (_allowed.Contains("admin.asset-categories"))
                 {
-                    <MudNavLink Href="/admin/asset-categories" Icon="@Icons.Material.Outlined.Class">Asset Categories</MudNavLink>
+                    <MudNavLink Href="/admin/asset-categories" Icon="@Icons.Material.Outlined.Class">@(Lang?.T("Nav_AssetCategories") ?? "Asset Categories")</MudNavLink>
                 }
             </MudNavGroup>
         }
@@ -76,19 +77,19 @@
     {
         <div class="nav-label">
             <span class="dot" style="background:#F59E0B;"></span>
-            Dealers
+            @(Lang?.T("Nav_Dealers") ?? "Dealers")
         </div>
         @if (_allowed.Contains("dealer.registration"))
         {
-            <MudNavLink Href="/dealer/registration" Icon="@Icons.Material.Outlined.PersonAdd">Registration</MudNavLink>
+            <MudNavLink Href="/dealer/registration" Icon="@Icons.Material.Outlined.PersonAdd">@(Lang?.T("Nav_Registration") ?? "Registration")</MudNavLink>
         }
         @if (_allowed.Contains("dealer.transfers"))
         {
-            <MudNavLink Href="/dealer/transfers" Icon="@Icons.Material.Outlined.SwapHoriz">Transfers</MudNavLink>
+            <MudNavLink Href="/dealer/transfers" Icon="@Icons.Material.Outlined.SwapHoriz">@(Lang?.T("Nav_Transfers") ?? "Transfers")</MudNavLink>
         }
         @if (_allowed.Contains("dealer.commissions"))
         {
-            <MudNavLink Href="/dealer/commissions" Icon="@Icons.Material.Outlined.Payments">Commissions</MudNavLink>
+            <MudNavLink Href="/dealer/commissions" Icon="@Icons.Material.Outlined.Payments">@(Lang?.T("Nav_Commissions") ?? "Commissions")</MudNavLink>
         }
     }
 
@@ -96,19 +97,19 @@
     {
         <div class="nav-label">
             <span class="dot" style="background:#16A34A;"></span>
-            Cashier
+            @(Lang?.T("Nav_Cashier") ?? "Cashier")
         </div>
         @if (_allowed.Contains("cashier.deposits"))
         {
-            <MudNavLink Href="/cashier/deposits" Icon="@Icons.Material.Outlined.Paid">Cash Deposits</MudNavLink>
+            <MudNavLink Href="/cashier/deposits" Icon="@Icons.Material.Outlined.Paid">@(Lang?.T("Nav_CashDeposits") ?? "Cash Deposits")</MudNavLink>
         }
         @if (_allowed.Contains("cashier.balances"))
         {
-            <MudNavLink Href="/cashier/balances" Icon="@Icons.Material.Outlined.AccountBalance">Balances</MudNavLink>
+            <MudNavLink Href="/cashier/balances" Icon="@Icons.Material.Outlined.AccountBalance">@(Lang?.T("Nav_Balances") ?? "Balances")</MudNavLink>
         }
         @if (_allowed.Contains("cashier.expenses"))
         {
-            <MudNavLink Href="/cashier/expenses" Icon="@Icons.Material.Outlined.Receipt">Expenses</MudNavLink>
+            <MudNavLink Href="/cashier/expenses" Icon="@Icons.Material.Outlined.Receipt">@(Lang?.T("Nav_Expenses") ?? "Expenses")</MudNavLink>
         }
     }
 
@@ -116,27 +117,29 @@
     {
         <div class="nav-label">
             <span class="dot" style="background:#A855F7;"></span>
-            System
+            @(Lang?.T("Nav_System") ?? "System")
         </div>
         @if (_allowed.Contains("system.users"))
         {
-            <MudNavLink Href="/superadmin/users" Icon="@Icons.Material.Outlined.Group">Users</MudNavLink>
+            <MudNavLink Href="/superadmin/users" Icon="@Icons.Material.Outlined.Group">@(Lang?.T("Nav_Users") ?? "Users")</MudNavLink>
         }
         @if (_allowed.Contains("system.audit"))
         {
-            <MudNavLink Href="/superadmin/audit" Icon="@Icons.Material.Outlined.History">Audit Logs</MudNavLink>
+            <MudNavLink Href="/superadmin/audit" Icon="@Icons.Material.Outlined.History">@(Lang?.T("Nav_AuditLogs") ?? "Audit Logs")</MudNavLink>
         }
         @if (_isSystemAdmin)
         {
-            <MudNavLink Href="/admin/permissions" Icon="@Icons.Material.Outlined.AdminPanelSettings">Permissions</MudNavLink>
+            <MudNavLink Href="/admin/permissions" Icon="@Icons.Material.Outlined.AdminPanelSettings">@(Lang?.T("Nav_Permissions") ?? "Permissions")</MudNavLink>
         }
     }
 
-    <MudNavLink Href="/help" Icon="@Icons.Material.Outlined.HelpOutline">Help</MudNavLink>
+    <MudNavLink Href="/help" Icon="@Icons.Material.Outlined.HelpOutline">@(Lang?.T("Nav_Help") ?? "Help")</MudNavLink>
 
 </MudNavMenu>
 
 @code {
+    [CascadingParameter] public ILanguageService? Lang { get; set; }
+
     private HashSet<string> _allowed = new();
     private bool _isSystemAdmin;
     private bool _adminVisible;
@@ -147,6 +150,9 @@
 
     protected override async Task OnInitializedAsync()
     {
+        if (Lang is not null)
+            Lang.OnLanguageChanged += OnLanguageChanged;
+
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
 
@@ -176,5 +182,13 @@
         _dealersVisible = IPermissionService.DealerKeys.Any(k => _allowed.Contains(k));
         _cashierVisible = IPermissionService.CashierKeys.Any(k => _allowed.Contains(k));
         _systemVisible = _isSystemAdmin || IPermissionService.SystemKeys.Any(k => _allowed.Contains(k));
+    }
+
+    private void OnLanguageChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        if (Lang is not null)
+            Lang.OnLanguageChanged -= OnLanguageChanged;
     }
 }

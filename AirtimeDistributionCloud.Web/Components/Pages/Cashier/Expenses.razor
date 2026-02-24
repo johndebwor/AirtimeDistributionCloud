@@ -9,19 +9,19 @@
 @inject ISnackbar Snackbar
 @rendermode InteractiveServer
 
-<PageTitle>Expenses - RasidBase</PageTitle>
+<PageTitle>@(Lang?.T("Expenses_Title") ?? "Expenses") - RasidBase</PageTitle>
 
 <div class="page-header">
-    <h1>Expenses</h1>
-    <p>Track and manage expenses</p>
+    <h1>@(Lang?.T("Expenses_Title") ?? "Expenses")</h1>
+    <p>@(Lang?.T("Expenses_Subtitle") ?? "Track and manage expenses")</p>
 </div>
 
 <div class="page-toolbar">
-    <MudTextField @bind-Value="_searchString" Placeholder="Search expenses..." Adornment="Adornment.Start"
+    <MudTextField @bind-Value="_searchString" Placeholder="@(Lang?.T("Expenses_Search") ?? "Search expenses...")" Adornment="Adornment.Start"
                   AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
                   Immediate="true" Style="max-width: 300px;" />
     <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Receipt"
-               OnClick="OpenCreateDialog">New Expense</MudButton>
+               OnClick="OpenCreateDialog">@(Lang?.T("Expenses_New") ?? "New Expense")</MudButton>
 </div>
 
 <MudPaper Elevation="0" Class="data-card pa-4">
@@ -34,16 +34,16 @@
                  QuickFilter="@(new Func<ExpenseDto, bool>(FilterFunc))">
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="ID" />
-            <PropertyColumn Property="x => x.BranchName" Title="Branch" />
-            <PropertyColumn Property="x => x.Description" Title="Description" />
-            <TemplateColumn Title="Category" Sortable="false">
+            <PropertyColumn Property="x => x.BranchName" Title="@(Lang?.T("Branch") ?? "Branch")" />
+            <PropertyColumn Property="x => x.Description" Title="@(Lang?.T("Description") ?? "Description")" />
+            <TemplateColumn Title="@(Lang?.T("Category") ?? "Category")" Sortable="false">
                 <CellTemplate>
                     <MudChip T="string" Color="Color.Info" Size="Size.Small">@context.Item.CategoryName</MudChip>
                 </CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.Amount" Title="Amount" Format="C6" />
-            <PropertyColumn Property="x => x.ExpenseDate" Title="Date" Format="dd MMM yyyy" />
-            <TemplateColumn Title="Status" Sortable="false">
+            <PropertyColumn Property="x => x.Amount" Title="@(Lang?.T("Amount") ?? "Amount")" Format="C6" />
+            <PropertyColumn Property="x => x.ExpenseDate" Title="@(Lang?.T("Date") ?? "Date")" Format="dd MMM yyyy" />
+            <TemplateColumn Title="@(Lang?.T("Status") ?? "Status")" Sortable="false">
                 <CellTemplate>
                     @{
                         var color = context.Item.Status switch
@@ -58,15 +58,17 @@
                     <MudChip T="string" Color="@color" Size="Size.Small">@context.Item.Status</MudChip>
                 </CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.ReceiptNumber" Title="Receipt #" />
+            <PropertyColumn Property="x => x.ReceiptNumber" Title="@(Lang?.T("Expenses_ReceiptNum") ?? "Receipt #")" />
         </Columns>
         <NoRecordsContent>
-            <MudText>No expenses found.</MudText>
+            <MudText>@(Lang?.T("Expenses_NotFound") ?? "No expenses found.")</MudText>
         </NoRecordsContent>
     </MudDataGrid>
 </MudPaper>
 
 @code {
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
+
     private List<ExpenseDto> _expenses = new();
     private string _searchString = "";
     private bool _loading = true;
@@ -85,7 +87,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error loading expenses: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("ErrorLoading") ?? "Error loading expenses"}: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -107,7 +109,7 @@
         {
             { x => x.Branches, branches }
         };
-        var dialog = await DialogService.ShowAsync<ExpenseDialog>("New Expense", parameters,
+        var dialog = await DialogService.ShowAsync<ExpenseDialog>(Lang?.T("Expenses_New") ?? "New Expense", parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
         var result = await dialog.Result;
         if (result is { Canceled: false })

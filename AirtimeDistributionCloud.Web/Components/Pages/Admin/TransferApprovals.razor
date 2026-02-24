@@ -11,27 +11,27 @@
 @inject IJSRuntime JS
 @rendermode InteractiveServer
 
-<PageTitle>Transfer Approvals - RasidBase</PageTitle>
+<PageTitle>@(Lang?.T("TransferApprovals_Title") ?? "Transfer Approvals") - RasidBase</PageTitle>
 
 <div class="page-header">
-    <h1>Transfer Approvals</h1>
-    <p>Review and approve/reject airtime transfers</p>
+    <h1>@(Lang?.T("TransferApprovals_Title") ?? "Transfer Approvals")</h1>
+    <p>@(Lang?.T("TransferApprovals_Subtitle") ?? "Review and approve/reject airtime transfers")</p>
 </div>
 
 <div class="page-toolbar">
     <MudChipSet T="string" SelectedValue="_currentFilter" SelectedValueChanged="OnFilterChanged" SelectionMode="SelectionMode.SingleSelection">
-        <MudChip T="string" Value="@("Pending")" Color="Color.Warning" Variant="Variant.Outlined">Pending</MudChip>
-        <MudChip T="string" Value="@("Approved")" Color="Color.Success" Variant="Variant.Outlined">Approved</MudChip>
-        <MudChip T="string" Value="@("Rejected")" Color="Color.Error" Variant="Variant.Outlined">Rejected</MudChip>
-        <MudChip T="string" Value="@("Cancelled")" Color="Color.Dark" Variant="Variant.Outlined">Cancelled</MudChip>
-        <MudChip T="string" Value="@("All")" Variant="Variant.Outlined">All</MudChip>
+        <MudChip T="string" Value="@("Pending")" Color="Color.Warning" Variant="Variant.Outlined">@(Lang?.T("Pending") ?? "Pending")</MudChip>
+        <MudChip T="string" Value="@("Approved")" Color="Color.Success" Variant="Variant.Outlined">@(Lang?.T("Approved") ?? "Approved")</MudChip>
+        <MudChip T="string" Value="@("Rejected")" Color="Color.Error" Variant="Variant.Outlined">@(Lang?.T("Rejected") ?? "Rejected")</MudChip>
+        <MudChip T="string" Value="@("Cancelled")" Color="Color.Dark" Variant="Variant.Outlined">@(Lang?.T("Cancelled") ?? "Cancelled")</MudChip>
+        <MudChip T="string" Value="@("All")" Variant="Variant.Outlined">@(Lang?.T("All") ?? "All")</MudChip>
     </MudChipSet>
     @if (_pendingCount > 0 && _currentFilter == "Pending")
     {
         <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Small"
                    StartIcon="@Icons.Material.Filled.DoneAll" OnClick="ApproveAll"
                    Disabled="@_approvingAll">
-            Approve All (@_pendingCount)
+            @(Lang?.T("Approvals_ApproveAll") ?? "Approve All") (@_pendingCount)
         </MudButton>
     }
 </div>
@@ -42,17 +42,17 @@
                  QuickFilter="@_quickFilter">
         <ToolBarContent>
             <MudSpacer />
-            <MudTextField @bind-Value="_searchString" Placeholder="Search by dealer, product, branch..."
+            <MudTextField @bind-Value="_searchString" Placeholder="@(Lang?.T("TransferApprovals_Search") ?? "Search by dealer, product, branch...")"
                           Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                           IconSize="Size.Medium" Class="mt-0" Immediate="true" />
         </ToolBarContent>
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="ID" />
-            <PropertyColumn Property="x => x.BranchName" Title="Branch" />
-            <PropertyColumn Property="x => x.ProductName" Title="Product" />
-            <PropertyColumn Property="x => x.DealerName" Title="Dealer" />
-            <PropertyColumn Property="x => x.Amount" Title="Amount" Format="C6" />
-            <TemplateColumn Title="Transfer Type" Sortable="false">
+            <PropertyColumn Property="x => x.BranchName" Title="@(Lang?.T("Branch") ?? "Branch")" />
+            <PropertyColumn Property="x => x.ProductName" Title="@(Lang?.T("Product") ?? "Product")" />
+            <PropertyColumn Property="x => x.DealerName" Title="@(Lang?.T("Dealer") ?? "Dealer")" />
+            <PropertyColumn Property="x => x.Amount" Title="@(Lang?.T("Amount") ?? "Amount")" Format="C6" />
+            <TemplateColumn Title="@(Lang?.T("TransferApprovals_TransferType") ?? "Transfer Type")" Sortable="false">
                 <CellTemplate>
                     @{
                         var typeColor = context.Item.TransferType switch
@@ -65,7 +65,7 @@
                     <MudChip T="string" Color="@typeColor" Size="Size.Small">@context.Item.TransferType</MudChip>
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn Title="Status" Sortable="false">
+            <TemplateColumn Title="@(Lang?.T("Status") ?? "Status")" Sortable="false">
                 <CellTemplate>
                     @{
                         var color = context.Item.Status switch
@@ -80,36 +80,38 @@
                     <MudChip T="string" Color="@color" Size="Size.Small">@context.Item.Status</MudChip>
                 </CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.CreatedDate" Title="Date" Format="dd MMM yyyy HH:mm" />
-            <TemplateColumn Title="Actions" Sortable="false">
+            <PropertyColumn Property="x => x.CreatedDate" Title="@(Lang?.T("Date") ?? "Date")" Format="dd MMM yyyy HH:mm" />
+            <TemplateColumn Title="@(Lang?.T("Actions") ?? "Actions")" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
                         @if (context.Item.Status == DepositStatus.Pending)
                         {
                             <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Success"
                                        StartIcon="@Icons.Material.Filled.Check"
-                                       OnClick="@(() => ApproveTransfer(context.Item))">Approve</MudButton>
+                                       OnClick="@(() => ApproveTransfer(context.Item))">@(Lang?.T("Approve") ?? "Approve")</MudButton>
                             <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Error"
                                        StartIcon="@Icons.Material.Filled.Close"
-                                       OnClick="@(() => RejectTransfer(context.Item))">Reject</MudButton>
+                                       OnClick="@(() => RejectTransfer(context.Item))">@(Lang?.T("Reject") ?? "Reject")</MudButton>
                         }
                         @if (context.Item.Status == DepositStatus.Pending || context.Item.Status == DepositStatus.Approved)
                         {
                             <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Dark"
                                        StartIcon="@Icons.Material.Filled.Cancel"
-                                       OnClick="@(() => CancelTransfer(context.Item))">Cancel</MudButton>
+                                       OnClick="@(() => CancelTransfer(context.Item))">@(Lang?.T("Cancel") ?? "Cancel")</MudButton>
                         }
                     </MudStack>
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
         <NoRecordsContent>
-            <MudText>No transfers found.</MudText>
+            <MudText>@(Lang?.T("Transfers_NotFound") ?? "No transfers found.")</MudText>
         </NoRecordsContent>
     </MudDataGrid>
 </MudPaper>
 
 @code {
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
+
     private List<AirtimeTransferDto> _allTransfers = new();
     private List<AirtimeTransferDto> _filteredTransfers = new();
     private string _currentFilter = "Pending";
@@ -150,7 +152,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error loading transfers: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("ErrorLoading") ?? "Error loading"} {Lang?.T("TransferApprovals_Title")?.ToLower() ?? "transfers"}: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -180,11 +182,11 @@
     {
         var parameters = new DialogParameters<ApprovalNotesDialog>
         {
-            { x => x.Title, $"Approve Transfer #{transfer.Id}" },
-            { x => x.ActionLabel, "Approve" },
+            { x => x.Title, $"{Lang?.T("TransferApprovals_ApproveTransfer") ?? "Approve Transfer"} #{transfer.Id}" },
+            { x => x.ActionLabel, Lang?.T("Approve") ?? "Approve" },
             { x => x.ActionColor, Color.Success }
         };
-        var dialog = await DialogService.ShowAsync<ApprovalNotesDialog>("Approve Transfer", parameters,
+        var dialog = await DialogService.ShowAsync<ApprovalNotesDialog>(Lang?.T("TransferApprovals_ApproveTransfer") ?? "Approve Transfer", parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
         var result = await dialog.Result;
         if (result is { Canceled: false, Data: string notes })
@@ -192,13 +194,13 @@
             try
             {
                 var (_, notification) = await TransferService.ApproveTransferAsync(transfer.Id, CurrentUser.UserId ?? "", notes);
-                Snackbar.Add("Transfer approved successfully", Severity.Success);
+                Snackbar.Add(Lang?.T("TransferApprovals_Approved") ?? "Transfer approved successfully", Severity.Success);
                 await LoadTransfers();
                 await HandleNotification(notification);
             }
             catch (Exception ex)
             {
-                Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+                Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
             }
         }
     }
@@ -207,11 +209,11 @@
     {
         var parameters = new DialogParameters<ApprovalNotesDialog>
         {
-            { x => x.Title, $"Reject Transfer #{transfer.Id}" },
-            { x => x.ActionLabel, "Reject" },
+            { x => x.Title, $"{Lang?.T("TransferApprovals_RejectTransfer") ?? "Reject Transfer"} #{transfer.Id}" },
+            { x => x.ActionLabel, Lang?.T("Reject") ?? "Reject" },
             { x => x.ActionColor, Color.Error }
         };
-        var dialog = await DialogService.ShowAsync<ApprovalNotesDialog>("Reject Transfer", parameters,
+        var dialog = await DialogService.ShowAsync<ApprovalNotesDialog>(Lang?.T("TransferApprovals_RejectTransfer") ?? "Reject Transfer", parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
         var result = await dialog.Result;
         if (result is { Canceled: false, Data: string notes })
@@ -219,12 +221,12 @@
             try
             {
                 await TransferService.RejectTransferAsync(transfer.Id, CurrentUser.UserId ?? "", notes);
-                Snackbar.Add("Transfer rejected", Severity.Warning);
+                Snackbar.Add(Lang?.T("TransferApprovals_Rejected") ?? "Transfer rejected", Severity.Warning);
                 await LoadTransfers();
             }
             catch (Exception ex)
             {
-                Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+                Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
             }
         }
     }
@@ -233,11 +235,11 @@
     {
         var parameters = new DialogParameters<ApprovalNotesDialog>
         {
-            { x => x.Title, $"Cancel Transfer #{transfer.Id}" },
-            { x => x.ActionLabel, "Cancel Transfer" },
+            { x => x.Title, $"{Lang?.T("TransferApprovals_CancelTransfer") ?? "Cancel Transfer"} #{transfer.Id}" },
+            { x => x.ActionLabel, Lang?.T("Cancel") ?? "Cancel Transfer" },
             { x => x.ActionColor, Color.Dark }
         };
-        var dialog = await DialogService.ShowAsync<ApprovalNotesDialog>("Cancel Transfer", parameters,
+        var dialog = await DialogService.ShowAsync<ApprovalNotesDialog>(Lang?.T("TransferApprovals_CancelTransfer") ?? "Cancel Transfer", parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
         var result = await dialog.Result;
         if (result is { Canceled: false, Data: string notes })
@@ -245,12 +247,12 @@
             try
             {
                 await TransferService.CancelTransferAsync(transfer.Id, CurrentUser.UserId ?? "", notes);
-                Snackbar.Add("Transfer cancelled successfully", Severity.Info);
+                Snackbar.Add(Lang?.T("TransferApprovals_Cancelled") ?? "Transfer cancelled successfully", Severity.Info);
                 await LoadTransfers();
             }
             catch (Exception ex)
             {
-                Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+                Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
             }
         }
     }
@@ -261,9 +263,9 @@
         if (pending.Count == 0) return;
 
         var confirm = await DialogService.ShowMessageBox(
-            "Approve All Transfers",
-            $"Are you sure you want to approve all {pending.Count} pending transfer(s)?",
-            yesText: "Approve All", cancelText: "Cancel");
+            Lang?.T("TransferApprovals_ApproveAllTitle") ?? "Approve All Transfers",
+            $"{Lang?.T("TransferApprovals_ConfirmApproveAll") ?? "Are you sure you want to approve all"} {pending.Count} {(Lang?.T("Pending")?.ToLower() ?? "pending")} transfer(s)?",
+            yesText: Lang?.T("Approvals_ApproveAll") ?? "Approve All", cancelText: Lang?.T("Cancel") ?? "Cancel");
         if (confirm != true) return;
 
         _approvingAll = true;
@@ -294,13 +296,13 @@
             }
         }
         _approvingAll = false;
-        Snackbar.Add($"{approved} transfer(s) approved" + (failed > 0 ? $", {failed} failed" : ""), failed > 0 ? Severity.Warning : Severity.Success);
+        Snackbar.Add($"{approved} {Lang?.T("TransferApprovals_BulkResult") ?? "transfer(s) approved"}" + (failed > 0 ? $", {failed} {Lang?.T("Approvals_BulkFailed") ?? "failed"}" : ""), failed > 0 ? Severity.Warning : Severity.Success);
         await LoadTransfers();
 
         // Show WhatsApp API send results
         if (allApiResults.Count > 0)
         {
-            Snackbar.Add($"WhatsApp messages sent to {allApiResults.Count} dealer(s)", Severity.Success);
+            Snackbar.Add(string.Format(Lang?.T("WhatsApp_SentCount") ?? "WhatsApp messages sent to {0} dealer(s)", allApiResults.Count), Severity.Success);
         }
 
         // Open DealerWhatsApp URLs directly (fallback if API not configured)
@@ -316,12 +318,12 @@
             try
             {
                 await JS.InvokeVoidAsync("navigator.clipboard.writeText", combined);
-                Snackbar.Add($"{allMessages.Count} message(s) copied to clipboard — paste in the WhatsApp group", Severity.Info,
+                Snackbar.Add(string.Format(Lang?.T("WhatsApp_CopiedCount") ?? "{0} message(s) copied to clipboard — paste in the WhatsApp group", allMessages.Count), Severity.Info,
                     config => config.VisibleStateDuration = 5000);
             }
             catch
             {
-                Snackbar.Add("Could not auto-copy messages", Severity.Warning);
+                Snackbar.Add(Lang?.T("WhatsApp_CopyFailed") ?? "Could not auto-copy messages", Severity.Warning);
             }
 
             if (!string.IsNullOrWhiteSpace(groupUrl))
@@ -338,7 +340,7 @@
         {
             foreach (var result in notification.WhatsAppApiResults)
             {
-                Snackbar.Add($"WhatsApp sent: {result}", Severity.Success);
+                Snackbar.Add(string.Format(Lang?.T("WhatsApp_Sent") ?? "WhatsApp sent: {0}", result), Severity.Success);
             }
         }
 
@@ -354,12 +356,12 @@
             try
             {
                 await JS.InvokeVoidAsync("navigator.clipboard.writeText", notification.FormattedMessage);
-                Snackbar.Add("Message copied to clipboard — paste it in the WhatsApp group", Severity.Info,
+                Snackbar.Add(Lang?.T("WhatsApp_CopiedSingle") ?? "Message copied to clipboard — paste it in the WhatsApp group", Severity.Info,
                     config => config.VisibleStateDuration = 5000);
             }
             catch
             {
-                Snackbar.Add("Could not auto-copy message", Severity.Warning);
+                Snackbar.Add(Lang?.T("WhatsApp_CopySingleFailed") ?? "Could not auto-copy message", Severity.Warning);
             }
 
             if (!string.IsNullOrWhiteSpace(notification.WhatsAppGroupUrl))

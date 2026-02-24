@@ -6,6 +6,7 @@ using AirtimeDistributionCloud.Infrastructure;
 using AirtimeDistributionCloud.Infrastructure.Data;
 using AirtimeDistributionCloud.Web.Components;
 using AirtimeDistributionCloud.Web.Components.Account;
+using AirtimeDistributionCloud.Application.Services;
 using AirtimeDistributionCloud.Web.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -39,6 +40,7 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+builder.Services.AddScoped<ILanguageService, LanguageService>();
 
 builder.Services.AddAuthentication(options =>
 {

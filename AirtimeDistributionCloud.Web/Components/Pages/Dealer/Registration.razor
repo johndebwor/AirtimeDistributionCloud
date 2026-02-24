@@ -7,19 +7,19 @@
 @inject ISnackbar Snackbar
 @rendermode InteractiveServer
 
-<PageTitle>Dealer Registration - RasidBase</PageTitle>
+<PageTitle>@(Lang?.T("Registration_Title") ?? "Dealer Registration") - RasidBase</PageTitle>
 
 <div class="page-header">
-    <h1>Dealer Registration</h1>
-    <p>Register and manage dealers</p>
+    <h1>@(Lang?.T("Registration_Title") ?? "Dealer Registration")</h1>
+    <p>@(Lang?.T("Registration_Subtitle") ?? "Register and manage dealers")</p>
 </div>
 
 <div class="page-toolbar">
-    <MudTextField @bind-Value="_searchString" Placeholder="Search dealers..." Adornment="Adornment.Start"
+    <MudTextField @bind-Value="_searchString" Placeholder="@(Lang?.T("Registration_Search") ?? "Search dealers...")" Adornment="Adornment.Start"
                   AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
                   Immediate="true" Style="max-width: 300px;" />
     <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd"
-               OnClick="OpenCreateDialog">Register Dealer</MudButton>
+               OnClick="OpenCreateDialog">@(Lang?.T("Registration_Register") ?? "Register Dealer")</MudButton>
 </div>
 
 <MudPaper Elevation="0" Class="data-card pa-4">
@@ -27,35 +27,35 @@
                  Loading="@_loading" Dense="true" Hover="true" Striped="true"
                  QuickFilter="@(new Func<DealerDto, bool>(FilterFunc))">
         <Columns>
-            <PropertyColumn Property="x => x.DealerNumber" Title="Dealer #" />
-            <PropertyColumn Property="x => x.Name" Title="Name" />
-            <TemplateColumn Title="Type" Sortable="false">
+            <PropertyColumn Property="x => x.DealerNumber" Title="@(Lang?.T("Registration_DealerNum") ?? "Dealer #")" />
+            <PropertyColumn Property="x => x.Name" Title="@(Lang?.T("Name") ?? "Name")" />
+            <TemplateColumn Title="@(Lang?.T("Type") ?? "Type")" Sortable="false">
                 <CellTemplate>
                     <MudChip T="string" Color="@(context.Item.Type == Core.Enums.DealerType.Person ? Color.Info : Color.Secondary)"
                              Size="Size.Small">@context.Item.Type</MudChip>
                 </CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.Gender" Title="Gender" />
-            <PropertyColumn Property="x => x.IDNumber" Title="ID Number" />
-            <PropertyColumn Property="x => x.PhoneNumber" Title="Phone" />
-            <PropertyColumn Property="x => x.State" Title="State" />
-            <TemplateColumn Title="Status" Sortable="false">
+            <PropertyColumn Property="x => x.Gender" Title="@(Lang?.T("Registration_Gender") ?? "Gender")" />
+            <PropertyColumn Property="x => x.IDNumber" Title="@(Lang?.T("Registration_IDNumber") ?? "ID Number")" />
+            <PropertyColumn Property="x => x.PhoneNumber" Title="@(Lang?.T("Phone") ?? "Phone")" />
+            <PropertyColumn Property="x => x.State" Title="@(Lang?.T("Registration_State") ?? "State")" />
+            <TemplateColumn Title="@(Lang?.T("Status") ?? "Status")" Sortable="false">
                 <CellTemplate>
                     <MudChip T="string" Color="@(context.Item.IsActive ? Color.Success : Color.Error)"
-                             Size="Size.Small">@(context.Item.IsActive ? "Active" : "Inactive")</MudChip>
+                             Size="Size.Small">@(context.Item.IsActive ? (Lang?.T("Active") ?? "Active") : (Lang?.T("Inactive") ?? "Inactive"))</MudChip>
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn Title="Actions" Sortable="false">
+            <TemplateColumn Title="@(Lang?.T("Actions") ?? "Actions")" Sortable="false">
                 <CellTemplate>
-                    <MudTooltip Text="View Details">
+                    <MudTooltip Text="@(Lang?.T("ViewDetails") ?? "View Details")">
                         <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Color="Color.Info"
                                        OnClick="@(() => ViewDetails(context.Item))" />
                     </MudTooltip>
-                    <MudTooltip Text="Edit">
+                    <MudTooltip Text="@(Lang?.T("Edit") ?? "Edit")">
                         <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary"
                                        OnClick="@(() => OpenEditDialog(context.Item))" />
                     </MudTooltip>
-                    <MudTooltip Text="@(context.Item.IsActive ? "Deactivate" : "Activate")">
+                    <MudTooltip Text="@(context.Item.IsActive ? (Lang?.T("Deactivate") ?? "Deactivate") : (Lang?.T("Activate") ?? "Activate"))">
                         <MudIconButton Icon="@(context.Item.IsActive ? Icons.Material.Filled.PersonOff : Icons.Material.Filled.PersonAdd)"
                                        Size="Size.Small"
                                        Color="@(context.Item.IsActive ? Color.Error : Color.Success)"
@@ -65,12 +65,14 @@
             </TemplateColumn>
         </Columns>
         <NoRecordsContent>
-            <MudText>No dealers registered.</MudText>
+            <MudText>@(Lang?.T("Registration_NotFound") ?? "No dealers registered.")</MudText>
         </NoRecordsContent>
     </MudDataGrid>
 </MudPaper>
 
 @code {
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
+
     private List<DealerDto> _dealers = new();
     private string _searchString = "";
     private bool _loading = true;
@@ -89,7 +91,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error loading dealers: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("ErrorLoading") ?? "Error loading dealers"}: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -105,7 +107,7 @@
 
     private async Task OpenCreateDialog()
     {
-        var dialog = await DialogService.ShowAsync<DealerDialog>("Register Dealer",
+        var dialog = await DialogService.ShowAsync<DealerDialog>(Lang?.T("Registration_Register") ?? "Register Dealer",
             new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
         var result = await dialog.Result;
         if (result is { Canceled: false })
@@ -115,7 +117,7 @@
     private async Task OpenEditDialog(DealerDto dealer)
     {
         var parameters = new DialogParameters<DealerDialog> { { x => x.EditDealer, dealer } };
-        var dialog = await DialogService.ShowAsync<DealerDialog>($"Edit Dealer: {dealer.Name}", parameters,
+        var dialog = await DialogService.ShowAsync<DealerDialog>($"{Lang?.T("Edit") ?? "Edit"}: {dealer.Name}", parameters,
             new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
         var result = await dialog.Result;
         if (result is { Canceled: false })
@@ -125,23 +127,25 @@
     private async Task ViewDetails(DealerDto dealer)
     {
         var parameters = new DialogParameters<DealerDetailsDialog> { { x => x.Dealer, dealer } };
-        await DialogService.ShowAsync<DealerDetailsDialog>($"Dealer: {dealer.Name}", parameters,
+        await DialogService.ShowAsync<DealerDetailsDialog>($"{Lang?.T("Dealer") ?? "Dealer"}: {dealer.Name}", parameters,
             new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
     }
 
     private async Task ToggleActive(DealerDto dealer)
     {
         var newState = !dealer.IsActive;
-        var action = newState ? "activate" : "deactivate";
+        var action = newState ? (Lang?.T("Activate") ?? "activate") : (Lang?.T("Deactivate") ?? "deactivate");
         try
         {
             await DealerService.SetDealerActiveAsync(dealer.Id, newState);
-            Snackbar.Add($"Dealer {(newState ? "activated" : "deactivated")} successfully", Severity.Success);
+            Snackbar.Add(newState
+                ? (Lang?.T("Registration_Activated") ?? "Dealer activated successfully")
+                : (Lang?.T("Registration_Deactivated") ?? "Dealer deactivated successfully"), Severity.Success);
             await LoadDealers();
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Failed to {action} dealer: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
         }
     }
 }

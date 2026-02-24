@@ -2,16 +2,17 @@
 
 <MudDialog>
     <DialogContent>
-        <MudTextField @bind-Value="_notes" Label="Notes" Lines="3" Variant="Variant.Outlined" />
+        <MudTextField @bind-Value="_notes" Label="@(Lang?.T("Notes") ?? "Notes")" Lines="3" Variant="Variant.Outlined" />
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton OnClick="Cancel">@(Lang?.T("Cancel") ?? "Cancel")</MudButton>
         <MudButton Color="@ActionColor" Variant="Variant.Filled" OnClick="Submit">@ActionLabel</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
     [Parameter] public string Title { get; set; } = "";
     [Parameter] public string ActionLabel { get; set; } = "Confirm";
     [Parameter] public Color ActionColor { get; set; } = Color.Primary;

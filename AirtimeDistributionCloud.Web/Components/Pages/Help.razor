@@ -1,15 +1,16 @@
 @page "/help"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using AirtimeDistributionCloud.Application.Services
 @rendermode InteractiveServer
 
-<PageTitle>Help - RasidBase</PageTitle>
+<PageTitle>@(Lang?.T("Help_Title") ?? "Help & Guide") - RasidBase</PageTitle>
 
 <div class="page-header">
-    <h1>Help & Guide</h1>
-    <p>Learn how to use RasidBase — Smart Airtime Distribution</p>
+    <h1>@(Lang?.T("Help_Title") ?? "Help & Guide")</h1>
+    <p>@(Lang?.T("Help_Subtitle") ?? "Learn how to use RasidBase — Smart Airtime Distribution")</p>
 </div>
 
-<MudTextField @bind-Value="_search" Placeholder="Search help topics..." Variant="Variant.Outlined"
+<MudTextField @bind-Value="_search" Placeholder="@(Lang?.T("Help_Search") ?? "Search help topics...")" Variant="Variant.Outlined"
               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
               Immediate="true" Class="mb-4" />
 
@@ -19,35 +20,30 @@
     <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
         <div class="d-flex align-center gap-2 mb-3">
             <MudIcon Icon="@Icons.Material.Outlined.RocketLaunch" Color="Color.Primary" />
-            <MudText Typo="Typo.h6">Getting Started</MudText>
+            <MudText Typo="Typo.h6">@(Lang?.T("Help_GettingStarted") ?? "Getting Started")</MudText>
         </div>
         <MudExpansionPanels MultiExpansion="true" Elevation="0">
             @if (MatchesSearch("What is RasidBase", "airtime distribution", "overview"))
             {
-                <MudExpansionPanel Text="What is RasidBase?">
+                <MudExpansionPanel Text="@(Lang?.T("Help_WhatIsApp") ?? "What is RasidBase?")">
                     <MudText Typo="Typo.body2">
-                        RasidBase is a smart airtime distribution management system. It helps you manage dealers,
-                        track airtime deposits and transfers, handle expenses, and generate reports — all from one place.
+                        @(Lang?.T("Help_WhatIsAppAnswer") ?? "RasidBase is a smart airtime distribution management system. It helps you manage dealers, track airtime deposits and transfers, handle expenses, and generate reports — all from one place.")
                     </MudText>
                 </MudExpansionPanel>
             }
             @if (MatchesSearch("navigate", "sidebar", "menu", "pages"))
             {
-                <MudExpansionPanel Text="How do I navigate the application?">
+                <MudExpansionPanel Text="@(Lang?.T("Help_HowNavigate") ?? "How do I navigate the application?")">
                     <MudText Typo="Typo.body2">
-                        Use the sidebar on the left to access different sections. The sidebar shows only the pages
-                        you have permission to access based on your role. Click the menu icon (☰) in the top-left
-                        to collapse or expand the sidebar.
+                        @(Lang?.T("Help_HowNavigateAnswer") ?? "Use the sidebar on the left to access different sections. The sidebar shows only the pages you have permission to access based on your role. Click the menu icon in the top-left to collapse or expand the sidebar.")
                     </MudText>
                 </MudExpansionPanel>
             }
             @if (MatchesSearch("dark mode", "light mode", "theme"))
             {
-                <MudExpansionPanel Text="How do I switch between light and dark mode?">
+                <MudExpansionPanel Text="@(Lang?.T("Help_HowTheme") ?? "How do I switch between light and dark mode?")">
                     <MudText Typo="Typo.body2">
-                        Click the theme icon in the top-right corner of the app bar. You can choose between
-                        <strong>Light</strong>, <strong>Dark</strong>, or <strong>Auto</strong> (follows your system preference).
-                        Your choice is saved and remembered across sessions.
+                        @(Lang?.T("Help_HowThemeAnswer") ?? "Click the theme icon in the top-right corner of the app bar. You can choose between Light, Dark, or Auto (follows your system preference). Your choice is saved and remembered across sessions.")
                     </MudText>
                 </MudExpansionPanel>
             }
@@ -61,27 +57,27 @@
     <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
         <div class="d-flex align-center gap-2 mb-3">
             <MudIcon Icon="@Icons.Material.Outlined.SpaceDashboard" Color="Color.Primary" />
-            <MudText Typo="Typo.h6">Dashboard</MudText>
+            <MudText Typo="Typo.h6">@(Lang?.T("Help_Dashboard") ?? "Dashboard")</MudText>
         </div>
         <MudExpansionPanels MultiExpansion="true" Elevation="0">
             @if (MatchesSearch("dashboard", "summary", "cards", "statistics"))
             {
-                <MudExpansionPanel Text="What do the dashboard cards show?">
+                <MudExpansionPanel Text="@(Lang?.T("Help_DashboardCards") ?? "What do the dashboard cards show?")">
                     <MudText Typo="Typo.body2">
-                        The dashboard provides a quick overview of your business:
+                        @(Lang?.T("Help_DashboardCardsIntro") ?? "The dashboard provides a quick overview of your business:")
                     </MudText>
                     <MudList T="string" Dense="true" Class="mt-2">
                         <MudListItem Icon="@Icons.Material.Filled.Circle" IconColor="Color.Primary" IconSize="Size.Small">
-                            <strong>Total Airtime Balance</strong> — Current airtime stock across all products
+                            <strong>@(Lang?.T("Help_TotalAirtimeBalance") ?? "Total Airtime Balance")</strong> — @(Lang?.T("Help_TotalAirtimeBalanceDesc") ?? "Current airtime stock across all products")
                         </MudListItem>
                         <MudListItem Icon="@Icons.Material.Filled.Circle" IconColor="Color.Success" IconSize="Size.Small">
-                            <strong>Active Dealers</strong> — Number of registered active dealers
+                            <strong>@(Lang?.T("Help_ActiveDealers") ?? "Active Dealers")</strong> — @(Lang?.T("Help_ActiveDealersDesc") ?? "Number of registered active dealers")
                         </MudListItem>
                         <MudListItem Icon="@Icons.Material.Filled.Circle" IconColor="Color.Warning" IconSize="Size.Small">
-                            <strong>Today's Transfers</strong> — Airtime transfers made today
+                            <strong>@(Lang?.T("Help_TodaysTransfers") ?? "Today's Transfers")</strong> — @(Lang?.T("Help_TodaysTransfersDesc") ?? "Airtime transfers made today")
                         </MudListItem>
                         <MudListItem Icon="@Icons.Material.Filled.Circle" IconColor="Color.Error" IconSize="Size.Small">
-                            <strong>Pending Approvals</strong> — Items waiting for admin approval
+                            <strong>@(Lang?.T("Help_PendingApprovals") ?? "Pending Approvals")</strong> — @(Lang?.T("Help_PendingApprovalsDesc") ?? "Items waiting for admin approval")
                         </MudListItem>
                     </MudList>
                 </MudExpansionPanel>
@@ -96,48 +92,44 @@
     <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
         <div class="d-flex align-center gap-2 mb-3">
             <MudIcon Icon="@Icons.Material.Outlined.PersonAdd" Style="color:#F59E0B;" />
-            <MudText Typo="Typo.h6">Dealers</MudText>
+            <MudText Typo="Typo.h6">@(Lang?.T("Help_Dealers") ?? "Dealers")</MudText>
         </div>
         <MudExpansionPanels MultiExpansion="true" Elevation="0">
             @if (MatchesSearch("register", "new dealer", "add dealer"))
             {
-                <MudExpansionPanel Text="How do I register a new dealer?">
+                <MudExpansionPanel Text="@(Lang?.T("Help_HowRegisterDealer") ?? "How do I register a new dealer?")">
                     <MudText Typo="Typo.body2">
-                        Go to <strong>Dealers → Registration</strong> and click the <strong>+ New Dealer</strong> button.
-                        Fill in the dealer's name, phone number, select their branch, and set the commission rate for each product.
-                        A unique dealer number (e.g. DLR-0001) is automatically generated.
+                        @(Lang?.T("Help_HowRegisterDealerAnswer") ?? "Go to Dealers > Registration and click the + New Dealer button. Fill in the dealer's name, phone number, select their branch, and set the commission rate for each product. A unique dealer number (e.g. DLR-0001) is automatically generated.")
                     </MudText>
                 </MudExpansionPanel>
             }
             @if (MatchesSearch("transfer", "airtime", "send"))
             {
-                <MudExpansionPanel Text="How do I create an airtime transfer?">
+                <MudExpansionPanel Text="@(Lang?.T("Help_HowCreateTransfer") ?? "How do I create an airtime transfer?")">
                     <MudText Typo="Typo.body2">
-                        Go to <strong>Dealers → Transfers</strong> and click <strong>+ New Transfer</strong>.
-                        Select the dealer, product, and enter the amount. The system automatically calculates:
+                        @(Lang?.T("Help_HowCreateTransferIntro") ?? "Go to Dealers > Transfers and click + New Transfer. Select the dealer, product, and enter the amount. The system automatically calculates:")
                     </MudText>
                     <MudList T="string" Dense="true" Class="mt-2">
                         <MudListItem Icon="@Icons.Material.Filled.ArrowRight" IconSize="Size.Small">
-                            <strong>Airtime Amount</strong> — The actual airtime value transferred
+                            <strong>@(Lang?.T("Help_AirtimeAmount") ?? "Airtime Amount")</strong> — @(Lang?.T("Help_AirtimeAmountDesc") ?? "The actual airtime value transferred")
                         </MudListItem>
                         <MudListItem Icon="@Icons.Material.Filled.ArrowRight" IconSize="Size.Small">
-                            <strong>Commission</strong> — Dealer's commission based on their rate
+                            <strong>@(Lang?.T("Help_Commission") ?? "Commission")</strong> — @(Lang?.T("Help_CommissionDesc") ?? "Dealer's commission based on their rate")
                         </MudListItem>
                     </MudList>
                     <MudText Typo="Typo.body2" Class="mt-2">
-                        Transfers require admin approval before they are finalized.
+                        @(Lang?.T("Help_TransfersRequireApproval") ?? "Transfers require admin approval before they are finalized.")
                     </MudText>
                 </MudExpansionPanel>
             }
             @if (MatchesSearch("commission", "rate", "percentage"))
             {
-                <MudExpansionPanel Text="How are commissions calculated?">
+                <MudExpansionPanel Text="@(Lang?.T("Help_HowCommissions") ?? "How are commissions calculated?")">
                     <MudText Typo="Typo.body2">
-                        Each dealer has a commission rate per product (set during registration or editing).
-                        When a transfer is created, the formula splits the total amount into airtime and commission:
+                        @(Lang?.T("Help_HowCommissionsAnswer") ?? "Each dealer has a commission rate per product (set during registration or editing). When a transfer is created, the formula splits the total amount into airtime and commission:")
                         <br /><br />
-                        <code>Airtime = Amount ÷ (1 + CommissionRate ÷ 100)</code><br />
-                        <code>Commission = Amount − Airtime</code>
+                        <code>Airtime = Amount / (1 + CommissionRate / 100)</code><br />
+                        <code>Commission = Amount - Airtime</code>
                     </MudText>
                 </MudExpansionPanel>
             }
@@ -151,34 +143,32 @@
     <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
         <div class="d-flex align-center gap-2 mb-3">
             <MudIcon Icon="@Icons.Material.Outlined.AccountBalanceWallet" Style="color:#3B82F6;" />
-            <MudText Typo="Typo.h6">Deposits & Approvals</MudText>
+            <MudText Typo="Typo.h6">@(Lang?.T("Help_DepositsApprovals") ?? "Deposits & Approvals")</MudText>
         </div>
         <MudExpansionPanels MultiExpansion="true" Elevation="0">
             @if (MatchesSearch("airtime deposit", "add stock", "deposit"))
             {
-                <MudExpansionPanel Text="How do I add airtime stock (deposits)?">
+                <MudExpansionPanel Text="@(Lang?.T("Help_HowAddStock") ?? "How do I add airtime stock (deposits)?")">
                     <MudText Typo="Typo.body2">
-                        Go to <strong>Admin → Deposits</strong> and click <strong>+ New Deposit</strong>.
-                        Select the product, enter the amount and optional bonus percentage.
-                        Depending on settings, the deposit may be auto-approved or require admin approval.
+                        @(Lang?.T("Help_HowAddStockAnswer") ?? "Go to Admin > Deposits and click + New Deposit. Select the product, enter the amount and optional bonus percentage. Depending on settings, the deposit may be auto-approved or require admin approval.")
                     </MudText>
                 </MudExpansionPanel>
             }
             @if (MatchesSearch("approve", "reject", "approval"))
             {
-                <MudExpansionPanel Text="How do approvals work?">
+                <MudExpansionPanel Text="@(Lang?.T("Help_HowApprovals") ?? "How do approvals work?")">
                     <MudText Typo="Typo.body2">
-                        Several operations require admin approval:
+                        @(Lang?.T("Help_HowApprovalsIntro") ?? "Several operations require admin approval:")
                     </MudText>
                     <MudList T="string" Dense="true" Class="mt-2">
                         <MudListItem Icon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Success" IconSize="Size.Small">
-                            <strong>Deposit Approvals</strong> — Review and approve airtime deposits
+                            <strong>@(Lang?.T("Help_DepositApprovals") ?? "Deposit Approvals")</strong> — @(Lang?.T("Help_DepositApprovalsDesc") ?? "Review and approve airtime deposits")
                         </MudListItem>
                         <MudListItem Icon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Success" IconSize="Size.Small">
-                            <strong>Transfer Approvals</strong> — Review and approve dealer airtime transfers
+                            <strong>@(Lang?.T("Help_TransferApprovals") ?? "Transfer Approvals")</strong> — @(Lang?.T("Help_TransferApprovalsDesc") ?? "Review and approve dealer airtime transfers")
                         </MudListItem>
                         <MudListItem Icon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Success" IconSize="Size.Small">
-                            <strong>Expense Approvals</strong> — Expenses above the threshold need approval
+                            <strong>@(Lang?.T("Help_ExpenseApprovals") ?? "Expense Approvals")</strong> — @(Lang?.T("Help_ExpenseApprovalsDesc") ?? "Expenses above the threshold need approval")
                         </MudListItem>
                     </MudList>
                 </MudExpansionPanel>
@@ -193,35 +183,30 @@
     <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
         <div class="d-flex align-center gap-2 mb-3">
             <MudIcon Icon="@Icons.Material.Outlined.Paid" Style="color:#16A34A;" />
-            <MudText Typo="Typo.h6">Cashier Operations</MudText>
+            <MudText Typo="Typo.h6">@(Lang?.T("Help_CashierOps") ?? "Cashier Operations")</MudText>
         </div>
         <MudExpansionPanels MultiExpansion="true" Elevation="0">
             @if (MatchesSearch("cash deposit", "record payment"))
             {
-                <MudExpansionPanel Text="How do I record a cash deposit from a dealer?">
+                <MudExpansionPanel Text="@(Lang?.T("Help_HowCashDeposit") ?? "How do I record a cash deposit from a dealer?")">
                     <MudText Typo="Typo.body2">
-                        Go to <strong>Cashier → Cash Deposits</strong> and click <strong>+ New Deposit</strong>.
-                        Select the dealer and enter the amount received. This records cash payments
-                        from dealers and updates their balance.
+                        @(Lang?.T("Help_HowCashDepositAnswer") ?? "Go to Cashier > Cash Deposits and click + New Deposit. Select the dealer and enter the amount received. This records cash payments from dealers and updates their balance.")
                     </MudText>
                 </MudExpansionPanel>
             }
             @if (MatchesSearch("expense", "record expense", "petty cash"))
             {
-                <MudExpansionPanel Text="How do I record an expense?">
+                <MudExpansionPanel Text="@(Lang?.T("Help_HowExpense") ?? "How do I record an expense?")">
                     <MudText Typo="Typo.body2">
-                        Go to <strong>Cashier → Expenses</strong> and click <strong>+ New Expense</strong>.
-                        Select a category, enter the amount, and provide a description.
-                        Expenses above the approval threshold (configured in Settings) will require admin approval.
+                        @(Lang?.T("Help_HowExpenseAnswer") ?? "Go to Cashier > Expenses and click + New Expense. Select a category, enter the amount, and provide a description. Expenses above the approval threshold (configured in Settings) will require admin approval.")
                     </MudText>
                 </MudExpansionPanel>
             }
             @if (MatchesSearch("balance", "dealer balance", "outstanding"))
             {
-                <MudExpansionPanel Text="How do I check dealer balances?">
+                <MudExpansionPanel Text="@(Lang?.T("Help_HowBalance") ?? "How do I check dealer balances?")">
                     <MudText Typo="Typo.body2">
-                        Go to <strong>Cashier → Balances</strong> to see each dealer's outstanding balance.
-                        The balance reflects total airtime transferred minus cash deposits received.
+                        @(Lang?.T("Help_HowBalanceAnswer") ?? "Go to Cashier > Balances to see each dealer's outstanding balance. The balance reflects total airtime transferred minus cash deposits received.")
                     </MudText>
                 </MudExpansionPanel>
             }
@@ -235,22 +220,21 @@
     <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
         <div class="d-flex align-center gap-2 mb-3">
             <MudIcon Icon="@Icons.Material.Outlined.Assessment" Color="Color.Primary" />
-            <MudText Typo="Typo.h6">Reports</MudText>
+            <MudText Typo="Typo.h6">@(Lang?.T("Help_Reports") ?? "Reports")</MudText>
         </div>
         <MudExpansionPanels MultiExpansion="true" Elevation="0">
             @if (MatchesSearch("report", "generate", "PDF", "Excel"))
             {
-                <MudExpansionPanel Text="How do I generate reports?">
+                <MudExpansionPanel Text="@(Lang?.T("Help_HowReports") ?? "How do I generate reports?")">
                     <MudText Typo="Typo.body2">
-                        Go to <strong>Admin → Reports</strong>. Select the report type, date range, and any filters.
-                        You can export reports as:
+                        @(Lang?.T("Help_HowReportsIntro") ?? "Go to Admin > Reports. Select the report type, date range, and any filters. You can export reports as:")
                     </MudText>
                     <MudList T="string" Dense="true" Class="mt-2">
                         <MudListItem Icon="@Icons.Material.Filled.PictureAsPdf" IconColor="Color.Error" IconSize="Size.Small">
-                            <strong>PDF</strong> — Formatted for printing with company logo and branding
+                            <strong>PDF</strong> — @(Lang?.T("Help_ReportPdfDesc") ?? "Formatted for printing with company logo and branding")
                         </MudListItem>
                         <MudListItem Icon="@Icons.Material.Filled.TableChart" IconColor="Color.Success" IconSize="Size.Small">
-                            <strong>Excel</strong> — Spreadsheet format for further analysis
+                            <strong>Excel</strong> — @(Lang?.T("Help_ReportExcelDesc") ?? "Spreadsheet format for further analysis")
                         </MudListItem>
                     </MudList>
                 </MudExpansionPanel>
@@ -265,55 +249,49 @@
     <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
         <div class="d-flex align-center gap-2 mb-3">
             <MudIcon Icon="@Icons.Material.Outlined.Settings" Color="Color.Default" />
-            <MudText Typo="Typo.h6">Settings & Configuration</MudText>
+            <MudText Typo="Typo.h6">@(Lang?.T("Help_Settings") ?? "Settings & Configuration")</MudText>
         </div>
         <MudExpansionPanels MultiExpansion="true" Elevation="0">
             @if (MatchesSearch("company profile", "logo", "stamp", "abbreviation"))
             {
-                <MudExpansionPanel Text="How do I set up my company profile?">
+                <MudExpansionPanel Text="@(Lang?.T("Help_HowCompanyProfile") ?? "How do I set up my company profile?")">
                     <MudText Typo="Typo.body2">
-                        Go to <strong>System Settings → Company Profile</strong>. Here you can configure:
+                        @(Lang?.T("Help_HowCompanyProfileIntro") ?? "Go to System Settings > Company Profile. Here you can configure:")
                     </MudText>
                     <MudList T="string" Dense="true" Class="mt-2">
-                        <MudListItem Icon="@Icons.Material.Filled.ArrowRight" IconSize="Size.Small">Company name and abbreviation (shown in sidebar)</MudListItem>
-                        <MudListItem Icon="@Icons.Material.Filled.ArrowRight" IconSize="Size.Small">Address and phone numbers</MudListItem>
-                        <MudListItem Icon="@Icons.Material.Filled.ArrowRight" IconSize="Size.Small">Company logo (appears on login page and reports)</MudListItem>
-                        <MudListItem Icon="@Icons.Material.Filled.ArrowRight" IconSize="Size.Small">Electronic stamp (for document signing)</MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.ArrowRight" IconSize="Size.Small">@(Lang?.T("Help_CompanyNameAbbr") ?? "Company name and abbreviation (shown in sidebar)")</MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.ArrowRight" IconSize="Size.Small">@(Lang?.T("Help_AddressPhones") ?? "Address and phone numbers")</MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.ArrowRight" IconSize="Size.Small">@(Lang?.T("Help_CompanyLogo") ?? "Company logo (appears on login page and reports)")</MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.ArrowRight" IconSize="Size.Small">@(Lang?.T("Help_ElectronicStamp") ?? "Electronic stamp (for document signing)")</MudListItem>
                     </MudList>
                 </MudExpansionPanel>
             }
             @if (MatchesSearch("email", "SMTP", "configure email"))
             {
-                <MudExpansionPanel Text="How do I configure email notifications?">
+                <MudExpansionPanel Text="@(Lang?.T("Help_HowEmail") ?? "How do I configure email notifications?")">
                     <MudText Typo="Typo.body2">
-                        Go to <strong>System Settings → General Settings</strong> and scroll to the
-                        <strong>Email Configuration (SMTP)</strong> section. Enter your SMTP server details
-                        (host, port, username, password) and use the <strong>Send Test</strong> button to verify.
-                        <br /><br />
-                        For Gmail, use <code>smtp.gmail.com</code> on port <code>587</code> with an
-                        <strong>App Password</strong> (not your regular password).
+                        @(Lang?.T("Help_HowEmailAnswer") ?? "Go to System Settings > General Settings and scroll to the Email Configuration (SMTP) section. Enter your SMTP server details (host, port, username, password) and use the Send Test button to verify. For Gmail, use smtp.gmail.com on port 587 with an App Password (not your regular password).")
                     </MudText>
                 </MudExpansionPanel>
             }
             @if (MatchesSearch("notification", "transfer notification", "WhatsApp"))
             {
-                <MudExpansionPanel Text="How do transfer notifications work?">
+                <MudExpansionPanel Text="@(Lang?.T("Help_HowNotifications") ?? "How do transfer notifications work?")">
                     <MudText Typo="Typo.body2">
-                        In <strong>General Settings → Transfer Notification Settings</strong>, you can:
+                        @(Lang?.T("Help_HowNotificationsIntro") ?? "In General Settings > Transfer Notification Settings, you can:")
                     </MudText>
                     <MudList T="string" Dense="true" Class="mt-2">
-                        <MudListItem Icon="@Icons.Material.Filled.ArrowRight" IconSize="Size.Small">Enable/disable notifications</MudListItem>
-                        <MudListItem Icon="@Icons.Material.Filled.ArrowRight" IconSize="Size.Small">Choose channels: Email, Dealer WhatsApp, or WhatsApp Group</MudListItem>
-                        <MudListItem Icon="@Icons.Material.Filled.ArrowRight" IconSize="Size.Small">Customize the notification message template with placeholders</MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.ArrowRight" IconSize="Size.Small">@(Lang?.T("Help_EnableDisableNotif") ?? "Enable/disable notifications")</MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.ArrowRight" IconSize="Size.Small">@(Lang?.T("Help_ChooseChannels") ?? "Choose channels: Email, Dealer WhatsApp, or WhatsApp Group")</MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.ArrowRight" IconSize="Size.Small">@(Lang?.T("Help_CustomizeTemplate") ?? "Customize the notification message template with placeholders")</MudListItem>
                     </MudList>
                 </MudExpansionPanel>
             }
             @if (MatchesSearch("permission", "role", "access"))
             {
-                <MudExpansionPanel Text="How do I manage user permissions?">
+                <MudExpansionPanel Text="@(Lang?.T("Help_HowPermissions") ?? "How do I manage user permissions?")">
                     <MudText Typo="Typo.body2">
-                        Go to <strong>System → Permissions</strong> (SystemAdmin only). Here you can control which pages
-                        each role (SuperAdministrator, Dealer, Cashier) can access. Toggle permissions on or off for each page.
+                        @(Lang?.T("Help_HowPermissionsAnswer") ?? "Go to System > Permissions (SystemAdmin only). Here you can control which pages each role (SuperAdministrator, Dealer, Cashier) can access. Toggle permissions on or off for each page.")
                     </MudText>
                 </MudExpansionPanel>
             }
@@ -327,25 +305,25 @@
     <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
         <div class="d-flex align-center gap-2 mb-3">
             <MudIcon Icon="@Icons.Material.Outlined.Lightbulb" Color="Color.Warning" />
-            <MudText Typo="Typo.h6">Tips</MudText>
+            <MudText Typo="Typo.h6">@(Lang?.T("Help_Tips") ?? "Tips")</MudText>
         </div>
         <MudExpansionPanels MultiExpansion="true" Elevation="0">
-            <MudExpansionPanel Text="Quick tips for using RasidBase">
+            <MudExpansionPanel Text="@(Lang?.T("Help_QuickTips") ?? "Quick tips for using RasidBase")">
                 <MudList T="string" Dense="true">
                     <MudListItem Icon="@Icons.Material.Filled.TipsAndUpdates" IconColor="Color.Warning" IconSize="Size.Small">
-                        Use the search/filter fields on data tables to quickly find records
+                        @(Lang?.T("Help_Tip1") ?? "Use the search/filter fields on data tables to quickly find records")
                     </MudListItem>
                     <MudListItem Icon="@Icons.Material.Filled.TipsAndUpdates" IconColor="Color.Warning" IconSize="Size.Small">
-                        Numbers are formatted automatically as you type in amount fields
+                        @(Lang?.T("Help_Tip2") ?? "Numbers are formatted automatically as you type in amount fields")
                     </MudListItem>
                     <MudListItem Icon="@Icons.Material.Filled.TipsAndUpdates" IconColor="Color.Warning" IconSize="Size.Small">
-                        Export reports to Excel for custom analysis or PDF for printing
+                        @(Lang?.T("Help_Tip3") ?? "Export reports to Excel for custom analysis or PDF for printing")
                     </MudListItem>
                     <MudListItem Icon="@Icons.Material.Filled.TipsAndUpdates" IconColor="Color.Warning" IconSize="Size.Small">
-                        Set up your company profile first — the logo appears on login and reports
+                        @(Lang?.T("Help_Tip4") ?? "Set up your company profile first — the logo appears on login and reports")
                     </MudListItem>
                     <MudListItem Icon="@Icons.Material.Filled.TipsAndUpdates" IconColor="Color.Warning" IconSize="Size.Small">
-                        Configure email settings to enable transfer notifications to dealers
+                        @(Lang?.T("Help_Tip5") ?? "Configure email settings to enable transfer notifications to dealers")
                     </MudListItem>
                 </MudList>
             </MudExpansionPanel>
@@ -357,14 +335,14 @@
 {
     <MudPaper Elevation="0" Class="data-card pa-6" Style="text-align:center;">
         <MudIcon Icon="@Icons.Material.Outlined.SearchOff" Size="Size.Large" Color="Color.Secondary" />
-        <MudText Typo="Typo.h6" Color="Color.Secondary" Class="mt-2">No results found</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary">Try different keywords</MudText>
+        <MudText Typo="Typo.h6" Color="Color.Secondary" Class="mt-2">@(Lang?.T("Help_NoResults") ?? "No results found")</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">@(Lang?.T("Help_TryDifferent") ?? "Try different keywords")</MudText>
     </MudPaper>
 }
 
 <MudPaper Elevation="0" Class="data-card pa-4 mt-4" Style="text-align:center;">
     <MudText Typo="Typo.body2" Color="Color.Secondary">
-        Need more help? Contact your system administrator.
+        @(Lang?.T("Help_NeedMore") ?? "Need more help? Contact your system administrator.")
     </MudText>
     <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
         RasidBase v0.1.0
@@ -372,6 +350,8 @@
 </MudPaper>
 
 @code {
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
+
     private string _search = "";
     private bool _hasResults => string.IsNullOrWhiteSpace(_search) || _matchCount > 0;
     private int _matchCount;

@@ -11,19 +11,19 @@
 @inject ISnackbar Snackbar
 @rendermode InteractiveServer
 
-<PageTitle>Airtime Transfers - RasidBase</PageTitle>
+<PageTitle>@(Lang?.T("Transfers_Title") ?? "Airtime Transfers") - RasidBase</PageTitle>
 
 <div class="page-header">
-    <h1>Airtime Transfers</h1>
-    <p>Transfer airtime to dealers</p>
+    <h1>@(Lang?.T("Transfers_Title") ?? "Airtime Transfers")</h1>
+    <p>@(Lang?.T("Transfers_Subtitle") ?? "Transfer airtime to dealers")</p>
 </div>
 
 <div class="page-toolbar">
-    <MudTextField @bind-Value="_searchString" Placeholder="Search transfers..." Adornment="Adornment.Start"
+    <MudTextField @bind-Value="_searchString" Placeholder="@(Lang?.T("Transfers_Search") ?? "Search transfers...")" Adornment="Adornment.Start"
                   AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
                   Immediate="true" Style="max-width: 300px;" />
     <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.SwapHoriz"
-               OnClick="OpenCreateDialog">New Transfer</MudButton>
+               OnClick="OpenCreateDialog">@(Lang?.T("Transfers_New") ?? "New Transfer")</MudButton>
 </div>
 
 <MudPaper Elevation="0" Class="data-card pa-4">
@@ -32,18 +32,18 @@
                  QuickFilter="@(new Func<AirtimeTransferDto, bool>(FilterFunc))">
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="ID" />
-            <PropertyColumn Property="x => x.BranchName" Title="Branch" />
-            <PropertyColumn Property="x => x.ProductName" Title="Product" />
-            <PropertyColumn Property="x => x.DealerName" Title="Dealer" />
-            <PropertyColumn Property="x => x.Amount" Title="Airtime + Comm" Format="C6" />
-            <PropertyColumn Property="x => x.LoanAmount" Title="Airtime" Format="C6" />
-            <TemplateColumn Title="Type" Sortable="false">
+            <PropertyColumn Property="x => x.BranchName" Title="@(Lang?.T("Branch") ?? "Branch")" />
+            <PropertyColumn Property="x => x.ProductName" Title="@(Lang?.T("Product") ?? "Product")" />
+            <PropertyColumn Property="x => x.DealerName" Title="@(Lang?.T("Dealer") ?? "Dealer")" />
+            <PropertyColumn Property="x => x.Amount" Title="@(Lang?.T("Transfers_AirtimeComm") ?? "Airtime + Comm")" Format="C6" />
+            <PropertyColumn Property="x => x.LoanAmount" Title="@(Lang?.T("Transfers_Airtime") ?? "Airtime")" Format="C6" />
+            <TemplateColumn Title="@(Lang?.T("Type") ?? "Type")" Sortable="false">
                 <CellTemplate>
                     <MudChip T="string" Color="@(context.Item.TransferType == TransferType.Airtime ? Color.Warning : Color.Success)"
                              Size="Size.Small">@GetTransferTypeDisplay(context.Item.TransferType)</MudChip>
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn Title="Status" Sortable="false">
+            <TemplateColumn Title="@(Lang?.T("Status") ?? "Status")" Sortable="false">
                 <CellTemplate>
                     @{
                         var statusColor = context.Item.Status switch
@@ -58,15 +58,17 @@
                     <MudChip T="string" Color="@statusColor" Size="Size.Small">@context.Item.Status</MudChip>
                 </CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.CreatedDate" Title="Date" Format="dd MMM yyyy HH:mm" />
+            <PropertyColumn Property="x => x.CreatedDate" Title="@(Lang?.T("Date") ?? "Date")" Format="dd MMM yyyy HH:mm" />
         </Columns>
         <NoRecordsContent>
-            <MudText>No transfers found.</MudText>
+            <MudText>@(Lang?.T("Transfers_NotFound") ?? "No transfers found.")</MudText>
         </NoRecordsContent>
     </MudDataGrid>
 </MudPaper>
 
 @code {
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
+
     private List<AirtimeTransferDto> _transfers = new();
     private string _searchString = "";
     private bool _loading = true;
@@ -85,7 +87,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error loading transfers: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("ErrorLoading") ?? "Error loading transfers"}: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -93,9 +95,9 @@
         }
     }
 
-    private static string GetTransferTypeDisplay(TransferType t) => t switch
+    private string GetTransferTypeDisplay(TransferType t) => t switch
     {
-        TransferType.Cash => "Cash from Dealer Account",
+        TransferType.Cash => Lang?.T("Transfers_CashFromDealer") ?? "Cash from Dealer Account",
         _ => t.ToString()
     };
 
@@ -119,7 +121,7 @@
             { x => x.Dealers, dealers.ToList() },
             { x => x.DealerProductRates, dealerProductRates }
         };
-        var dialog = await DialogService.ShowAsync<TransferDialog>("New Airtime Transfer", parameters,
+        var dialog = await DialogService.ShowAsync<TransferDialog>(Lang?.T("Transfers_NewTitle") ?? "New Airtime Transfer", parameters,
             new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
         var result = await dialog.Result;
         if (result is { Canceled: false })

@@ -13,7 +13,7 @@
 @inject IJSRuntime JS
 @rendermode InteractiveServer
 
-<PageTitle>Asset Detail - RasidBase</PageTitle>
+<PageTitle>@(Lang?.T("AssetDetail_Title") ?? "Asset Detail") - RasidBase</PageTitle>
 
 @if (_loading)
 {
@@ -21,8 +21,8 @@
 }
 else if (_asset is null)
 {
-    <MudAlert Severity="Severity.Error" Class="mb-4">Asset not found.</MudAlert>
-    <MudButton Variant="Variant.Outlined" OnClick="@(() => Navigation.NavigateTo("/admin/assets"))">Back to Assets</MudButton>
+    <MudAlert Severity="Severity.Error" Class="mb-4">@(Lang?.T("AssetDetail_NotFound") ?? "Asset not found.")</MudAlert>
+    <MudButton Variant="Variant.Outlined" OnClick="@(() => Navigation.NavigateTo("/admin/assets"))">@(Lang?.T("AssetDetail_BackToAssets") ?? "Back to Assets")</MudButton>
 }
 else
 {
@@ -60,80 +60,80 @@ else
 
     <div class="page-toolbar">
         <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit"
-                   OnClick="OpenEditDialog">Edit</MudButton>
+                   OnClick="OpenEditDialog">@(Lang?.T("Edit") ?? "Edit")</MudButton>
         @if (_asset.Status == AssetStatus.Active || _asset.Status == AssetStatus.InMaintenance)
         {
             <MudButton Variant="Variant.Outlined" Color="Color.Info" StartIcon="@Icons.Material.Filled.SwapHoriz"
-                       OnClick="OpenAssignDialog">Assign</MudButton>
+                       OnClick="OpenAssignDialog">@(Lang?.T("Assign") ?? "Assign")</MudButton>
             <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Build"
-                       OnClick="OpenMaintenanceDialog">Add Maintenance</MudButton>
+                       OnClick="OpenMaintenanceDialog">@(Lang?.T("AssetDetail_AddMaintenance") ?? "Add Maintenance")</MudButton>
             <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete"
-                       OnClick="@(() => { _showDisposeDialog = true; })">Dispose / Write-Off</MudButton>
+                       OnClick="@(() => { _showDisposeDialog = true; })">@(Lang?.T("AssetDetail_DisposeWriteOff") ?? "Dispose / Write-Off")</MudButton>
         }
     </div>
 
     <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
         <MudGrid>
             <MudItem xs="12" md="6" lg="4">
-                <MudText Typo="Typo.caption" Color="Color.Secondary">Name</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Name") ?? "Name")</MudText>
                 <MudText Typo="Typo.body1">@_asset.Name</MudText>
             </MudItem>
             <MudItem xs="12" md="6" lg="4">
-                <MudText Typo="Typo.caption" Color="Color.Secondary">Category</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Category") ?? "Category")</MudText>
                 <MudText Typo="Typo.body1">@_asset.CategoryName</MudText>
             </MudItem>
             <MudItem xs="12" md="6" lg="4">
-                <MudText Typo="Typo.caption" Color="Color.Secondary">Serial Number</MudText>
-                <MudText Typo="Typo.body1">@(_asset.SerialNumber ?? "N/A")</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("AssetDetail_SerialNumber") ?? "Serial Number")</MudText>
+                <MudText Typo="Typo.body1">@(_asset.SerialNumber ?? (Lang?.T("NA") ?? "N/A"))</MudText>
             </MudItem>
             <MudItem xs="12" md="6" lg="4">
-                <MudText Typo="Typo.caption" Color="Color.Secondary">Asset Tag</MudText>
-                <MudText Typo="Typo.body1">@(_asset.AssetTag ?? "N/A")</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("AssetDetail_AssetTag") ?? "Asset Tag")</MudText>
+                <MudText Typo="Typo.body1">@(_asset.AssetTag ?? (Lang?.T("NA") ?? "N/A"))</MudText>
             </MudItem>
             <MudItem xs="12" md="6" lg="4">
-                <MudText Typo="Typo.caption" Color="Color.Secondary">Branch</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Branch") ?? "Branch")</MudText>
                 <MudText Typo="Typo.body1">@_asset.BranchName</MudText>
             </MudItem>
             <MudItem xs="12" md="6" lg="4">
-                <MudText Typo="Typo.caption" Color="Color.Secondary">Assigned To</MudText>
-                <MudText Typo="Typo.body1">@(_asset.AssignedToUserName ?? "Unassigned")</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("AssetDetail_AssignedTo") ?? "Assigned To")</MudText>
+                <MudText Typo="Typo.body1">@(_asset.AssignedToUserName ?? (Lang?.T("Unassigned") ?? "Unassigned"))</MudText>
             </MudItem>
             <MudItem xs="12" md="6" lg="4">
-                <MudText Typo="Typo.caption" Color="Color.Secondary">Purchase Date</MudText>
-                <MudText Typo="Typo.body1">@(_asset.PurchaseDate?.ToString("dd MMM yyyy") ?? "N/A")</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("AssetDetail_PurchaseDate") ?? "Purchase Date")</MudText>
+                <MudText Typo="Typo.body1">@(_asset.PurchaseDate?.ToString("dd MMM yyyy") ?? (Lang?.T("NA") ?? "N/A"))</MudText>
             </MudItem>
             <MudItem xs="12" md="6" lg="4">
-                <MudText Typo="Typo.caption" Color="Color.Secondary">Currency</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("AssetDetail_Currency") ?? "Currency")</MudText>
                 <MudText Typo="Typo.body1">@_asset.Currency</MudText>
             </MudItem>
             <MudItem xs="12" md="6" lg="4">
-                <MudText Typo="Typo.caption" Color="Color.Secondary">Purchase Value</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Assets_PurchaseValue") ?? "Purchase Value")</MudText>
                 <MudText Typo="Typo.body1">@_asset.Currency @_asset.PurchaseValue.ToString("N2")</MudText>
             </MudItem>
             <MudItem xs="12" md="6" lg="4">
-                <MudText Typo="Typo.caption" Color="Color.Secondary">Current Value</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("AssetDetail_CurrentValue") ?? "Current Value")</MudText>
                 <MudText Typo="Typo.body1">@_asset.Currency @_asset.CurrentValue.ToString("N2")</MudText>
             </MudItem>
             <MudItem xs="12" md="6" lg="4">
-                <MudText Typo="Typo.caption" Color="Color.Secondary">Book Value</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Assets_BookValue") ?? "Book Value")</MudText>
                 <MudText Typo="Typo.body1">@_asset.Currency @_asset.BookValue.ToString("N2")</MudText>
             </MudItem>
             <MudItem xs="12" md="6" lg="4">
-                <MudText Typo="Typo.caption" Color="Color.Secondary">Useful Life</MudText>
-                <MudText Typo="Typo.body1">@_asset.UsefulLifeMonths months</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("AssetDetail_UsefulLife") ?? "Useful Life")</MudText>
+                <MudText Typo="Typo.body1">@_asset.UsefulLifeMonths @(Lang?.T("AssetDetail_Months") ?? "months")</MudText>
             </MudItem>
             <MudItem xs="12" md="6" lg="4">
-                <MudText Typo="Typo.caption" Color="Color.Secondary">Depreciation Method</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("AssetDetail_DepreciationMethod") ?? "Depreciation Method")</MudText>
                 <MudText Typo="Typo.body1">@_asset.DepreciationMethod</MudText>
             </MudItem>
             <MudItem xs="12" md="6" lg="4">
-                <MudText Typo="Typo.caption" Color="Color.Secondary">Created</MudText>
-                <MudText Typo="Typo.body1">@_asset.CreatedDate.ToString("dd MMM yyyy") by @(_asset.CreatedByName ?? _asset.CreatedBy)</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Created") ?? "Created")</MudText>
+                <MudText Typo="Typo.body1">@_asset.CreatedDate.ToString("dd MMM yyyy") @(Lang?.T("AssetDetail_CreatedBy") ?? "by") @(_asset.CreatedByName ?? _asset.CreatedBy)</MudText>
             </MudItem>
             @if (!string.IsNullOrEmpty(_asset.Notes))
             {
                 <MudItem xs="12">
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Notes</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Notes") ?? "Notes")</MudText>
                     <MudText Typo="Typo.body1">@_asset.Notes</MudText>
                 </MudItem>
             }
@@ -144,7 +144,7 @@ else
             @if (photos.Length > 0)
             {
                 <MudItem xs="12">
-                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-1">Photos</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-1">@(Lang?.T("Photos") ?? "Photos")</MudText>
                     <div class="d-flex flex-wrap gap-3">
                         @foreach (var photo in photos)
                         {
@@ -158,7 +158,7 @@ else
             @if (documents.Length > 0)
             {
                 <MudItem xs="12">
-                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-1">Documents</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-1">@(Lang?.T("Documents") ?? "Documents")</MudText>
                     <div class="d-flex flex-wrap gap-3">
                         @foreach (var doc in documents)
                         {
@@ -175,9 +175,9 @@ else
                                     <MudText Typo="Typo.caption">@Path.GetFileName(doc)</MudText>
                                     <div class="d-flex gap-1">
                                         <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
-                                                   Href="@doc" Target="_blank">View</MudButton>
+                                                   Href="@doc" Target="_blank">@(Lang?.T("View") ?? "View")</MudButton>
                                         <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Secondary"
-                                                   OnClick="@(() => DownloadFile(doc))">Download</MudButton>
+                                                   OnClick="@(() => DownloadFile(doc))">@(Lang?.T("Download") ?? "Download")</MudButton>
                                     </div>
                                 </div>
                             </MudPaper>
@@ -189,67 +189,67 @@ else
     </MudPaper>
 
     <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" Class="data-card">
-        <MudTabPanel Text="Assignment History" Icon="@Icons.Material.Filled.SwapHoriz">
+        <MudTabPanel Text="@(Lang?.T("AssetDetail_AssignmentHistory") ?? "Assignment History")" Icon="@Icons.Material.Filled.SwapHoriz">
             <div class="pa-4">
                 @if (_asset.Status == AssetStatus.Active || _asset.Status == AssetStatus.InMaintenance)
                 {
                     <div class="d-flex justify-end mb-3">
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
-                                   StartIcon="@Icons.Material.Filled.Add" OnClick="OpenAssignDialog">Assign</MudButton>
+                                   StartIcon="@Icons.Material.Filled.Add" OnClick="OpenAssignDialog">@(Lang?.T("Assign") ?? "Assign")</MudButton>
                     </div>
                 }
                 <MudDataGrid T="AssetAssignmentDto" Items="@_assignments" Dense="true" Hover="true" Striped="true"
                              Loading="@_loadingAssignments">
                     <Columns>
-                        <PropertyColumn Property="x => x.AssignmentType" Title="Type" />
-                        <PropertyColumn Property="x => x.BranchName" Title="Branch" />
-                        <PropertyColumn Property="x => x.ContactName" Title="Contact" />
-                        <PropertyColumn Property="x => x.ContactPhone" Title="Phone" />
-                        <PropertyColumn Property="x => x.DepartmentName" Title="Department" />
-                        <PropertyColumn Property="x => x.OfficeName" Title="Office" />
-                        <PropertyColumn Property="x => x.AssignedDate" Title="Assigned Date" Format="dd MMM yyyy" />
-                        <TemplateColumn Title="Returned Date">
+                        <PropertyColumn Property="x => x.AssignmentType" Title="@(Lang?.T("Type") ?? "Type")" />
+                        <PropertyColumn Property="x => x.BranchName" Title="@(Lang?.T("Branch") ?? "Branch")" />
+                        <PropertyColumn Property="x => x.ContactName" Title="@(Lang?.T("AssetDetail_Contact") ?? "Contact")" />
+                        <PropertyColumn Property="x => x.ContactPhone" Title="@(Lang?.T("Phone") ?? "Phone")" />
+                        <PropertyColumn Property="x => x.DepartmentName" Title="@(Lang?.T("AssetDetail_Department") ?? "Department")" />
+                        <PropertyColumn Property="x => x.OfficeName" Title="@(Lang?.T("AssetDetail_Office") ?? "Office")" />
+                        <PropertyColumn Property="x => x.AssignedDate" Title="@(Lang?.T("AssetDetail_AssignedDate") ?? "Assigned Date")" Format="dd MMM yyyy" />
+                        <TemplateColumn Title="@(Lang?.T("AssetDetail_ReturnedDate") ?? "Returned Date")">
                             <CellTemplate>
-                                @(context.Item.ReturnedDate?.ToString("dd MMM yyyy") ?? "Current")
+                                @(context.Item.ReturnedDate?.ToString("dd MMM yyyy") ?? (Lang?.T("Current") ?? "Current"))
                             </CellTemplate>
                         </TemplateColumn>
-                        <PropertyColumn Property="x => x.Notes" Title="Notes" />
+                        <PropertyColumn Property="x => x.Notes" Title="@(Lang?.T("Notes") ?? "Notes")" />
                     </Columns>
                     <NoRecordsContent>
-                        <MudText>No assignment history.</MudText>
+                        <MudText>@(Lang?.T("AssetDetail_NoAssignments") ?? "No assignment history.")</MudText>
                     </NoRecordsContent>
                 </MudDataGrid>
             </div>
         </MudTabPanel>
 
-        <MudTabPanel Text="Maintenance Log" Icon="@Icons.Material.Filled.Build">
+        <MudTabPanel Text="@(Lang?.T("AssetDetail_MaintenanceLog") ?? "Maintenance Log")" Icon="@Icons.Material.Filled.Build">
             <div class="pa-4">
                 @if (_asset.Status == AssetStatus.Active || _asset.Status == AssetStatus.InMaintenance)
                 {
                     <div class="d-flex justify-end mb-3">
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
-                                   StartIcon="@Icons.Material.Filled.Add" OnClick="OpenMaintenanceDialog">Add Record</MudButton>
+                                   StartIcon="@Icons.Material.Filled.Add" OnClick="OpenMaintenanceDialog">@(Lang?.T("AssetDetail_AddRecord") ?? "Add Record")</MudButton>
                     </div>
                 }
                 <MudDataGrid T="AssetMaintenanceDto" Items="@_maintenanceRecords" Dense="true" Hover="true" Striped="true"
                              Loading="@_loadingMaintenance">
                     <Columns>
-                        <PropertyColumn Property="x => x.MaintenanceDate" Title="Date" Format="dd MMM yyyy" />
-                        <PropertyColumn Property="x => x.Description" Title="Description" />
-                        <TemplateColumn Title="Cost">
+                        <PropertyColumn Property="x => x.MaintenanceDate" Title="@(Lang?.T("Date") ?? "Date")" Format="dd MMM yyyy" />
+                        <PropertyColumn Property="x => x.Description" Title="@(Lang?.T("Description") ?? "Description")" />
+                        <TemplateColumn Title="@(Lang?.T("AssetDetail_Cost") ?? "Cost")">
                             <CellTemplate>
                                 @context.Item.Cost.ToString("N2")
                             </CellTemplate>
                         </TemplateColumn>
-                        <TemplateColumn Title="Next Scheduled">
+                        <TemplateColumn Title="@(Lang?.T("AssetDetail_NextScheduled") ?? "Next Scheduled")">
                             <CellTemplate>
-                                @(context.Item.NextScheduledDate?.ToString("dd MMM yyyy") ?? "N/A")
+                                @(context.Item.NextScheduledDate?.ToString("dd MMM yyyy") ?? (Lang?.T("NA") ?? "N/A"))
                             </CellTemplate>
                         </TemplateColumn>
-                        <PropertyColumn Property="x => x.PerformedBy" Title="Performed By" />
+                        <PropertyColumn Property="x => x.PerformedBy" Title="@(Lang?.T("AssetDetail_PerformedBy") ?? "Performed By")" />
                     </Columns>
                     <NoRecordsContent>
-                        <MudText>No maintenance records.</MudText>
+                        <MudText>@(Lang?.T("AssetDetail_NoMaintenance") ?? "No maintenance records.")</MudText>
                     </NoRecordsContent>
                 </MudDataGrid>
             </div>
@@ -257,24 +257,24 @@ else
 
         @if (_asset.Status == AssetStatus.Disposed || _asset.Status == AssetStatus.WrittenOff)
         {
-            <MudTabPanel Text="Disposal Info" Icon="@Icons.Material.Filled.Delete">
+            <MudTabPanel Text="@(Lang?.T("AssetDetail_DisposalInfo") ?? "Disposal Info")" Icon="@Icons.Material.Filled.Delete">
                 <div class="pa-4">
                     <MudGrid>
                         <MudItem xs="12" md="6">
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">Disposal Status</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("AssetDetail_DisposalStatus") ?? "Disposal Status")</MudText>
                             <MudText Typo="Typo.body1">@_asset.Status</MudText>
                         </MudItem>
                         <MudItem xs="12" md="6">
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">Disposal Date</MudText>
-                            <MudText Typo="Typo.body1">@(_asset.DisposalDate?.ToString("dd MMM yyyy") ?? "N/A")</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("AssetDetail_DisposalDate") ?? "Disposal Date")</MudText>
+                            <MudText Typo="Typo.body1">@(_asset.DisposalDate?.ToString("dd MMM yyyy") ?? (Lang?.T("NA") ?? "N/A"))</MudText>
                         </MudItem>
                         <MudItem xs="12" md="6">
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">Reason</MudText>
-                            <MudText Typo="Typo.body1">@(_asset.DisposalReason ?? "N/A")</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("AssetDetail_Reason") ?? "Reason")</MudText>
+                            <MudText Typo="Typo.body1">@(_asset.DisposalReason ?? (Lang?.T("NA") ?? "N/A"))</MudText>
                         </MudItem>
                         <MudItem xs="12">
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">Notes</MudText>
-                            <MudText Typo="Typo.body1">@(_asset.DisposalNotes ?? "N/A")</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Notes") ?? "Notes")</MudText>
+                            <MudText Typo="Typo.body1">@(_asset.DisposalNotes ?? (Lang?.T("NA") ?? "N/A"))</MudText>
                         </MudItem>
                     </MudGrid>
                 </div>
@@ -288,8 +288,8 @@ else
             <MudImage Src="@_previewImage" Alt="Preview" Style="max-width:90vw;max-height:80vh;" Elevation="4" Class="rounded mb-3" />
             <div class="d-flex gap-2">
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download"
-                           OnClick="@(() => DownloadFile(_previewImage))">Download</MudButton>
-                <MudButton Variant="Variant.Outlined" OnClick="@(() => _showPreview = false)">Close</MudButton>
+                           OnClick="@(() => DownloadFile(_previewImage))">@(Lang?.T("Download") ?? "Download")</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick="@(() => _showPreview = false)">@(Lang?.T("Close") ?? "Close")</MudButton>
             </div>
         </div>
     </MudOverlay>
@@ -297,27 +297,28 @@ else
     @* Dispose / Write-Off Overlay Dialog *@
     <MudOverlay Visible="@_showDisposeDialog" DarkBackground="true" AutoClose="false" ZIndex="1300">
         <MudPaper Class="pa-6" Style="max-width: 500px; width: 100%;" Elevation="8">
-            <MudText Typo="Typo.h6" Class="mb-4">Dispose / Write-Off Asset</MudText>
+            <MudText Typo="Typo.h6" Class="mb-4">@(Lang?.T("AssetDetail_DisposeTitle") ?? "Dispose / Write-Off Asset")</MudText>
             <MudText Typo="Typo.body2" Class="mb-4">
-                This will permanently change the status of <strong>@_asset.Name</strong>. This action cannot be undone.
+                @(Lang?.T("AssetDetail_DisposeMsg") ?? "This will permanently change the status of") <strong>@_asset.Name</strong>. @(Lang?.T("AssetDetail_CannotUndo") ?? "This action cannot be undone.")
             </MudText>
-            <MudSelect T="string" @bind-Value="_disposeAction" Label="Action" Required="true" Class="mb-3">
-                <MudSelectItem T="string" Value="@("Dispose")">Dispose</MudSelectItem>
-                <MudSelectItem T="string" Value="@("WriteOff")">Write Off</MudSelectItem>
+            <MudSelect T="string" @bind-Value="_disposeAction" Label="@(Lang?.T("Actions") ?? "Action")" Required="true" Class="mb-3">
+                <MudSelectItem T="string" Value="@("Dispose")">@(Lang?.T("AssetDetail_Dispose") ?? "Dispose")</MudSelectItem>
+                <MudSelectItem T="string" Value="@("WriteOff")">@(Lang?.T("AssetDetail_WriteOff") ?? "Write Off")</MudSelectItem>
             </MudSelect>
-            <MudTextField @bind-Value="_disposeReason" Label="Reason" Required="true"
-                          RequiredError="Reason is required" Class="mb-3" />
-            <MudTextField @bind-Value="_disposeNotes" Label="Notes" Lines="3" Class="mb-3" />
+            <MudTextField @bind-Value="_disposeReason" Label="@(Lang?.T("AssetDetail_Reason") ?? "Reason")" Required="true"
+                          RequiredError="@(Lang?.T("AssetDetail_ReasonRequired") ?? "Reason is required")" Class="mb-3" />
+            <MudTextField @bind-Value="_disposeNotes" Label="@(Lang?.T("Notes") ?? "Notes")" Lines="3" Class="mb-3" />
             <div class="d-flex justify-end gap-2">
-                <MudButton OnClick="@(() => { _showDisposeDialog = false; })">Cancel</MudButton>
+                <MudButton OnClick="@(() => { _showDisposeDialog = false; })">@(Lang?.T("Cancel") ?? "Cancel")</MudButton>
                 <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="ConfirmDispose"
-                           Disabled="@_disposing">Confirm</MudButton>
+                           Disabled="@_disposing">@(Lang?.T("Confirm") ?? "Confirm")</MudButton>
             </div>
         </MudPaper>
     </MudOverlay>
 }
 
 @code {
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
     [Parameter] public int AssetId { get; set; }
 
     private AssetDto? _asset;
@@ -357,7 +358,7 @@ else
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error loading asset: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("ErrorLoading") ?? "Error loading asset"}: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -374,7 +375,7 @@ else
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error loading assignments: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -391,7 +392,7 @@ else
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error loading maintenance records: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -410,7 +411,7 @@ else
             { x => x.Branches, branches },
             { x => x.Categories, categories }
         };
-        var dialog = await DialogService.ShowAsync<AssetDialog>("Edit Asset", parameters,
+        var dialog = await DialogService.ShowAsync<AssetDialog>(Lang?.T("EditAsset") ?? "Edit Asset", parameters,
             new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
         var result = await dialog.Result;
         if (result is { Canceled: false })
@@ -426,7 +427,7 @@ else
             { x => x.AssetId, AssetId },
             { x => x.Branches, branches }
         };
-        var dialog = await DialogService.ShowAsync<AssetAssignmentDialog>("Assign Asset", parameters,
+        var dialog = await DialogService.ShowAsync<AssetAssignmentDialog>(Lang?.T("AssignAsset") ?? "Assign Asset", parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
         var result = await dialog.Result;
         if (result is { Canceled: false })
@@ -439,7 +440,7 @@ else
         {
             { x => x.AssetId, AssetId }
         };
-        var dialog = await DialogService.ShowAsync<AssetMaintenanceDialog>("Add Maintenance Record", parameters,
+        var dialog = await DialogService.ShowAsync<AssetMaintenanceDialog>(Lang?.T("AddMaintenanceRecord") ?? "Add Maintenance Record", parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
         var result = await dialog.Result;
         if (result is { Canceled: false })
@@ -450,7 +451,7 @@ else
     {
         if (string.IsNullOrWhiteSpace(_disposeReason))
         {
-            Snackbar.Add("Please provide a reason", Severity.Warning);
+            Snackbar.Add(Lang?.T("AssetDetail_ProvideReason") ?? "Please provide a reason", Severity.Warning);
             return;
         }
 
@@ -463,14 +464,16 @@ else
             else
                 await AssetService.DisposeAssetAsync(AssetId, _disposeReason, _disposeNotes, userId);
 
-            var actionLabel = _disposeAction == "WriteOff" ? "written off" : "disposed";
-            Snackbar.Add($"Asset {actionLabel} successfully", Severity.Success);
+            var actionLabel = _disposeAction == "WriteOff"
+                ? (Lang?.T("AssetDetail_WrittenOff") ?? "written off")
+                : (Lang?.T("AssetDetail_DisposedMsg") ?? "disposed");
+            Snackbar.Add(string.Format(Lang?.T("AssetDisposedSuccess") ?? "Asset {0} successfully", actionLabel), Severity.Success);
             _showDisposeDialog = false;
             await LoadAsset();
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
         }
         finally
         {

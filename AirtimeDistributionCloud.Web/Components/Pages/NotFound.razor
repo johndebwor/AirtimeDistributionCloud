@@ -1,18 +1,23 @@
 @page "/not-found"
 @layout AirtimeDistributionCloud.Web.Components.Layout.MainLayout
+@using AirtimeDistributionCloud.Application.Services
 
-<PageTitle>Not Found - RasidBase</PageTitle>
+<PageTitle>@(Lang?.T("NotFound_Title") ?? "Page not found") - RasidBase</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Small" Class="d-flex flex-column align-center justify-center" Style="min-height: 60vh;">
     <MudAvatar Color="Color.Default" Variant="Variant.Outlined" Size="Size.Large" Class="mb-4">
         <MudIcon Icon="@Icons.Material.Outlined.SearchOff" />
     </MudAvatar>
-    <MudText Typo="Typo.h5" GutterBottom="true" Style="font-weight: 700;">Page not found</MudText>
+    <MudText Typo="Typo.h5" GutterBottom="true" Style="font-weight: 700;">@(Lang?.T("NotFound_Title") ?? "Page not found")</MudText>
     <MudText Typo="Typo.body1" Color="Color.Secondary" Align="Align.Center" Class="mb-4">
-        The page you are looking for does not exist or has been moved.
+        @(Lang?.T("NotFound_Msg") ?? "The page you are looking for does not exist or has been moved.")
     </MudText>
     <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/"
                StartIcon="@Icons.Material.Outlined.Home" Class="text-transform-none">
-        Back to Dashboard
+        @(Lang?.T("NotFound_Back") ?? "Back to Dashboard")
     </MudButton>
 </MudContainer>
+
+@code {
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
+}

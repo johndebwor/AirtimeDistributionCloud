@@ -6,11 +6,11 @@
 @inject ISnackbar Snackbar
 @rendermode InteractiveServer
 
-<PageTitle>Dealer Balances - RasidBase</PageTitle>
+<PageTitle>@(Lang?.T("Balances_Title") ?? "Dealer Balances") - RasidBase</PageTitle>
 
 <div class="page-header">
-    <h1>Dealer Balances</h1>
-    <p>Overview of dealer cash balances</p>
+    <h1>@(Lang?.T("Balances_Title") ?? "Dealer Balances")</h1>
+    <p>@(Lang?.T("Balances_Subtitle") ?? "Overview of dealer cash balances")</p>
 </div>
 
 <MudPaper Elevation="0" Class="data-card pa-4">
@@ -19,9 +19,9 @@
                  SortMode="SortMode.Multiple">
         <Columns>
             <PropertyColumn Property="x => x.DealerId" Title="ID" />
-            <PropertyColumn Property="x => x.DealerName" Title="Dealer" />
-            <PropertyColumn Property="x => x.DealerType" Title="Type" />
-            <TemplateColumn Title="Cash Balance">
+            <PropertyColumn Property="x => x.DealerName" Title="@(Lang?.T("Dealer") ?? "Dealer")" />
+            <PropertyColumn Property="x => x.DealerType" Title="@(Lang?.T("Type") ?? "Type")" />
+            <TemplateColumn Title="@(Lang?.T("Balances_CashBalance") ?? "Cash Balance")">
                 <CellTemplate>
                     <MudText Color="@(context.Item.CashBalance > 0 ? Color.Success : context.Item.CashBalance < 0 ? Color.Error : Color.Default)">
                         @context.Item.CashBalance.ToString("C6")
@@ -30,12 +30,14 @@
             </TemplateColumn>
         </Columns>
         <NoRecordsContent>
-            <MudText>No dealers found.</MudText>
+            <MudText>@(Lang?.T("Balances_NotFound") ?? "No dealers found.")</MudText>
         </NoRecordsContent>
     </MudDataGrid>
 </MudPaper>
 
 @code {
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
+
     private List<DealerBalanceView> _balances = new();
     private bool _loading = true;
 
@@ -62,7 +64,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error loading balances: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("ErrorLoading") ?? "Error loading balances"}: {ex.Message}", Severity.Error);
         }
         finally
         {

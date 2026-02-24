@@ -9,29 +9,29 @@
 @inject ISnackbar Snackbar
 @rendermode InteractiveServer
 
-<PageTitle>User Management - RasidBase</PageTitle>
+<PageTitle>@(Lang?.T("Users_Title") ?? "User Management") - RasidBase</PageTitle>
 
 <div class="page-header">
-    <h1>User Management</h1>
-    <p>Manage system users and roles</p>
+    <h1>@(Lang?.T("Users_Title") ?? "User Management")</h1>
+    <p>@(Lang?.T("Users_Subtitle") ?? "Manage system users and roles")</p>
 </div>
 
 <div class="page-toolbar">
-    <MudTextField @bind-Value="_searchString" Placeholder="Search users..." Adornment="Adornment.Start"
+    <MudTextField @bind-Value="_searchString" Placeholder="@(Lang?.T("Users_Search") ?? "Search users...")" Adornment="Adornment.Start"
                   AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
                   Immediate="true" Style="max-width: 300px;" />
     <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd"
-               OnClick="OpenCreateDialog">Add User</MudButton>
+               OnClick="OpenCreateDialog">@(Lang?.T("Users_Add") ?? "Add User")</MudButton>
 </div>
 
 <MudPaper Elevation="0" Class="data-card pa-4">
     <MudDataGrid T="UserView" Items="@_filteredUsers" Loading="@_loading" Dense="true" Hover="true" Striped="true"
                  Filterable="false" SortMode="SortMode.Multiple">
         <Columns>
-            <PropertyColumn Property="x => x.FullName" Title="Full Name" />
-            <PropertyColumn Property="x => x.Email" Title="Email" />
-            <PropertyColumn Property="x => x.BranchName" Title="Branch" />
-            <TemplateColumn Title="Roles" Sortable="false">
+            <PropertyColumn Property="x => x.FullName" Title="@(Lang?.T("FullName") ?? "Full Name")" />
+            <PropertyColumn Property="x => x.Email" Title="@(Lang?.T("Email") ?? "Email")" />
+            <PropertyColumn Property="x => x.BranchName" Title="@(Lang?.T("Branch") ?? "Branch")" />
+            <TemplateColumn Title="@(Lang?.T("Roles") ?? "Roles")" Sortable="false">
                 <CellTemplate>
                     @foreach (var role in context.Item.Roles)
                     {
@@ -39,15 +39,15 @@
                     }
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn Title="Status" Sortable="false">
+            <TemplateColumn Title="@(Lang?.T("Status") ?? "Status")" Sortable="false">
                 <CellTemplate>
                     <MudChip T="string" Color="@(context.Item.EmailConfirmed ? Color.Success : Color.Warning)" Size="Size.Small">
-                        @(context.Item.EmailConfirmed ? "Confirmed" : "Pending")
+                        @(context.Item.EmailConfirmed ? (Lang?.T("Confirmed") ?? "Confirmed") : (Lang?.T("Pending") ?? "Pending"))
                     </MudChip>
                 </CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.CreatedDate" Title="Created" Format="dd MMM yyyy" />
-            <TemplateColumn Title="Actions" Sortable="false">
+            <PropertyColumn Property="x => x.CreatedDate" Title="@(Lang?.T("Created") ?? "Created")" Format="dd MMM yyyy" />
+            <TemplateColumn Title="@(Lang?.T("Actions") ?? "Actions")" Sortable="false">
                 <CellTemplate>
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary"
                                    OnClick="@(() => OpenEditDialog(context.Item))" />
@@ -55,12 +55,14 @@
             </TemplateColumn>
         </Columns>
         <NoRecordsContent>
-            <MudText>No users found.</MudText>
+            <MudText>@(Lang?.T("Users_NotFound") ?? "No users found.")</MudText>
         </NoRecordsContent>
     </MudDataGrid>
 </MudPaper>
 
 @code {
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
+
     private List<UserView> _users = new();
     private string _searchString = "";
     private bool _loading = true;
@@ -105,7 +107,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error loading users: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("ErrorLoading") ?? "Error loading users"}: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -124,7 +126,7 @@
             { x => x.AvailableRoles, roles },
             { x => x.Branches, branches }
         };
-        var dialog = await DialogService.ShowAsync<UserDialog>("Add User", parameters,
+        var dialog = await DialogService.ShowAsync<UserDialog>(Lang?.T("Users_Add") ?? "Add User", parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
         var result = await dialog.Result;
         if (result is { Canceled: false })
@@ -148,7 +150,7 @@
                 }
             }
         };
-        var dialog = await DialogService.ShowAsync<UserDialog>("Edit User", parameters,
+        var dialog = await DialogService.ShowAsync<UserDialog>(Lang?.T("Edit") ?? "Edit User", parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
         var result = await dialog.Result;
         if (result is { Canceled: false })

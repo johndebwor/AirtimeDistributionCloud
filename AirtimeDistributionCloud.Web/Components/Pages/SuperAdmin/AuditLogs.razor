@@ -8,48 +8,48 @@
 @inject ISnackbar Snackbar
 @rendermode InteractiveServer
 
-<PageTitle>Audit Logs - RasidBase</PageTitle>
+<PageTitle>@(Lang?.T("AuditLogs_Title") ?? "Audit Logs") - RasidBase</PageTitle>
 
 <div class="page-header">
-    <h1>Audit Logs</h1>
-    <p>View system activity and changes</p>
+    <h1>@(Lang?.T("AuditLogs_Title") ?? "Audit Logs")</h1>
+    <p>@(Lang?.T("AuditLogs_Subtitle") ?? "View system activity and changes")</p>
 </div>
 
 <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
     <MudGrid>
         <MudItem xs="12" sm="3">
-            <MudSelect T="string" @bind-Value="_selectedEntity" Label="Entity Type" Clearable="true"
+            <MudSelect T="string" @bind-Value="_selectedEntity" Label="@(Lang?.T("AuditLogs_EntityType") ?? "Entity Type")" Clearable="true"
                        Variant="Variant.Outlined" Dense="true">
-                <MudSelectItem T="string" Value="@("AirtimeDeposit")">Airtime Deposit</MudSelectItem>
-                <MudSelectItem T="string" Value="@("AirtimeTransfer")">Airtime Transfer</MudSelectItem>
-                <MudSelectItem T="string" Value="@("CashDeposit")">Cash Deposit</MudSelectItem>
-                <MudSelectItem T="string" Value="@("Product")">Product</MudSelectItem>
-                <MudSelectItem T="string" Value="@("Dealer")">Dealer</MudSelectItem>
-                <MudSelectItem T="string" Value="@("Branch")">Branch</MudSelectItem>
-                <MudSelectItem T="string" Value="@("Expense")">Expense</MudSelectItem>
-                <MudSelectItem T="string" Value="@("DealerProduct")">Dealer Product</MudSelectItem>
-                <MudSelectItem T="string" Value="@("ApplicationUser")">Application User</MudSelectItem>
+                <MudSelectItem T="string" Value="@("AirtimeDeposit")">@(Lang?.T("AuditEntity_AirtimeDeposit") ?? "Airtime Deposit")</MudSelectItem>
+                <MudSelectItem T="string" Value="@("AirtimeTransfer")">@(Lang?.T("AuditEntity_AirtimeTransfer") ?? "Airtime Transfer")</MudSelectItem>
+                <MudSelectItem T="string" Value="@("CashDeposit")">@(Lang?.T("AuditEntity_CashDeposit") ?? "Cash Deposit")</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Product")">@(Lang?.T("AuditEntity_Product") ?? "Product")</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Dealer")">@(Lang?.T("AuditEntity_Dealer") ?? "Dealer")</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Branch")">@(Lang?.T("AuditEntity_Branch") ?? "Branch")</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Expense")">@(Lang?.T("AuditEntity_Expense") ?? "Expense")</MudSelectItem>
+                <MudSelectItem T="string" Value="@("DealerProduct")">@(Lang?.T("AuditEntity_DealerProduct") ?? "Dealer Product")</MudSelectItem>
+                <MudSelectItem T="string" Value="@("ApplicationUser")">@(Lang?.T("AuditEntity_ApplicationUser") ?? "Application User")</MudSelectItem>
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="3">
-            <MudSelect T="string" @bind-Value="_selectedAction" Label="Action" Clearable="true"
+            <MudSelect T="string" @bind-Value="_selectedAction" Label="@(Lang?.T("AuditLogs_Action") ?? "Action")" Clearable="true"
                        Variant="Variant.Outlined" Dense="true">
-                <MudSelectItem T="string" Value="@("Create")">Create</MudSelectItem>
-                <MudSelectItem T="string" Value="@("Update")">Update</MudSelectItem>
-                <MudSelectItem T="string" Value="@("Delete")">Delete</MudSelectItem>
-                <MudSelectItem T="string" Value="@("Approve")">Approve</MudSelectItem>
-                <MudSelectItem T="string" Value="@("Reject")">Reject</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Create")">@(Lang?.T("AuditAction_Create") ?? "Create")</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Update")">@(Lang?.T("AuditAction_Update") ?? "Update")</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Delete")">@(Lang?.T("AuditAction_Delete") ?? "Delete")</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Approve")">@(Lang?.T("AuditAction_Approve") ?? "Approve")</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Reject")">@(Lang?.T("AuditAction_Reject") ?? "Reject")</MudSelectItem>
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="3">
-            <MudDateRangePicker @bind-DateRange="_dateRange" Label="Date Range" Clearable="true"
+            <MudDateRangePicker @bind-DateRange="_dateRange" Label="@(Lang?.T("AuditLogs_DateRange") ?? "Date Range")" Clearable="true"
                                 Variant="Variant.Outlined" Margin="Margin.Dense" />
         </MudItem>
         <MudItem xs="12" sm="3" Class="d-flex align-end gap-2">
             <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.FilterAlt"
-                       OnClick="ApplyFilters">Apply Filters</MudButton>
+                       OnClick="ApplyFilters">@(Lang?.T("AuditLogs_ApplyFilters") ?? "Apply Filters")</MudButton>
             <MudButton Variant="Variant.Filled" Color="Color.Default" StartIcon="@Icons.Material.Filled.Clear"
-                       OnClick="ClearFilters">Clear</MudButton>
+                       OnClick="ClearFilters">@(Lang?.T("AuditLogs_Clear") ?? "Clear")</MudButton>
         </MudItem>
     </MudGrid>
 </MudPaper>
@@ -58,14 +58,14 @@
     <MudDataGrid T="AuditLogDto" Items="@_logs" Loading="@_loading" Dense="true" Hover="true" Striped="true"
                  Filterable="false" SortMode="SortMode.Multiple" QuickFilter="@_quickFilter">
         <ToolBarContent>
-            <MudTextField @bind-Value="_searchString" Placeholder="Search logs..." Adornment="Adornment.Start"
+            <MudTextField @bind-Value="_searchString" Placeholder="@(Lang?.T("AuditLogs_Search") ?? "Search logs...")" Adornment="Adornment.Start"
                           AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
                           Immediate="true" Style="max-width: 300px;" />
         </ToolBarContent>
         <Columns>
-            <PropertyColumn Property="x => x.EntityName" Title="Entity" />
+            <PropertyColumn Property="x => x.EntityName" Title="@(Lang?.T("AuditLogs_Entity") ?? "Entity")" />
             <PropertyColumn Property="x => x.EntityId" Title="ID" />
-            <TemplateColumn Title="Action" Sortable="false">
+            <TemplateColumn Title="@(Lang?.T("AuditLogs_Action") ?? "Action")" Sortable="false">
                 <CellTemplate>
                     @{
                         var actionColor = context.Item.Action switch
@@ -81,9 +81,9 @@
                     <MudChip T="string" Color="@actionColor" Size="Size.Small">@context.Item.Action</MudChip>
                 </CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.UserName" Title="User" />
-            <PropertyColumn Property="x => x.Timestamp" Title="Date" Format="dd MMM yyyy HH:mm" />
-            <TemplateColumn Title="Details" Sortable="false">
+            <PropertyColumn Property="x => x.UserName" Title="@(Lang?.T("User") ?? "User")" />
+            <PropertyColumn Property="x => x.Timestamp" Title="@(Lang?.T("Date") ?? "Date")" Format="dd MMM yyyy HH:mm" />
+            <TemplateColumn Title="@(Lang?.T("Details") ?? "Details")" Sortable="false">
                 <CellTemplate>
                     @if (!string.IsNullOrEmpty(context.Item.OldValues) || !string.IsNullOrEmpty(context.Item.NewValues))
                     {
@@ -94,7 +94,7 @@
             </TemplateColumn>
         </Columns>
         <NoRecordsContent>
-            <MudText>No audit logs found.</MudText>
+            <MudText>@(Lang?.T("AuditLogs_NotFound") ?? "No audit logs found.")</MudText>
         </NoRecordsContent>
         <LoadingContent>
             <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
@@ -103,6 +103,8 @@
 </MudPaper>
 
 @code {
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
+
     private List<AuditLogDto> _logs = new();
     private string? _selectedEntity;
     private string? _selectedAction;
@@ -141,7 +143,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error loading audit logs: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("ErrorLoading") ?? "Error loading audit logs"}: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -160,7 +162,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error loading audit logs: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("ErrorLoading") ?? "Error loading audit logs"}: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -191,7 +193,7 @@
             { x => x.NewValues, newJson }
         };
 
-        await DialogService.ShowAsync<AuditLogDetailDialog>("Audit Log Details", parameters,
+        await DialogService.ShowAsync<AuditLogDetailDialog>(Lang?.T("Details") ?? "Audit Log Details", parameters,
             new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
     }
 

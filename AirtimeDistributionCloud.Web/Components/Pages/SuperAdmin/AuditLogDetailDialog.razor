@@ -1,34 +1,36 @@
 @rendermode InteractiveServer
+@using AirtimeDistributionCloud.Application.Services
 
 <MudDialog>
     <DialogContent>
         <MudStack Spacing="3">
             <MudStack Row="true" Spacing="2">
-                <MudText Typo="Typo.body2"><strong>Entity:</strong> @EntityName</MudText>
+                <MudText Typo="Typo.body2"><strong>@(Lang?.T("AuditLogs_Entity") ?? "Entity"):</strong> @EntityName</MudText>
                 <MudText Typo="Typo.body2"><strong>ID:</strong> @EntityId</MudText>
-                <MudText Typo="Typo.body2"><strong>Action:</strong> @Action</MudText>
+                <MudText Typo="Typo.body2"><strong>@(Lang?.T("AuditLogs_Action") ?? "Action"):</strong> @Action</MudText>
             </MudStack>
 
             <MudDivider />
 
-            <MudText Typo="Typo.subtitle2">Old Values</MudText>
+            <MudText Typo="Typo.subtitle2">@(Lang?.T("AuditLogs_OldValues") ?? "Old Values")</MudText>
             <MudPaper Elevation="0" Class="pa-3" Style="background-color: var(--mud-palette-background-gray); overflow-x: auto;">
                 <pre style="margin: 0; white-space: pre-wrap; word-break: break-word; font-size: 0.85rem;">@OldValues</pre>
             </MudPaper>
 
-            <MudText Typo="Typo.subtitle2">New Values</MudText>
+            <MudText Typo="Typo.subtitle2">@(Lang?.T("AuditLogs_NewValues") ?? "New Values")</MudText>
             <MudPaper Elevation="0" Class="pa-3" Style="background-color: var(--mud-palette-background-gray); overflow-x: auto;">
                 <pre style="margin: 0; white-space: pre-wrap; word-break: break-word; font-size: 0.85rem;">@NewValues</pre>
             </MudPaper>
         </MudStack>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Close">Close</MudButton>
+        <MudButton OnClick="Close">@(Lang?.T("Close") ?? "Close")</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
     [Parameter] public string EntityName { get; set; } = "";
     [Parameter] public string EntityId { get; set; } = "";
     [Parameter] public string Action { get; set; } = "";

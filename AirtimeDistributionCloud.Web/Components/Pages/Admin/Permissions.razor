@@ -5,11 +5,11 @@
 @inject ISnackbar Snackbar
 @rendermode InteractiveServer
 
-<PageTitle>Permissions - RasidBase</PageTitle>
+<PageTitle>@(Lang?.T("Permissions_Title") ?? "Permissions") - RasidBase</PageTitle>
 
 <div class="page-header">
-    <h1>Permissions</h1>
-    <p>Manage role access to pages and features</p>
+    <h1>@(Lang?.T("Permissions_Title") ?? "Permissions")</h1>
+    <p>@(Lang?.T("Permissions_Subtitle") ?? "Manage role access to pages and features")</p>
 </div>
 
 <MudPaper Elevation="0" Class="data-card pa-4">
@@ -21,10 +21,10 @@
     {
         <MudTable Items="@_rows" Dense="true" Hover="true" Striped="true" Elevation="0">
             <HeaderContent>
-                <MudTh>Page</MudTh>
+                <MudTh>@(Lang?.T("Permissions_Page") ?? "Page")</MudTh>
                 <MudTh Style="text-align:center; min-width:140px;">
                     <MudText>SystemAdmin</MudText>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Always full access</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Permissions_AlwaysFull") ?? "Always full access")</MudText>
                 </MudTh>
                 @foreach (var role in IPermissionService.ManagedRoles)
                 {
@@ -69,6 +69,8 @@
 </MudPaper>
 
 @code {
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
+
     private bool _loading = true;
     private Dictionary<string, Dictionary<string, bool>> _permissions = new();
     private List<PermissionRow> _rows = new();
@@ -85,7 +87,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error loading permissions: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("ErrorLoading") ?? "Error loading"} {Lang?.T("Permissions_Title")?.ToLower() ?? "permissions"}: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -131,13 +133,13 @@
         try
         {
             await PermissionService.SetPermissionAsync(role, pageKey, value);
-            Snackbar.Add($"{IPermissionService.PageDisplayNames[pageKey]} {(value ? "granted to" : "revoked from")} {role}", Severity.Success);
+            Snackbar.Add($"{IPermissionService.PageDisplayNames[pageKey]} {(value ? (Lang?.T("Permissions_Granted") ?? "granted to") : (Lang?.T("Permissions_Revoked") ?? "revoked from"))} {role}", Severity.Success);
         }
         catch (Exception ex)
         {
             // Revert on failure
             _permissions[role][pageKey] = !value;
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
             StateHasChanged();
         }
     }

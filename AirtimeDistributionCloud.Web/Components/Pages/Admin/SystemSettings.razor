@@ -6,11 +6,11 @@
 @inject ISnackbar Snackbar
 @rendermode InteractiveServer
 
-<PageTitle>System Settings - RasidBase</PageTitle>
+<PageTitle>@(Lang?.T("Settings_Title") ?? "System Settings") - RasidBase</PageTitle>
 
 <div class="page-header">
-    <h1>System Settings</h1>
-    <p>Configure application-wide settings</p>
+    <h1>@(Lang?.T("Settings_Title") ?? "System Settings")</h1>
+    <p>@(Lang?.T("Settings_Subtitle") ?? "Configure application-wide settings")</p>
 </div>
 
 @if (_loading)
@@ -21,16 +21,16 @@ else
 {
     <!-- General Settings -->
     <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
-        <MudText Typo="Typo.h6" Class="mb-3">General Settings</MudText>
+        <MudText Typo="Typo.h6" Class="mb-3">@(Lang?.T("Settings_GeneralSettings") ?? "General Settings")</MudText>
         <MudGrid>
             <!-- Airtime Deposit Auto Approve Toggle -->
             <MudItem xs="12">
                 <MudPaper Elevation="1" Class="pa-4" Style="border-radius:8px;">
                     <div class="d-flex align-center justify-space-between">
                         <div>
-                            <MudText Typo="Typo.subtitle2">Airtime Deposit Auto Approve</MudText>
+                            <MudText Typo="Typo.subtitle2">@(Lang?.T("Settings_AutoApprove") ?? "Airtime Deposit Auto Approve")</MudText>
                             <MudText Typo="Typo.caption" Color="Color.Secondary">
-                                Automatically approve new airtime deposits without admin review
+                                @(Lang?.T("Settings_AutoApproveDesc") ?? "Automatically approve new airtime deposits without admin review")
                             </MudText>
                         </div>
                         <MudSwitch T="bool" Value="_autoApproveDeposit" ValueChanged="OnAutoApproveChanged"
@@ -74,7 +74,7 @@ else
     <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
         <div class="d-flex align-center gap-2 mb-3">
             <MudIcon Icon="@Icons.Material.Outlined.Notifications" />
-            <MudText Typo="Typo.h6">Transfer Notification Settings</MudText>
+            <MudText Typo="Typo.h6">@(Lang?.T("Settings_TransferNotification") ?? "Transfer Notification Settings")</MudText>
         </div>
 
         <MudGrid>
@@ -83,9 +83,9 @@ else
                 <MudPaper Elevation="1" Class="pa-4" Style="border-radius:8px;">
                     <div class="d-flex align-center justify-space-between">
                         <div>
-                            <MudText Typo="Typo.subtitle2">Transfer Notification Enabled</MudText>
+                            <MudText Typo="Typo.subtitle2">@(Lang?.T("Settings_NotifEnabled") ?? "Transfer Notification Enabled")</MudText>
                             <MudText Typo="Typo.caption" Color="Color.Secondary">
-                                Enable dealer notifications when airtime transfers are approved
+                                @(Lang?.T("Settings_NotifEnabledDesc") ?? "Enable dealer notifications when airtime transfers are approved")
                             </MudText>
                         </div>
                         <MudSwitch T="bool" Value="_notificationEnabled" ValueChanged="OnNotificationEnabledChanged"
@@ -97,18 +97,18 @@ else
             <!-- Notification Methods -->
             <MudItem xs="12" sm="6">
                 <MudPaper Elevation="1" Class="pa-4" Style="border-radius:8px; height:100%;">
-                    <MudText Typo="Typo.subtitle2" Class="mb-1">Transfer Notification Method</MudText>
+                    <MudText Typo="Typo.subtitle2" Class="mb-1">@(Lang?.T("Settings_NotifMethod") ?? "Transfer Notification Method")</MudText>
                     <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-3">
-                        Select one or more notification channels
+                        @(Lang?.T("Settings_NotifMethodDesc") ?? "Select one or more notification channels")
                     </MudText>
                     <MudCheckBox T="bool" Value="_emailChecked" ValueChanged="OnEmailChanged"
-                                 Label="Email" Color="Color.Primary"
+                                 Label="@(Lang?.T("Email") ?? "Email")" Color="Color.Primary"
                                  Disabled="@(!_notificationEnabled || _saving)" Class="mb-1" />
                     <MudCheckBox T="bool" Value="_dealerWhatsAppChecked" ValueChanged="OnDealerWhatsAppChanged"
-                                 Label="Dealer WhatsApp" Color="Color.Primary"
+                                 Label="@(Lang?.T("Settings_DealerWhatsApp") ?? "Dealer WhatsApp")" Color="Color.Primary"
                                  Disabled="@(!_notificationEnabled || _saving)" Class="mb-1" />
                     <MudCheckBox T="bool" Value="_whatsAppGroupChecked" ValueChanged="OnWhatsAppGroupChanged"
-                                 Label="WhatsApp Group" Color="Color.Primary"
+                                 Label="@(Lang?.T("Settings_WhatsAppGroup") ?? "WhatsApp Group")" Color="Color.Primary"
                                  Disabled="@(!_notificationEnabled || _saving)" />
                 </MudPaper>
             </MudItem>
@@ -116,9 +116,9 @@ else
             <!-- WhatsApp Group URL -->
             <MudItem xs="12" sm="6">
                 <MudPaper Elevation="1" Class="pa-4" Style="border-radius:8px; height:100%;">
-                    <MudText Typo="Typo.subtitle2" Class="mb-1">Transfer Notification to WhatsApp Group Url</MudText>
+                    <MudText Typo="Typo.subtitle2" Class="mb-1">@(Lang?.T("Settings_GroupUrl") ?? "Transfer Notification to WhatsApp Group Url")</MudText>
                     <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-3">
-                        WhatsApp group invite URL (used when WhatsApp Group method is selected)
+                        @(Lang?.T("Settings_GroupUrlDesc") ?? "WhatsApp group invite URL (used when WhatsApp Group method is selected)")
                     </MudText>
                     <div class="d-flex align-center gap-2">
                         @if (_editingWhatsAppUrl)
@@ -136,7 +136,7 @@ else
                         else
                         {
                             <MudText Typo="Typo.body1" Style="flex:1; font-weight:600; word-break:break-all;">
-                                @(string.IsNullOrEmpty(_whatsAppGroupUrl) ? "(not set)" : _whatsAppGroupUrl)
+                                @(string.IsNullOrEmpty(_whatsAppGroupUrl) ? (Lang?.T("Settings_NotSet") ?? "(not set)") : _whatsAppGroupUrl)
                             </MudText>
                             <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary"
                                            Size="Size.Small" OnClick="@(() => _editingWhatsAppUrl = true)"
@@ -149,9 +149,9 @@ else
             <!-- Template Editor with Preview -->
             <MudItem xs="12">
                 <MudPaper Elevation="1" Class="pa-4" Style="border-radius:8px;">
-                    <MudText Typo="Typo.subtitle2" Class="mb-1">Transfer Notification Template</MudText>
+                    <MudText Typo="Typo.subtitle2" Class="mb-1">@(Lang?.T("Settings_Template") ?? "Transfer Notification Template")</MudText>
                     <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-3">
-                        Available placeholders:
+                        @(Lang?.T("Settings_AvailablePlaceholders") ?? "Available placeholders"):
                         <code>@("{{Name}}")</code>, <code>@("{{DealerNumber}}")</code>, <code>@("{{AirtimeTransferId}}")</code>,
                         <code>@("{{Product}}")</code>, <code>@("{{AirtimeAmount}}")</code>, <code>@("{{CommissionAmount}}")</code>,
                         <code>@("{{Branch}}")</code>, <code>@("{{CreatedDate}}")</code>, <code>@("{{TotalBalance}}")</code>,
@@ -159,7 +159,7 @@ else
                     </MudText>
                     <MudGrid>
                         <MudItem xs="12" md="6">
-                            <MudText Typo="Typo.body2" Class="mb-2" Style="font-weight:600;">Editor</MudText>
+                            <MudText Typo="Typo.body2" Class="mb-2" Style="font-weight:600;">@(Lang?.T("Settings_Editor") ?? "Editor")</MudText>
                             <MudTextField @bind-Value="_templateValue" Variant="Variant.Outlined"
                                           Lines="12" Immediate="true"
                                           Disabled="@(!_notificationEnabled)"
@@ -167,10 +167,10 @@ else
                             <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
                                        Class="mt-2" OnClick="SaveTemplate"
                                        Disabled="@(!_notificationEnabled || _saving)"
-                                       StartIcon="@Icons.Material.Filled.Save">Save Template</MudButton>
+                                       StartIcon="@Icons.Material.Filled.Save">@(Lang?.T("Settings_SaveTemplate") ?? "Save Template")</MudButton>
                         </MudItem>
                         <MudItem xs="12" md="6">
-                            <MudText Typo="Typo.body2" Class="mb-2" Style="font-weight:600;">Preview</MudText>
+                            <MudText Typo="Typo.body2" Class="mb-2" Style="font-weight:600;">@(Lang?.T("Settings_Preview") ?? "Preview")</MudText>
                             <MudPaper Elevation="0" Class="pa-4"
                                       Style="border-radius:8px; border: 1px solid var(--mud-palette-divider); background: var(--mud-palette-background); min-height: 260px; font-size: 0.85rem;">
                                 @((MarkupString)GetTemplatePreview())
@@ -186,30 +186,30 @@ else
     <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
         <div class="d-flex align-center gap-2 mb-3">
             <MudIcon Icon="@Icons.Material.Outlined.Email" />
-            <MudText Typo="Typo.h6">Email Configuration (SMTP)</MudText>
+            <MudText Typo="Typo.h6">@(Lang?.T("Settings_EmailConfig") ?? "Email Configuration (SMTP)")</MudText>
         </div>
 
         <MudGrid>
             <MudItem xs="12" sm="6">
-                <MudTextField @bind-Value="_smtpHost" Label="SMTP Server" Variant="Variant.Outlined"
+                <MudTextField @bind-Value="_smtpHost" Label="@(Lang?.T("Settings_SmtpServer") ?? "SMTP Server")" Variant="Variant.Outlined"
                               Margin="Margin.Dense" Placeholder="smtp.gmail.com" />
             </MudItem>
             <MudItem xs="12" sm="3">
-                <MudTextField @bind-Value="_smtpPort" Label="Port" Variant="Variant.Outlined"
+                <MudTextField @bind-Value="_smtpPort" Label="@(Lang?.T("Settings_Port") ?? "Port")" Variant="Variant.Outlined"
                               Margin="Margin.Dense" Placeholder="587" />
             </MudItem>
             <MudItem xs="12" sm="3">
                 <MudPaper Elevation="0" Class="d-flex align-center" Style="height:100%;">
-                    <MudSwitch T="bool" @bind-Value="_smtpUseSsl" Label="Use SSL/TLS" Color="Color.Primary" />
+                    <MudSwitch T="bool" @bind-Value="_smtpUseSsl" Label="@(Lang?.T("Settings_UseSsl") ?? "Use SSL/TLS")" Color="Color.Primary" />
                 </MudPaper>
             </MudItem>
 
             <MudItem xs="12" sm="6">
-                <MudTextField @bind-Value="_smtpUsername" Label="Username" Variant="Variant.Outlined"
+                <MudTextField @bind-Value="_smtpUsername" Label="@(Lang?.T("Settings_Username") ?? "Username")" Variant="Variant.Outlined"
                               Margin="Margin.Dense" Placeholder="user@example.com" />
             </MudItem>
             <MudItem xs="12" sm="6">
-                <MudTextField @bind-Value="_smtpPassword" Label="Password" Variant="Variant.Outlined"
+                <MudTextField @bind-Value="_smtpPassword" Label="@(Lang?.T("Password") ?? "Password")" Variant="Variant.Outlined"
                               Margin="Margin.Dense" Placeholder="••••••••"
                               InputType="@(_showPassword ? InputType.Text : InputType.Password)"
                               Adornment="Adornment.End"
@@ -218,11 +218,11 @@ else
             </MudItem>
 
             <MudItem xs="12" sm="6">
-                <MudTextField @bind-Value="_smtpSenderEmail" Label="Sender Email (From)" Variant="Variant.Outlined"
+                <MudTextField @bind-Value="_smtpSenderEmail" Label="@(Lang?.T("Settings_SenderEmail") ?? "Sender Email (From)")" Variant="Variant.Outlined"
                               Margin="Margin.Dense" Placeholder="noreply@company.com" />
             </MudItem>
             <MudItem xs="12" sm="6">
-                <MudTextField @bind-Value="_smtpSenderName" Label="Sender Name" Variant="Variant.Outlined"
+                <MudTextField @bind-Value="_smtpSenderName" Label="@(Lang?.T("Settings_SenderName") ?? "Sender Name")" Variant="Variant.Outlined"
                               Margin="Margin.Dense" Placeholder="RasidBase" />
             </MudItem>
 
@@ -231,7 +231,7 @@ else
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
                                OnClick="SaveEmailSettings" Disabled="@_savingEmail"
                                StartIcon="@Icons.Material.Filled.Save">
-                        @(_savingEmail ? "Saving..." : "Save Email Settings")
+                        @(_savingEmail ? (Lang?.T("Saving") ?? "Saving...") : (Lang?.T("Settings_SaveEmail") ?? "Save Email Settings"))
                     </MudButton>
                 </div>
             </MudItem>
@@ -239,17 +239,17 @@ else
             <!-- Test Email -->
             <MudItem xs="12">
                 <MudPaper Elevation="1" Class="pa-4" Style="border-radius:8px;">
-                    <MudText Typo="Typo.subtitle2" Class="mb-1">Send Test Email</MudText>
+                    <MudText Typo="Typo.subtitle2" Class="mb-1">@(Lang?.T("Settings_SendTest") ?? "Send Test Email")</MudText>
                     <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-3">
-                        Save settings first, then send a test email to verify the configuration
+                        @(Lang?.T("Settings_TestDesc") ?? "Save settings first, then send a test email to verify the configuration")
                     </MudText>
                     <div class="d-flex align-center gap-2">
-                        <MudTextField @bind-Value="_testEmailAddress" Label="Recipient Email" Variant="Variant.Outlined"
+                        <MudTextField @bind-Value="_testEmailAddress" Label="@(Lang?.T("Settings_RecipientEmail") ?? "Recipient Email")" Variant="Variant.Outlined"
                                       Margin="Margin.Dense" Style="max-width:360px;" Placeholder="test@example.com" />
                         <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
                                    OnClick="SendTestEmail" Disabled="@(_sendingTest || string.IsNullOrWhiteSpace(_testEmailAddress))"
                                    StartIcon="@Icons.Material.Filled.Send">
-                            @(_sendingTest ? "Sending..." : "Send Test")
+                            @(_sendingTest ? (Lang?.T("Sending") ?? "Sending...") : (Lang?.T("Settings_SendTestBtn") ?? "Send Test"))
                         </MudButton>
                     </div>
                 </MudPaper>
@@ -261,21 +261,20 @@ else
     <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
         <div class="d-flex align-center gap-2 mb-3">
             <MudIcon Icon="@Icons.Custom.Brands.WhatsApp" />
-            <MudText Typo="Typo.h6">WhatsApp Business API</MudText>
+            <MudText Typo="Typo.h6">@(Lang?.T("Settings_WhatsAppApi") ?? "WhatsApp Business API")</MudText>
         </div>
         <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
-            Configure Meta WhatsApp Business Cloud API credentials to send messages directly to dealers.
-            Required when using the "Dealer WhatsApp" notification method.
+            @(Lang?.T("Settings_WhatsAppApiDesc") ?? "Configure Meta WhatsApp Business Cloud API credentials to send messages directly to dealers. Required when using the \"Dealer WhatsApp\" notification method.")
         </MudText>
 
         <MudGrid>
             <MudItem xs="12" sm="6">
-                <MudTextField @bind-Value="_whatsAppApiPhoneNumberId" Label="Phone Number ID" Variant="Variant.Outlined"
+                <MudTextField @bind-Value="_whatsAppApiPhoneNumberId" Label="@(Lang?.T("Settings_PhoneNumberId") ?? "Phone Number ID")" Variant="Variant.Outlined"
                               Margin="Margin.Dense" Placeholder="e.g. 123456789012345"
                               HelperText="From your Meta WhatsApp Business dashboard" />
             </MudItem>
             <MudItem xs="12" sm="6">
-                <MudTextField @bind-Value="_whatsAppApiAccessToken" Label="Access Token" Variant="Variant.Outlined"
+                <MudTextField @bind-Value="_whatsAppApiAccessToken" Label="@(Lang?.T("Settings_AccessToken") ?? "Access Token")" Variant="Variant.Outlined"
                               Margin="Margin.Dense" Placeholder="EAAxxxxxxx..."
                               InputType="@(_showWhatsAppToken ? InputType.Text : InputType.Password)"
                               Adornment="Adornment.End"
@@ -287,7 +286,7 @@ else
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
                            OnClick="SaveWhatsAppApiSettings" Disabled="@_savingWhatsApp"
                            StartIcon="@Icons.Material.Filled.Save">
-                    @(_savingWhatsApp ? "Saving..." : "Save WhatsApp API Settings")
+                    @(_savingWhatsApp ? (Lang?.T("Saving") ?? "Saving...") : (Lang?.T("Settings_SaveWhatsApp") ?? "Save WhatsApp API Settings"))
                 </MudButton>
             </MudItem>
         </MudGrid>
@@ -297,22 +296,22 @@ else
     <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
         <div class="d-flex align-center gap-2 mb-3">
             <MudIcon Icon="@Icons.Material.Outlined.CurrencyExchange" />
-            <MudText Typo="Typo.h6">Currency Configuration</MudText>
+            <MudText Typo="Typo.h6">@(Lang?.T("Settings_CurrencyConfig") ?? "Currency Configuration")</MudText>
         </div>
         <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
-            Configure the default currency and available currencies for the asset registry.
+            @(Lang?.T("Settings_CurrencyDesc") ?? "Configure the default currency and available currencies for the asset registry.")
         </MudText>
 
         <MudGrid>
             <MudItem xs="12" sm="6">
                 <MudSelect T="string" Value="_defaultCurrency" ValueChanged="OnDefaultCurrencyChanged"
-                           Label="Default Currency" Variant="Variant.Outlined" Disabled="@_saving">
-                    <MudSelectItem T="string" Value="@("SSP")">SSP - South Sudan Pound</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("USD")">USD - United States Dollar</MudSelectItem>
+                           Label="@(Lang?.T("Settings_DefaultCurrency") ?? "Default Currency")" Variant="Variant.Outlined" Disabled="@_saving">
+                    <MudSelectItem T="string" Value="@("SSP")">@(Lang?.T("Settings_SSP") ?? "SSP - South Sudan Pound")</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("USD")">@(Lang?.T("Settings_USD") ?? "USD - United States Dollar")</MudSelectItem>
                 </MudSelect>
             </MudItem>
             <MudItem xs="12" sm="6">
-                <MudTextField Value="@_availableCurrencies" Label="Available Currencies" Variant="Variant.Outlined"
+                <MudTextField Value="@_availableCurrencies" Label="@(Lang?.T("Settings_AvailableCurrencies") ?? "Available Currencies")" Variant="Variant.Outlined"
                               ReadOnly="true" HelperText="SSP, USD" />
             </MudItem>
         </MudGrid>
@@ -325,10 +324,10 @@ else
             <MudPaper Elevation="1" Class="pa-4" Style="border: 2px solid var(--mud-palette-error); border-radius: 8px;">
                 <div class="d-flex align-center gap-2 mb-2">
                     <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" />
-                    <MudText Typo="Typo.h6" Color="Color.Error">Danger Zone</MudText>
+                    <MudText Typo="Typo.h6" Color="Color.Error">@(Lang?.T("Settings_DangerZone") ?? "Danger Zone")</MudText>
                 </div>
                 <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
-                    These formulas define how airtime calculations are performed. Edit with caution — changes serve as documentation for all future transactions.
+                    @(Lang?.T("Settings_DangerDesc") ?? "These formulas define how airtime calculations are performed. Edit with caution — changes serve as documentation for all future transactions.")
                 </MudText>
                 <MudGrid>
                     @foreach (var setting in _settings.Where(s => IsDangerSetting(s.Key)))
@@ -364,7 +363,7 @@ else
                 <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small"
                            Class="mt-3" OnClick="ResetFormulasToDefault"
                            StartIcon="@Icons.Material.Filled.RestartAlt" Disabled="@_saving">
-                    Reset to Default
+                    @(Lang?.T("Settings_ResetDefault") ?? "Reset to Default")
                 </MudButton>
             </MudPaper>
         </MudPaper>
@@ -372,6 +371,8 @@ else
 }
 
 @code {
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
+
     private List<SystemSetting> _settings = new();
     private bool _loading = true;
     private bool _saving;
@@ -453,7 +454,7 @@ else
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -544,11 +545,11 @@ else
             await UnitOfWork.Repository<SystemSetting>().UpdateAsync(setting);
             await UnitOfWork.SaveChangesAsync();
             _editingId = null;
-            Snackbar.Add("Setting updated", Severity.Success);
+            Snackbar.Add(Lang?.T("Settings_Updated") ?? "Setting updated", Severity.Success);
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -569,12 +570,12 @@ else
                 setting.Value = value;
                 await UnitOfWork.Repository<SystemSetting>().UpdateAsync(setting);
                 await UnitOfWork.SaveChangesAsync();
-                Snackbar.Add("Setting updated", Severity.Success);
+                Snackbar.Add(Lang?.T("Settings_Updated") ?? "Setting updated", Severity.Success);
             }
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -637,7 +638,7 @@ else
     private string GetTemplatePreview()
     {
         if (string.IsNullOrWhiteSpace(_templateValue))
-            return "<em style='color:var(--mud-palette-text-secondary)'>(No template configured)</em>";
+            return $"<em style='color:var(--mud-palette-text-secondary)'>({Lang?.T("Settings_NoTemplate") ?? "No template configured"})</em>";
 
         var preview = System.Net.WebUtility.HtmlEncode(_templateValue)
             .Replace("{{Name}}", "<strong>John Okoth</strong>")
@@ -677,11 +678,11 @@ else
                 }
             }
             await UnitOfWork.SaveChangesAsync();
-            Snackbar.Add("Formulas reset to default", Severity.Success);
+            Snackbar.Add(Lang?.T("Settings_FormulasReset") ?? "Formulas reset to default", Severity.Success);
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -719,11 +720,11 @@ else
                 }
             }
             await UnitOfWork.SaveChangesAsync();
-            Snackbar.Add("Email settings saved", Severity.Success);
+            Snackbar.Add(Lang?.T("Settings_EmailSaved") ?? "Email settings saved", Severity.Success);
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -754,11 +755,11 @@ else
                 }
             }
             await UnitOfWork.SaveChangesAsync();
-            Snackbar.Add("WhatsApp API settings saved", Severity.Success);
+            Snackbar.Add(Lang?.T("Settings_WhatsAppSaved") ?? "WhatsApp API settings saved", Severity.Success);
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -781,7 +782,7 @@ else
         {
             if (string.IsNullOrWhiteSpace(_smtpHost))
             {
-                Snackbar.Add("Please configure SMTP server first", Severity.Warning);
+                Snackbar.Add(Lang?.T("Settings_ConfigureSmtp") ?? "Please configure SMTP server first", Severity.Warning);
                 return;
             }
 
@@ -803,11 +804,11 @@ else
             };
 
             await smtp.SendMailAsync(message);
-            Snackbar.Add($"Test email sent to {_testEmailAddress}", Severity.Success);
+            Snackbar.Add(Lang?.T("Settings_TestSent") ?? $"Test email sent to {_testEmailAddress}", Severity.Success);
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Failed to send: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("Settings_FailedToSend") ?? "Failed to send"}: {ex.Message}", Severity.Error);
         }
         finally
         {

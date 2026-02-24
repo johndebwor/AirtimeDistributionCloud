@@ -14,17 +14,17 @@
 
 <MudDialog>
     <DialogContent>
-        <MudSelect T="int" @bind-Value="_branchId" Label="Branch" Required="true"
-                   RequiredError="Branch is required" Placeholder="-- Select Branch --" Class="mb-3">
+        <MudSelect T="int" @bind-Value="_branchId" Label="@(Lang?.T("Branch") ?? "Branch")" Required="true"
+                   RequiredError="@(Lang?.T("BranchRequired") ?? "Branch is required")" Placeholder="@(Lang?.T("SelectBranch") ?? "-- Select Branch --")" Class="mb-3">
             @foreach (var b in Branches)
             {
                 <MudSelectItem T="int" Value="@b.Id">@b.Name</MudSelectItem>
             }
         </MudSelect>
-        <MudTextField @bind-Value="_description" Label="Description" Required="true"
-                      RequiredError="Description is required" Lines="2" Class="mb-3" />
-        <MudSelect T="int" @bind-Value="_categoryId" Label="Category" Required="true"
-                   RequiredError="Category is required" Placeholder="-- Select Category --" Class="mb-3">
+        <MudTextField @bind-Value="_description" Label="@(Lang?.T("Description") ?? "Description")" Required="true"
+                      RequiredError="@(Lang?.T("DescriptionRequired") ?? "Description is required")" Lines="2" Class="mb-3" />
+        <MudSelect T="int" @bind-Value="_categoryId" Label="@(Lang?.T("Category") ?? "Category")" Required="true"
+                   RequiredError="@(Lang?.T("CategoryRequired") ?? "Category is required")" Placeholder="@(Lang?.T("SelectCategory") ?? "-- Select Category --")" Class="mb-3">
             @foreach (var cat in _categories)
             {
                 <MudSelectItem T="int" Value="@cat.Id">@cat.Name</MudSelectItem>
@@ -32,16 +32,16 @@
         </MudSelect>
         <div @ref="_amountRef">
             <MudTextField T="string" Value="@_amountDisplay" ValueChanged="OnAmountDisplayChanged"
-                          Label="Amount"
-                          Required="true" RequiredError="Amount is required" Class="mb-3" />
+                          Label="@(Lang?.T("Amount") ?? "Amount")"
+                          Required="true" RequiredError="@(Lang?.T("AmountRequired") ?? "Amount is required")" Class="mb-3" />
         </div>
-        <MudTextField @bind-Value="_receiptNumber" Label="Receipt Number (Optional)" Class="mb-3" />
+        <MudTextField @bind-Value="_receiptNumber" Label="@(Lang?.T("Expenses_ReceiptOptional") ?? "Receipt Number (Optional)")" Class="mb-3" />
         <MudFileUpload T="IBrowserFile" Accept=".pdf,.jpg,.jpeg,.png" MaximumFileCount="1"
                        FilesChanged="@(f => _receiptFile = f)">
             <ActivatorContent>
                 <MudButton Variant="Variant.Outlined" Color="Color.Primary"
                            StartIcon="@Icons.Material.Filled.Receipt" Class="mb-1">
-                    Upload Receipt (Optional)
+                    @(Lang?.T("Expenses_UploadReceipt") ?? "Upload Receipt (Optional)")
                 </MudButton>
             </ActivatorContent>
         </MudFileUpload>
@@ -51,14 +51,15 @@
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton OnClick="Cancel">@(Lang?.T("Cancel") ?? "Cancel")</MudButton>
         <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit"
-                   Disabled="@_saving">Save</MudButton>
+                   Disabled="@_saving">@(Lang?.T("Save") ?? "Save")</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
     [Parameter] public List<BranchDto> Branches { get; set; } = new();
 
     private bool _saving;
@@ -115,7 +116,7 @@
 
         if (_branchId == 0 || string.IsNullOrWhiteSpace(_description) || _categoryId == 0 || _amount <= 0)
         {
-            Snackbar.Add("Please fill in all required fields", Severity.Warning);
+            Snackbar.Add(Lang?.T("FillRequiredFields") ?? "Please fill in all required fields", Severity.Warning);
             return;
         }
 
@@ -144,14 +145,14 @@
                 await UserPrefs.SetAsync(userId, IUserPreferenceService.LastBranchId, _branchId.ToString());
 
             var message = result.Status == DepositStatus.Approved
-                ? "Expense recorded and auto-approved"
-                : "Expense submitted for approval";
+                ? (Lang?.T("Expenses_AutoApproved") ?? "Expense recorded and auto-approved")
+                : (Lang?.T("Expenses_Submitted") ?? "Expense submitted for approval");
             Snackbar.Add(message, Severity.Success);
             MudDialog.Close(DialogResult.Ok(true));
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
         }
         finally
         {

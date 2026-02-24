@@ -1,7 +1,7 @@
 html, body {
     margin: 0;
     padding: 0;
-    font-family: 'Inter', 'Roboto', sans-serif;
+    font-family: 'Inter', 'Roboto', 'Noto Sans Arabic', sans-serif;
 }
 
 .cursor-pointer { cursor: pointer; }
@@ -209,4 +209,30 @@ html, body {
 
 .blazor-error-boundary::after {
     content: "An error has occurred."
+}
+
+/* ===== RTL Support ===== */
+[dir="rtl"] .sidebar {
+    border-left: none !important;
+}
+
+[dir="rtl"] .sidebar-brand {
+    direction: rtl;
+}
+
+[dir="rtl"] .nav-label {
+    direction: rtl;
+}
+
+[dir="rtl"] .page-header {
+    text-align: right;
+}
+
+[dir="rtl"] .sidebar-footer {
+    direction: ltr;
+}
+
+[dir="rtl"] #blazor-error-ui .dismiss {
+    right: auto;
+    left: 0.75rem;
 }

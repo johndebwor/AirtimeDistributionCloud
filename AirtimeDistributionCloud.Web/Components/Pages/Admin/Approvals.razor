@@ -10,27 +10,27 @@
 @inject ISnackbar Snackbar
 @rendermode InteractiveServer
 
-<PageTitle>Approvals - RasidBase</PageTitle>
+<PageTitle>@(Lang?.T("Approvals_Title") ?? "Approvals") - RasidBase</PageTitle>
 
 <div class="page-header">
-    <h1>Approvals</h1>
-    <p>Review and approve pending deposits</p>
+    <h1>@(Lang?.T("Approvals_Title") ?? "Approvals")</h1>
+    <p>@(Lang?.T("Approvals_Subtitle") ?? "Review and approve pending deposits")</p>
 </div>
 
 <div class="page-toolbar">
     <MudChipSet T="string" SelectedValue="_currentFilter" SelectedValueChanged="OnFilterChanged" SelectionMode="SelectionMode.SingleSelection">
-        <MudChip T="string" Value="@("Pending")" Color="Color.Warning" Variant="Variant.Outlined">Pending</MudChip>
-        <MudChip T="string" Value="@("Approved")" Color="Color.Success" Variant="Variant.Outlined">Approved</MudChip>
-        <MudChip T="string" Value="@("Rejected")" Color="Color.Error" Variant="Variant.Outlined">Rejected</MudChip>
-        <MudChip T="string" Value="@("Cancelled")" Color="Color.Dark" Variant="Variant.Outlined">Cancelled</MudChip>
-        <MudChip T="string" Value="@("All")" Variant="Variant.Outlined">All</MudChip>
+        <MudChip T="string" Value="@("Pending")" Color="Color.Warning" Variant="Variant.Outlined">@(Lang?.T("Pending") ?? "Pending")</MudChip>
+        <MudChip T="string" Value="@("Approved")" Color="Color.Success" Variant="Variant.Outlined">@(Lang?.T("Approved") ?? "Approved")</MudChip>
+        <MudChip T="string" Value="@("Rejected")" Color="Color.Error" Variant="Variant.Outlined">@(Lang?.T("Rejected") ?? "Rejected")</MudChip>
+        <MudChip T="string" Value="@("Cancelled")" Color="Color.Dark" Variant="Variant.Outlined">@(Lang?.T("Cancelled") ?? "Cancelled")</MudChip>
+        <MudChip T="string" Value="@("All")" Variant="Variant.Outlined">@(Lang?.T("All") ?? "All")</MudChip>
     </MudChipSet>
     @if (_pendingCount > 0 && _currentFilter == "Pending")
     {
         <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Small"
                    StartIcon="@Icons.Material.Filled.DoneAll" OnClick="ApproveAll"
                    Disabled="@_approvingAll">
-            Approve All (@_pendingCount)
+            @(Lang?.T("Approvals_ApproveAll") ?? "Approve All") (@_pendingCount)
         </MudButton>
     }
 </div>
@@ -40,11 +40,11 @@
                  Loading="@_loading" Dense="true" Hover="true" Striped="true">
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="ID" />
-            <PropertyColumn Property="x => x.ProductName" Title="Product" />
-            <PropertyColumn Property="x => x.Amount" Title="Amount" Format="C6" />
-            <PropertyColumn Property="x => x.BonusAmount" Title="Bonus" Format="C6" />
-            <PropertyColumn Property="x => x.TotalAmount" Title="Total" Format="C6" />
-            <TemplateColumn Title="Status" Sortable="false">
+            <PropertyColumn Property="x => x.ProductName" Title="@(Lang?.T("Product") ?? "Product")" />
+            <PropertyColumn Property="x => x.Amount" Title="@(Lang?.T("Amount") ?? "Amount")" Format="C6" />
+            <PropertyColumn Property="x => x.BonusAmount" Title="@(Lang?.T("Bonus") ?? "Bonus")" Format="C6" />
+            <PropertyColumn Property="x => x.TotalAmount" Title="@(Lang?.T("Total") ?? "Total")" Format="C6" />
+            <TemplateColumn Title="@(Lang?.T("Status") ?? "Status")" Sortable="false">
                 <CellTemplate>
                     @{
                         var color = context.Item.Status switch
@@ -59,36 +59,38 @@
                     <MudChip T="string" Color="@color" Size="Size.Small">@context.Item.Status</MudChip>
                 </CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.CreatedDate" Title="Date" Format="dd MMM yyyy HH:mm" />
-            <TemplateColumn Title="Actions" Sortable="false">
+            <PropertyColumn Property="x => x.CreatedDate" Title="@(Lang?.T("Date") ?? "Date")" Format="dd MMM yyyy HH:mm" />
+            <TemplateColumn Title="@(Lang?.T("Actions") ?? "Actions")" Sortable="false">
                 <CellTemplate>
                     <MudStack Row="true" Spacing="1">
                         @if (context.Item.Status == DepositStatus.Pending)
                         {
                             <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Success"
                                        StartIcon="@Icons.Material.Filled.Check"
-                                       OnClick="@(() => ApproveDeposit(context.Item))">Approve</MudButton>
+                                       OnClick="@(() => ApproveDeposit(context.Item))">@(Lang?.T("Approve") ?? "Approve")</MudButton>
                             <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Error"
                                        StartIcon="@Icons.Material.Filled.Close"
-                                       OnClick="@(() => RejectDeposit(context.Item))">Reject</MudButton>
+                                       OnClick="@(() => RejectDeposit(context.Item))">@(Lang?.T("Reject") ?? "Reject")</MudButton>
                         }
                         @if (context.Item.Status == DepositStatus.Pending || context.Item.Status == DepositStatus.Approved)
                         {
                             <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Dark"
                                        StartIcon="@Icons.Material.Filled.Cancel"
-                                       OnClick="@(() => CancelDeposit(context.Item))">Cancel</MudButton>
+                                       OnClick="@(() => CancelDeposit(context.Item))">@(Lang?.T("Cancel") ?? "Cancel")</MudButton>
                         }
                     </MudStack>
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
         <NoRecordsContent>
-            <MudText>No deposits found.</MudText>
+            <MudText>@(Lang?.T("Deposits_NotFound") ?? "No deposits found.")</MudText>
         </NoRecordsContent>
     </MudDataGrid>
 </MudPaper>
 
 @code {
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
+
     private List<AirtimeDepositDto> _allDeposits = new();
     private List<AirtimeDepositDto> _filteredDeposits = new();
     private string _currentFilter = "Pending";
@@ -111,7 +113,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error loading deposits: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("ErrorLoading") ?? "Error loading"} {Lang?.T("Approvals_Title")?.ToLower() ?? "deposits"}: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -141,11 +143,11 @@
     {
         var parameters = new DialogParameters<ApprovalNotesDialog>
         {
-            { x => x.Title, $"Approve Deposit #{deposit.Id}" },
-            { x => x.ActionLabel, "Approve" },
+            { x => x.Title, $"{Lang?.T("Approvals_ApproveDeposit") ?? "Approve Deposit"} #{deposit.Id}" },
+            { x => x.ActionLabel, Lang?.T("Approve") ?? "Approve" },
             { x => x.ActionColor, Color.Success }
         };
-        var dialog = await DialogService.ShowAsync<ApprovalNotesDialog>("Approve Deposit", parameters,
+        var dialog = await DialogService.ShowAsync<ApprovalNotesDialog>(Lang?.T("Approvals_ApproveDeposit") ?? "Approve Deposit", parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
         var result = await dialog.Result;
         if (result is { Canceled: false, Data: string notes })
@@ -153,12 +155,12 @@
             try
             {
                 await DepositService.ApproveDepositAsync(deposit.Id, CurrentUser.UserId ?? "", notes);
-                Snackbar.Add("Deposit approved successfully", Severity.Success);
+                Snackbar.Add(Lang?.T("Approvals_DepositApproved") ?? "Deposit approved successfully", Severity.Success);
                 await LoadDeposits();
             }
             catch (Exception ex)
             {
-                Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+                Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
             }
         }
     }
@@ -167,11 +169,11 @@
     {
         var parameters = new DialogParameters<ApprovalNotesDialog>
         {
-            { x => x.Title, $"Reject Deposit #{deposit.Id}" },
-            { x => x.ActionLabel, "Reject" },
+            { x => x.Title, $"{Lang?.T("Approvals_RejectDeposit") ?? "Reject Deposit"} #{deposit.Id}" },
+            { x => x.ActionLabel, Lang?.T("Reject") ?? "Reject" },
             { x => x.ActionColor, Color.Error }
         };
-        var dialog = await DialogService.ShowAsync<ApprovalNotesDialog>("Reject Deposit", parameters,
+        var dialog = await DialogService.ShowAsync<ApprovalNotesDialog>(Lang?.T("Approvals_RejectDeposit") ?? "Reject Deposit", parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
         var result = await dialog.Result;
         if (result is { Canceled: false, Data: string notes })
@@ -179,12 +181,12 @@
             try
             {
                 await DepositService.RejectDepositAsync(deposit.Id, CurrentUser.UserId ?? "", notes);
-                Snackbar.Add("Deposit rejected", Severity.Warning);
+                Snackbar.Add(Lang?.T("Approvals_DepositRejected") ?? "Deposit rejected", Severity.Warning);
                 await LoadDeposits();
             }
             catch (Exception ex)
             {
-                Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+                Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
             }
         }
     }
@@ -193,11 +195,11 @@
     {
         var parameters = new DialogParameters<ApprovalNotesDialog>
         {
-            { x => x.Title, $"Cancel Deposit #{deposit.Id}" },
-            { x => x.ActionLabel, "Cancel Deposit" },
+            { x => x.Title, $"{Lang?.T("Approvals_CancelDeposit") ?? "Cancel Deposit"} #{deposit.Id}" },
+            { x => x.ActionLabel, Lang?.T("Cancel") ?? "Cancel Deposit" },
             { x => x.ActionColor, Color.Dark }
         };
-        var dialog = await DialogService.ShowAsync<ApprovalNotesDialog>("Cancel Deposit", parameters,
+        var dialog = await DialogService.ShowAsync<ApprovalNotesDialog>(Lang?.T("Approvals_CancelDeposit") ?? "Cancel Deposit", parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
         var result = await dialog.Result;
         if (result is { Canceled: false, Data: string notes })
@@ -205,12 +207,12 @@
             try
             {
                 await DepositService.CancelDepositAsync(deposit.Id, CurrentUser.UserId ?? "", notes);
-                Snackbar.Add("Deposit cancelled successfully", Severity.Info);
+                Snackbar.Add(Lang?.T("Approvals_DepositCancelled") ?? "Deposit cancelled successfully", Severity.Info);
                 await LoadDeposits();
             }
             catch (Exception ex)
             {
-                Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+                Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
             }
         }
     }
@@ -221,9 +223,9 @@
         if (pending.Count == 0) return;
 
         var confirm = await DialogService.ShowMessageBox(
-            "Approve All Deposits",
-            $"Are you sure you want to approve all {pending.Count} pending deposit(s)?",
-            yesText: "Approve All", cancelText: "Cancel");
+            Lang?.T("Approvals_ApproveAllTitle") ?? "Approve All Deposits",
+            $"{Lang?.T("Approvals_ConfirmApproveAll") ?? "Are you sure you want to approve all"} {pending.Count} {(Lang?.T("Pending")?.ToLower() ?? "pending")} deposit(s)?",
+            yesText: Lang?.T("Approvals_ApproveAll") ?? "Approve All", cancelText: Lang?.T("Cancel") ?? "Cancel");
         if (confirm != true) return;
 
         _approvingAll = true;
@@ -243,7 +245,7 @@
             }
         }
         _approvingAll = false;
-        Snackbar.Add($"{approved} deposit(s) approved" + (failed > 0 ? $", {failed} failed" : ""), failed > 0 ? Severity.Warning : Severity.Success);
+        Snackbar.Add($"{approved} {Lang?.T("Approvals_BulkResult") ?? "deposit(s) approved"}" + (failed > 0 ? $", {failed} {Lang?.T("Approvals_BulkFailed") ?? "failed"}" : ""), failed > 0 ? Severity.Warning : Severity.Success);
         await LoadDeposits();
     }
 }

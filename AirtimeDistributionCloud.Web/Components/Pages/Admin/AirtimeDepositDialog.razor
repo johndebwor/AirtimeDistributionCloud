@@ -11,8 +11,8 @@
 
 <MudDialog>
     <DialogContent>
-        <MudSelect T="int" @bind-Value="_selectedProductId" Label="Product" Required="true"
-                   RequiredError="Product is required" Placeholder="-- Select Product --" Class="mb-3">
+        <MudSelect T="int" @bind-Value="_selectedProductId" Label="@(Lang?.T("Product") ?? "Product")" Required="true"
+                   RequiredError="@(Lang?.T("ProductRequired") ?? "Product is required")" Placeholder="@(Lang?.T("SelectProduct") ?? "-- Select Product --")" Class="mb-3">
             @foreach (var product in Products)
             {
                 <MudSelectItem T="int" Value="@product.Id">@product.Name</MudSelectItem>
@@ -20,19 +20,20 @@
         </MudSelect>
         <div @ref="_amountRef">
             <MudTextField T="string" Value="@_amountDisplay" ValueChanged="OnAmountDisplayChanged"
-                          Label="Amount"
-                          Required="true" RequiredError="Amount is required" Class="mb-3" />
+                          Label="@(Lang?.T("Amount") ?? "Amount")"
+                          Required="true" RequiredError="@(Lang?.T("AmountRequired") ?? "Amount is required")" Class="mb-3" />
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton OnClick="Cancel">@(Lang?.T("Cancel") ?? "Cancel")</MudButton>
         <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit"
-                   Disabled="@_saving">Save</MudButton>
+                   Disabled="@_saving">@(Lang?.T("Save") ?? "Save")</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
     [Parameter] public List<ProductDto> Products { get; set; } = new();
 
     private int _selectedProductId;
@@ -70,7 +71,7 @@
     {
         if (_selectedProductId == 0)
         {
-            Snackbar.Add("Please select a product and enter an amount", Severity.Warning);
+            Snackbar.Add(Lang?.T("Deposits_SelectProduct") ?? "Please select a product and enter an amount", Severity.Warning);
             return;
         }
 
@@ -79,7 +80,7 @@
 
         if (_amount <= 0)
         {
-            Snackbar.Add("Please select a product and enter an amount", Severity.Warning);
+            Snackbar.Add(Lang?.T("Deposits_SelectProduct") ?? "Please select a product and enter an amount", Severity.Warning);
             return;
         }
 
@@ -95,14 +96,14 @@
                 await UserPrefs.SetAsync(userId, IUserPreferenceService.LastProductId, _selectedProductId.ToString());
 
             var message = result.Status == DepositStatus.Approved
-                ? "Deposit created and auto-approved"
-                : "Deposit submitted for approval";
+                ? (Lang?.T("Deposits_AutoApproved") ?? "Deposit created and auto-approved")
+                : (Lang?.T("Deposits_Submitted") ?? "Deposit submitted for approval");
             Snackbar.Add(message, Severity.Success);
             MudDialog.Close(DialogResult.Ok(true));
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
         }
         finally
         {

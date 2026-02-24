@@ -1,4 +1,5 @@
 @inherits LayoutComponentBase
+@implements IDisposable
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 @using AirtimeDistributionCloud.Application.Services
@@ -6,91 +7,105 @@
 @using AirtimeDistributionCloud.Core.Entities
 @inject ICurrentUserService CurrentUser
 @inject IServiceScopeFactory ScopeFactory
+@inject ILanguageService Lang
 
-<MudThemeProvider @ref="_themeProvider" Theme="_theme" IsDarkMode="@_isDarkMode" />
-<MudPopoverProvider />
-<MudDialogProvider />
-<MudSnackbarProvider />
+<CascadingValue Value="Lang" IsFixed="false">
+    <MudThemeProvider @ref="_themeProvider" Theme="_theme" IsDarkMode="@_isDarkMode" />
+    <MudPopoverProvider />
+    <MudDialogProvider />
+    <MudSnackbarProvider />
 
-<MudLayout>
-    <MudAppBar Elevation="0" Dense="true">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
-                       OnClick="@ToggleDrawer" />
-        <MudText Typo="Typo.h6" Class="d-none d-sm-flex ml-2" Style="font-weight: 600;">
-            RasidBase
-        </MudText>
-        <MudText Typo="Typo.h6" Class="d-flex d-sm-none ml-2" Style="font-weight: 600;">RasidBase</MudText>
-        <MudSpacer />
+    <MudRTLProvider RightToLeft="@Lang.IsRtl">
+    <MudLayout>
+        <MudAppBar Elevation="0" Dense="true">
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
+                           OnClick="@ToggleDrawer" />
+            <MudText Typo="Typo.h6" Class="d-none d-sm-flex ml-2" Style="font-weight: 600;">
+                RasidBase
+            </MudText>
+            <MudText Typo="Typo.h6" Class="d-flex d-sm-none ml-2" Style="font-weight: 600;">RasidBase</MudText>
+            <MudSpacer />
 
-        <MudMenu Icon="@_themeModeIcon" Color="Color.Inherit" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
-            <MudMenuItem Icon="@Icons.Material.Outlined.LightMode" OnClick="@(() => SetThemeMode("Light"))">
-                Light @if (_themeMode == "Light") { <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Class="ml-2" /> }
-            </MudMenuItem>
-            <MudMenuItem Icon="@Icons.Material.Outlined.DarkMode" OnClick="@(() => SetThemeMode("Dark"))">
-                Dark @if (_themeMode == "Dark") { <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Class="ml-2" /> }
-            </MudMenuItem>
-            <MudMenuItem Icon="@Icons.Material.Outlined.SettingsBrightness" OnClick="@(() => SetThemeMode("Auto"))">
-                Auto @if (_themeMode == "Auto") { <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Class="ml-2" /> }
-            </MudMenuItem>
-        </MudMenu>
+            <MudMenu Icon="@Icons.Material.Outlined.Translate" Color="Color.Inherit" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                <MudMenuItem OnClick="@(() => SetLanguage("en"))">
+                    English @if (Lang.CurrentLanguage == "en") { <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Class="ml-2" /> }
+                </MudMenuItem>
+                <MudMenuItem OnClick="@(() => SetLanguage("ar"))">
+                    العربية @if (Lang.CurrentLanguage == "ar") { <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Class="ml-2" /> }
+                </MudMenuItem>
+            </MudMenu>
 
-        <AuthorizeView>
-            <Authorized>
-                <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
-                    <ActivatorContent>
-                        <MudButton Variant="Variant.Text" Color="Color.Inherit" Class="text-transform-none ml-1"
-                                   StartIcon="@Icons.Material.Outlined.AccountCircle"
-                                   EndIcon="@Icons.Material.Filled.KeyboardArrowDown">
-                            <span class="d-none d-sm-inline">@context.User.Identity?.Name</span>
-                        </MudButton>
-                    </ActivatorContent>
-                    <ChildContent>
-                        <MudMenuItem Icon="@Icons.Material.Outlined.Person" Href="/profile">Profile</MudMenuItem>
-                        <MudDivider />
-                        <MudMenuItem Icon="@Icons.Material.Outlined.Logout" IconColor="Color.Error"
-                                     OnClick="@SubmitLogout">
-                            Sign out
-                        </MudMenuItem>
-                    </ChildContent>
-                </MudMenu>
-                <form id="logoutForm" method="post" action="/Account/Logout" style="display:none;">
-                    <AntiforgeryToken />
-                    <input type="hidden" name="ReturnUrl" value="/" />
-                </form>
-            </Authorized>
-            <NotAuthorized>
-                <MudButton Href="/Account/Login" Color="Color.Inherit" Variant="Variant.Text"
-                           StartIcon="@Icons.Material.Outlined.Login" Class="text-transform-none">Sign in</MudButton>
-            </NotAuthorized>
-        </AuthorizeView>
-    </MudAppBar>
+            <MudMenu Icon="@_themeModeIcon" Color="Color.Inherit" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                <MudMenuItem Icon="@Icons.Material.Outlined.LightMode" OnClick="@(() => SetThemeMode("Light"))">
+                    @Lang.T("Light") @if (_themeMode == "Light") { <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Class="ml-2" /> }
+                </MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Outlined.DarkMode" OnClick="@(() => SetThemeMode("Dark"))">
+                    @Lang.T("Dark") @if (_themeMode == "Dark") { <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Class="ml-2" /> }
+                </MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Outlined.SettingsBrightness" OnClick="@(() => SetThemeMode("Auto"))">
+                    @Lang.T("Auto") @if (_themeMode == "Auto") { <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Class="ml-2" /> }
+                </MudMenuItem>
+            </MudMenu>
 
-    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Breakpoint="Breakpoint.Md"
-               Elevation="0" Variant="@DrawerVariant.Responsive" Class="sidebar">
+            <AuthorizeView>
+                <Authorized>
+                    <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                        <ActivatorContent>
+                            <MudButton Variant="Variant.Text" Color="Color.Inherit" Class="text-transform-none ml-1"
+                                       StartIcon="@Icons.Material.Outlined.AccountCircle"
+                                       EndIcon="@Icons.Material.Filled.KeyboardArrowDown">
+                                <span class="d-none d-sm-inline">@context.User.Identity?.Name</span>
+                            </MudButton>
+                        </ActivatorContent>
+                        <ChildContent>
+                            <MudMenuItem Icon="@Icons.Material.Outlined.Person" Href="/profile">@Lang.T("Profile")</MudMenuItem>
+                            <MudDivider />
+                            <MudMenuItem Icon="@Icons.Material.Outlined.Logout" IconColor="Color.Error"
+                                         OnClick="@SubmitLogout">
+                                @Lang.T("SignOut")
+                            </MudMenuItem>
+                        </ChildContent>
+                    </MudMenu>
+                    <form id="logoutForm" method="post" action="/Account/Logout" style="display:none;">
+                        <AntiforgeryToken />
+                        <input type="hidden" name="ReturnUrl" value="/" />
+                    </form>
+                </Authorized>
+                <NotAuthorized>
+                    <MudButton Href="/Account/Login" Color="Color.Inherit" Variant="Variant.Text"
+                               StartIcon="@Icons.Material.Outlined.Login" Class="text-transform-none">@Lang.T("SignIn")</MudButton>
+                </NotAuthorized>
+            </AuthorizeView>
+        </MudAppBar>
 
-        <div class="sidebar-brand">
-            <div class="sidebar-brand-logo">
-                <MudIcon Icon="@Icons.Material.Filled.CellTower" Style="color: white; font-size: 1.25rem;" />
+        <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Breakpoint="Breakpoint.Md"
+                   Elevation="0" Variant="@DrawerVariant.Responsive" Class="sidebar">
+
+            <div class="sidebar-brand">
+                <div class="sidebar-brand-logo">
+                    <MudIcon Icon="@Icons.Material.Filled.CellTower" Style="color: white; font-size: 1.25rem;" />
+                </div>
+                <div class="sidebar-brand-text">
+                    <span class="sidebar-brand-name">@(string.IsNullOrEmpty(_companyShortName) ? "RB" : _companyShortName)</span>
+                    <span class="sidebar-brand-label">@(string.IsNullOrEmpty(_companyFullName) ? "Smart Airtime Distribution" : _companyFullName)</span>
+                </div>
             </div>
-            <div class="sidebar-brand-text">
-                <span class="sidebar-brand-name">@(string.IsNullOrEmpty(_companyShortName) ? "RB" : _companyShortName)</span>
-                <span class="sidebar-brand-label">@(string.IsNullOrEmpty(_companyFullName) ? "Smart Airtime Distribution" : _companyFullName)</span>
+
+            <div class="sidebar-nav">
+                <NavMenu />
             </div>
-        </div>
 
-        <div class="sidebar-nav">
-            <NavMenu />
-        </div>
+            <div class="sidebar-footer">v 0.1.0</div>
+        </MudDrawer>
 
-        <div class="sidebar-footer">v 0.1.0</div>
-    </MudDrawer>
-
-    <MudMainContent Class="pt-16 px-2 px-sm-4">
-        <MudContainer MaxWidth="MaxWidth.False" Class="py-4">
-            @Body
-        </MudContainer>
-    </MudMainContent>
-</MudLayout>
+        <MudMainContent Class="pt-16 px-2 px-sm-4">
+            <MudContainer MaxWidth="MaxWidth.False" Class="py-4">
+                @Body
+            </MudContainer>
+        </MudMainContent>
+    </MudLayout>
+    </MudRTLProvider>
+</CascadingValue>
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
@@ -113,6 +128,13 @@
         _ => Icons.Material.Outlined.SettingsBrightness
     };
 
+    protected override void OnInitialized()
+    {
+        Lang.OnLanguageChanged += OnLanguageChanged;
+    }
+
+    private void OnLanguageChanged() => InvokeAsync(StateHasChanged);
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -127,6 +149,10 @@
                 var saved = await userPrefs.GetStringAsync(userId, IUserPreferenceService.ThemeMode);
                 if (!string.IsNullOrEmpty(saved))
                     _themeMode = saved;
+
+                var savedLang = await userPrefs.GetStringAsync(userId, IUserPreferenceService.Language);
+                if (!string.IsNullOrEmpty(savedLang))
+                    Lang.SetLanguage(savedLang);
             }
 
             var nameSetting = await settingsRepo.GetByKeyAsync("CompanyName");
@@ -135,6 +161,7 @@
             _companyShortName = abbrSetting?.Value ?? "";
 
             await ApplyThemeMode();
+            await JS.InvokeVoidAsync("setDocumentLang", Lang.CurrentLanguage, Lang.IsRtl ? "rtl" : "ltr");
             StateHasChanged();
         }
     }
@@ -160,6 +187,20 @@
             using var scope = ScopeFactory.CreateScope();
             var userPrefs = scope.ServiceProvider.GetRequiredService<IUserPreferenceService>();
             await userPrefs.SetAsync(userId, IUserPreferenceService.ThemeMode, mode);
+        }
+    }
+
+    private async Task SetLanguage(string lang)
+    {
+        Lang.SetLanguage(lang);
+        await JS.InvokeVoidAsync("setDocumentLang", lang, Lang.IsRtl ? "rtl" : "ltr");
+
+        var userId = CurrentUser.UserId;
+        if (userId is not null)
+        {
+            using var scope = ScopeFactory.CreateScope();
+            var userPrefs = scope.ServiceProvider.GetRequiredService<IUserPreferenceService>();
+            await userPrefs.SetAsync(userId, IUserPreferenceService.Language, lang);
         }
     }
 
@@ -211,7 +252,7 @@
         {
             Default = new DefaultTypography()
             {
-                FontFamily = ["Inter", "Roboto", "Helvetica", "Arial", "sans-serif"]
+                FontFamily = ["Inter", "Roboto", "Noto Sans Arabic", "Helvetica", "Arial", "sans-serif"]
             }
         }
     };
@@ -224,5 +265,10 @@
     private async Task SubmitLogout()
     {
         await JS.InvokeVoidAsync("eval", "document.getElementById('logoutForm').submit()");
+    }
+
+    public void Dispose()
+    {
+        Lang.OnLanguageChanged -= OnLanguageChanged;
     }
 }

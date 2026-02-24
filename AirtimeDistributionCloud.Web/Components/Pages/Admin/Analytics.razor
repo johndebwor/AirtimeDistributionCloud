@@ -7,34 +7,34 @@
 @inject ISnackbar Snackbar
 @rendermode InteractiveServer
 
-<PageTitle>Sales & Capital - RasidBase</PageTitle>
+<PageTitle>@(Lang?.T("Analytics_Title") ?? "Sales & Capital") - RasidBase</PageTitle>
 
 <div class="page-header">
-    <h1>Sales Stock & Capital Growth</h1>
-    <p>Business performance analytics</p>
+    <h1>@(Lang?.T("Analytics_SalesStock") ?? "Sales Stock") & @(Lang?.T("Analytics_CapitalGrowth") ?? "Capital Growth")</h1>
+    <p>@(Lang?.T("Analytics_Subtitle") ?? "Business performance analytics")</p>
 </div>
 
 <!-- Period / Date Filters -->
 <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
     <MudGrid>
         <MudItem xs="12" sm="3">
-            <MudSelect T="AnalyticsPeriod" @bind-Value="_selectedPeriod" Label="Period" Variant="Variant.Outlined" Margin="Margin.Dense">
-                <MudSelectItem T="AnalyticsPeriod" Value="AnalyticsPeriod.Daily">Daily (Last 30 days)</MudSelectItem>
-                <MudSelectItem T="AnalyticsPeriod" Value="AnalyticsPeriod.Weekly">Weekly (Last 12 weeks)</MudSelectItem>
-                <MudSelectItem T="AnalyticsPeriod" Value="AnalyticsPeriod.Monthly">Monthly (Last 12 months)</MudSelectItem>
-                <MudSelectItem T="AnalyticsPeriod" Value="AnalyticsPeriod.Yearly">Yearly</MudSelectItem>
+            <MudSelect T="AnalyticsPeriod" @bind-Value="_selectedPeriod" Label="@(Lang?.T("Analytics_Period") ?? "Period")" Variant="Variant.Outlined" Margin="Margin.Dense">
+                <MudSelectItem T="AnalyticsPeriod" Value="AnalyticsPeriod.Daily">@(Lang?.T("Analytics_Daily") ?? "Daily (Last 30 days)")</MudSelectItem>
+                <MudSelectItem T="AnalyticsPeriod" Value="AnalyticsPeriod.Weekly">@(Lang?.T("Analytics_Weekly") ?? "Weekly (Last 12 weeks)")</MudSelectItem>
+                <MudSelectItem T="AnalyticsPeriod" Value="AnalyticsPeriod.Monthly">@(Lang?.T("Analytics_Monthly") ?? "Monthly (Last 12 months)")</MudSelectItem>
+                <MudSelectItem T="AnalyticsPeriod" Value="AnalyticsPeriod.Yearly">@(Lang?.T("Analytics_Yearly") ?? "Yearly")</MudSelectItem>
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="3">
-            <MudDatePicker @bind-Date="_dateFrom" Label="From Date" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" />
+            <MudDatePicker @bind-Date="_dateFrom" Label="@(Lang?.T("Reports_FromDate") ?? "From Date")" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" />
         </MudItem>
         <MudItem xs="12" sm="3">
-            <MudDatePicker @bind-Date="_dateTo" Label="To Date" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" />
+            <MudDatePicker @bind-Date="_dateTo" Label="@(Lang?.T("Reports_ToDate") ?? "To Date")" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true" />
         </MudItem>
         <MudItem xs="12" sm="3" Class="d-flex align-end">
             <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadDataAsync"
                        StartIcon="@Icons.Material.Filled.Refresh" Disabled="@_loading">
-                @(_loading ? "Loading..." : "Refresh")
+                @(_loading ? (Lang?.T("Loading") ?? "Loading...") : (Lang?.T("Refresh") ?? "Refresh"))
             </MudButton>
         </MudItem>
     </MudGrid>
@@ -49,41 +49,41 @@ else
     <!-- ROW 1: Sales Stock Cards -->
     <MudGrid Spacing="3" Class="mb-4">
         <MudItem xs="12">
-            <MudText Typo="Typo.subtitle1" Style="font-weight:600;" Class="mb-1">Sales Stock</MudText>
+            <MudText Typo="Typo.subtitle1" Style="font-weight:600;" Class="mb-1">@(Lang?.T("Analytics_SalesStock") ?? "Sales Stock")</MudText>
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <MudCard Class="stat-card" Elevation="0" Style="border-left: 4px solid #16A34A !important;">
                 <MudCardContent>
-                    <MudText Typo="Typo.overline" Color="Color.Secondary">STOCK PURCHASED</MudText>
+                    <MudText Typo="Typo.overline" Color="Color.Secondary">@(Lang?.T("Analytics_StockPurchased") ?? "STOCK PURCHASED")</MudText>
                     <MudText Typo="Typo.h5" Style="font-weight:700;">@_stock?.TotalStockPurchased.ToString("C2")</MudText>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">@_stock?.TotalDepositCount deposits</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@_stock?.TotalDepositCount @(Lang?.T("Analytics_Deposits") ?? "deposits")</MudText>
                 </MudCardContent>
             </MudCard>
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <MudCard Class="stat-card" Elevation="0" Style="border-left: 4px solid #0284C7 !important;">
                 <MudCardContent>
-                    <MudText Typo="Typo.overline" Color="Color.Secondary">DISTRIBUTED</MudText>
+                    <MudText Typo="Typo.overline" Color="Color.Secondary">@(Lang?.T("Analytics_Distributed") ?? "DISTRIBUTED")</MudText>
                     <MudText Typo="Typo.h5" Style="font-weight:700;">@_stock?.TotalStockDistributed.ToString("C2")</MudText>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">@_stock?.TotalTransferCount transfers</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@_stock?.TotalTransferCount @(Lang?.T("Analytics_TransfersLabel") ?? "transfers")</MudText>
                 </MudCardContent>
             </MudCard>
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <MudCard Class="stat-card" Elevation="0" Style="border-left: 4px solid #D97706 !important;">
                 <MudCardContent>
-                    <MudText Typo="Typo.overline" Color="Color.Secondary">CURRENT STOCK</MudText>
+                    <MudText Typo="Typo.overline" Color="Color.Secondary">@(Lang?.T("Analytics_CurrentStock") ?? "CURRENT STOCK")</MudText>
                     <MudText Typo="Typo.h5" Style="font-weight:700;">@_stock?.CurrentStockRemaining.ToString("C2")</MudText>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">remaining inventory</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Analytics_RemainingInventory") ?? "remaining inventory")</MudText>
                 </MudCardContent>
             </MudCard>
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <MudCard Class="stat-card" Elevation="0" Style="border-left: 4px solid #7C3AED !important;">
                 <MudCardContent>
-                    <MudText Typo="Typo.overline" Color="Color.Secondary">UTILIZATION RATE</MudText>
+                    <MudText Typo="Typo.overline" Color="Color.Secondary">@(Lang?.T("Analytics_UtilizationRate") ?? "UTILIZATION RATE")</MudText>
                     <MudText Typo="Typo.h5" Style="font-weight:700;">@_stock?.StockUtilizationPercent.ToString("N1")%</MudText>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">stock distributed</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Analytics_StockDistributed") ?? "stock distributed")</MudText>
                 </MudCardContent>
             </MudCard>
         </MudItem>
@@ -92,12 +92,12 @@ else
     <!-- ROW 2: Capital Cards -->
     <MudGrid Spacing="3" Class="mb-4">
         <MudItem xs="12">
-            <MudText Typo="Typo.subtitle1" Style="font-weight:600;" Class="mb-1">Capital Growth</MudText>
+            <MudText Typo="Typo.subtitle1" Style="font-weight:600;" Class="mb-1">@(Lang?.T("Analytics_CapitalGrowth") ?? "Capital Growth")</MudText>
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
             <MudCard Class="stat-card" Elevation="0" Style="border-left: 4px solid #16A34A !important;">
                 <MudCardContent>
-                    <MudText Typo="Typo.overline" Color="Color.Secondary">CASH COLLECTED</MudText>
+                    <MudText Typo="Typo.overline" Color="Color.Secondary">@(Lang?.T("Analytics_CashCollected") ?? "CASH COLLECTED")</MudText>
                     <MudText Typo="Typo.h5" Style="font-weight:700;">@_capital?.TotalCashCollected.ToString("C2")</MudText>
                 </MudCardContent>
             </MudCard>
@@ -105,7 +105,7 @@ else
         <MudItem xs="12" sm="6" md="3">
             <MudCard Class="stat-card" Elevation="0" Style="border-left: 4px solid #3B82F6 !important;">
                 <MudCardContent>
-                    <MudText Typo="Typo.overline" Color="Color.Secondary">INVESTMENT</MudText>
+                    <MudText Typo="Typo.overline" Color="Color.Secondary">@(Lang?.T("Analytics_Investment") ?? "INVESTMENT")</MudText>
                     <MudText Typo="Typo.h5" Style="font-weight:700;">@_capital?.TotalAirtimeInvestment.ToString("C2")</MudText>
                     <MudText Typo="Typo.caption" Color="Color.Secondary">+@_capital?.TotalBonusGained.ToString("C2") bonus</MudText>
                 </MudCardContent>
@@ -114,7 +114,7 @@ else
         <MudItem xs="12" sm="6" md="3">
             <MudCard Class="stat-card" Elevation="0" Style="border-left: 4px solid #DC2626 !important;">
                 <MudCardContent>
-                    <MudText Typo="Typo.overline" Color="Color.Secondary">EXPENSES</MudText>
+                    <MudText Typo="Typo.overline" Color="Color.Secondary">@(Lang?.T("Analytics_Expenses") ?? "EXPENSES")</MudText>
                     <MudText Typo="Typo.h5" Style="font-weight:700;">@_capital?.TotalExpenses.ToString("C2")</MudText>
                 </MudCardContent>
             </MudCard>
@@ -122,11 +122,11 @@ else
         <MudItem xs="12" sm="6" md="3">
             <MudCard Class="stat-card" Elevation="0" Style="border-left: 4px solid #0D9488 !important;">
                 <MudCardContent>
-                    <MudText Typo="Typo.overline" Color="Color.Secondary">NET CAPITAL</MudText>
+                    <MudText Typo="Typo.overline" Color="Color.Secondary">@(Lang?.T("Analytics_NetCapital") ?? "NET CAPITAL")</MudText>
                     <MudText Typo="Typo.h5" Style="@($"font-weight:700;{(_capital?.NetCapital < 0 ? "color:#DC2626;" : "")}")">
                         @_capital?.NetCapital.ToString("C2")
                     </MudText>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Profit: @_capital?.GrossProfit.ToString("C2")</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Dash_Profit") ?? "Profit"): @_capital?.GrossProfit.ToString("C2")</MudText>
                 </MudCardContent>
             </MudCard>
         </MudItem>
@@ -136,7 +136,7 @@ else
     <MudGrid Spacing="3" Class="mb-4">
         <MudItem xs="12" md="6">
             <MudPaper Elevation="0" Class="data-card pa-4">
-                <MudText Typo="Typo.subtitle1" Style="font-weight:600;" Class="mb-3">Stock Movement</MudText>
+                <MudText Typo="Typo.subtitle1" Style="font-weight:600;" Class="mb-3">@(Lang?.T("Analytics_StockMovement") ?? "Stock Movement")</MudText>
                 <div style="height:300px; position:relative;">
                     <canvas id="stockMovementChart"></canvas>
                 </div>
@@ -144,7 +144,7 @@ else
         </MudItem>
         <MudItem xs="12" md="6">
             <MudPaper Elevation="0" Class="data-card pa-4">
-                <MudText Typo="Typo.subtitle1" Style="font-weight:600;" Class="mb-3">Capital Growth Trend</MudText>
+                <MudText Typo="Typo.subtitle1" Style="font-weight:600;" Class="mb-3">@(Lang?.T("Analytics_CapitalGrowthTrend") ?? "Capital Growth Trend")</MudText>
                 <div style="height:300px; position:relative;">
                     <canvas id="capitalGrowthChart"></canvas>
                 </div>
@@ -156,15 +156,15 @@ else
     <MudGrid Spacing="3" Class="mb-4">
         <MudItem xs="12" md="6">
             <MudPaper Elevation="0" Class="data-card pa-4">
-                <MudText Typo="Typo.subtitle1" Style="font-weight:600;" Class="mb-3">Stock by Product</MudText>
+                <MudText Typo="Typo.subtitle1" Style="font-weight:600;" Class="mb-3">@(Lang?.T("Analytics_StockByProduct") ?? "Stock by Product")</MudText>
                 <MudSimpleTable Dense="true" Hover="true" Striped="true" Style="overflow-x:auto;">
                     <thead>
                         <tr>
-                            <th>Product</th>
-                            <th style="text-align:right;">Deposited</th>
-                            <th style="text-align:right;">Distributed</th>
-                            <th style="text-align:right;">Balance</th>
-                            <th style="text-align:right;">Util %</th>
+                            <th>@(Lang?.T("Product") ?? "Product")</th>
+                            <th style="text-align:right;">@(Lang?.T("Analytics_Deposited") ?? "Deposited")</th>
+                            <th style="text-align:right;">@(Lang?.T("Chart_Distributed") ?? "Distributed")</th>
+                            <th style="text-align:right;">@(Lang?.T("Balance") ?? "Balance")</th>
+                            <th style="text-align:right;">@(Lang?.T("Analytics_UtilPercent") ?? "Util %")</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -184,7 +184,7 @@ else
         </MudItem>
         <MudItem xs="12" md="6">
             <MudPaper Elevation="0" Class="data-card pa-4">
-                <MudText Typo="Typo.subtitle1" Style="font-weight:600;" Class="mb-3">Profit by Period</MudText>
+                <MudText Typo="Typo.subtitle1" Style="font-weight:600;" Class="mb-3">@(Lang?.T("Analytics_ProfitByPeriod") ?? "Profit by Period")</MudText>
                 <div style="height:300px; position:relative;">
                     <canvas id="profitChart"></canvas>
                 </div>
@@ -196,29 +196,31 @@ else
     <MudGrid Spacing="3">
         <MudItem xs="12" sm="6" md="4">
             <MudPaper Elevation="0" Class="data-card pa-4">
-                <MudText Typo="Typo.subtitle1" Style="font-weight:600;" Class="mb-2">Outstanding Dealer Debt</MudText>
+                <MudText Typo="Typo.subtitle1" Style="font-weight:600;" Class="mb-2">@(Lang?.T("Analytics_OutstandingDebt") ?? "Outstanding Dealer Debt")</MudText>
                 <MudText Typo="Typo.h4" Style="font-weight:700; color:#D97706;">@_capital?.OutstandingDealerDebt.ToString("C2")</MudText>
-                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">Total airtime owed by dealers</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">@(Lang?.T("Analytics_DebtDesc") ?? "Total airtime owed by dealers")</MudText>
             </MudPaper>
         </MudItem>
         <MudItem xs="12" sm="6" md="4">
             <MudPaper Elevation="0" Class="data-card pa-4">
-                <MudText Typo="Typo.subtitle1" Style="font-weight:600;" Class="mb-2">Total Commissions Paid</MudText>
+                <MudText Typo="Typo.subtitle1" Style="font-weight:600;" Class="mb-2">@(Lang?.T("Analytics_CommissionsPaid") ?? "Total Commissions Paid")</MudText>
                 <MudText Typo="Typo.h4" Style="font-weight:700; color:#7C3AED;">@_capital?.TotalCommissionsPaid.ToString("C2")</MudText>
-                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">Dealer commission earnings</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">@(Lang?.T("Analytics_CommissionsDesc") ?? "Dealer commission earnings")</MudText>
             </MudPaper>
         </MudItem>
         <MudItem xs="12" sm="6" md="4">
             <MudPaper Elevation="0" Class="data-card pa-4">
-                <MudText Typo="Typo.subtitle1" Style="font-weight:600;" Class="mb-2">Bonus Received</MudText>
+                <MudText Typo="Typo.subtitle1" Style="font-weight:600;" Class="mb-2">@(Lang?.T("Analytics_BonusReceived") ?? "Bonus Received")</MudText>
                 <MudText Typo="Typo.h4" Style="font-weight:700; color:#16A34A;">@_stock?.TotalBonusReceived.ToString("C2")</MudText>
-                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">Total airtime bonus from deposits</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">@(Lang?.T("Analytics_BonusDesc") ?? "Total airtime bonus from deposits")</MudText>
             </MudPaper>
         </MudItem>
     </MudGrid>
 }
 
 @code {
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
+
     private bool _loading = true;
     private AnalyticsPeriod _selectedPeriod = AnalyticsPeriod.Monthly;
     private DateTime? _dateFrom;
@@ -274,7 +276,7 @@ else
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error loading analytics: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("ErrorLoading") ?? "Error loading"} {Lang?.T("Analytics_Title")?.ToLower() ?? "analytics"}: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -289,14 +291,22 @@ else
     {
         try
         {
+            var depositedLabel = Lang?.T("Analytics_Deposited") ?? "Deposited";
+            var distributedLabel = Lang?.T("Chart_Distributed") ?? "Distributed";
+            var netCapitalLabel = Lang?.T("Analytics_NetCapital") ?? "Net Capital";
+            var cashCollectedLabel = Lang?.T("Analytics_CashCollected") ?? "Cash Collected";
+            var investmentLabel = Lang?.T("Analytics_Investment") ?? "Investment";
+            var cashInLabel = Lang?.T("Analytics_CashCollected") ?? "Cash In";
+            var expensesLabel = Lang?.T("Analytics_Expenses") ?? "Expenses";
+
             if (_stockMovements.Count > 0)
             {
                 await JS.InvokeVoidAsync("chartInterop.createBar", "stockMovementChart",
                     _stockMovements.Select(m => m.PeriodLabel).ToArray(),
                     new object[]
                     {
-                        new { label = "Deposited", data = _stockMovements.Select(m => (double)m.Deposited).ToArray(), color = "#16A34A" },
-                        new { label = "Distributed", data = _stockMovements.Select(m => (double)m.Distributed).ToArray(), color = "#0284C7" }
+                        new { label = depositedLabel, data = _stockMovements.Select(m => (double)m.Deposited).ToArray(), color = "#16A34A" },
+                        new { label = distributedLabel, data = _stockMovements.Select(m => (double)m.Distributed).ToArray(), color = "#0284C7" }
                     },
                     false);
             }
@@ -307,9 +317,9 @@ else
                     _growthTrend.Select(g => g.PeriodLabel).ToArray(),
                     new object[]
                     {
-                        new { label = "Net Capital", data = _growthTrend.Select(g => (double)g.NetCapital).ToArray(), color = "#0D9488" },
-                        new { label = "Cash Collected", data = _growthTrend.Select(g => (double)g.CumulativeCashCollected).ToArray(), color = "#16A34A" },
-                        new { label = "Investment", data = _growthTrend.Select(g => (double)g.CumulativeInvestment).ToArray(), color = "#3B82F6" }
+                        new { label = netCapitalLabel, data = _growthTrend.Select(g => (double)g.NetCapital).ToArray(), color = "#0D9488" },
+                        new { label = cashCollectedLabel, data = _growthTrend.Select(g => (double)g.CumulativeCashCollected).ToArray(), color = "#16A34A" },
+                        new { label = investmentLabel, data = _growthTrend.Select(g => (double)g.CumulativeInvestment).ToArray(), color = "#3B82F6" }
                     });
             }
 
@@ -319,9 +329,9 @@ else
                     _profitBreakdown.Select(p => p.PeriodLabel).ToArray(),
                     new object[]
                     {
-                        new { label = "Cash In", data = _profitBreakdown.Select(p => (double)p.CashCollected).ToArray(), color = "#16A34A" },
-                        new { label = "Investment", data = _profitBreakdown.Select(p => (double)p.AirtimeInvested).ToArray(), color = "#3B82F6" },
-                        new { label = "Expenses", data = _profitBreakdown.Select(p => (double)p.ExpensesPaid).ToArray(), color = "#EF4444" }
+                        new { label = cashInLabel, data = _profitBreakdown.Select(p => (double)p.CashCollected).ToArray(), color = "#16A34A" },
+                        new { label = investmentLabel, data = _profitBreakdown.Select(p => (double)p.AirtimeInvested).ToArray(), color = "#3B82F6" },
+                        new { label = expensesLabel, data = _profitBreakdown.Select(p => (double)p.ExpensesPaid).ToArray(), color = "#EF4444" }
                     },
                     false);
             }

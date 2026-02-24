@@ -7,19 +7,19 @@
 @inject ISnackbar Snackbar
 @rendermode InteractiveServer
 
-<PageTitle>Products - RasidBase</PageTitle>
+<PageTitle>@(Lang?.T("Products_Title") ?? "Products") - RasidBase</PageTitle>
 
 <div class="page-header">
-    <h1>Products</h1>
-    <p>Manage airtime products and balances</p>
+    <h1>@(Lang?.T("Products_Title") ?? "Products")</h1>
+    <p>@(Lang?.T("Products_Subtitle") ?? "Manage airtime products and balances")</p>
 </div>
 
 <div class="page-toolbar">
-    <MudTextField @bind-Value="_searchString" Placeholder="Search products..." Adornment="Adornment.Start"
+    <MudTextField @bind-Value="_searchString" Placeholder="@(Lang?.T("Products_Search") ?? "Search products...")" Adornment="Adornment.Start"
                   AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
                   Immediate="true" Style="max-width: 300px;" />
     <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
-               OnClick="OpenCreateDialog">Add Product</MudButton>
+               OnClick="OpenCreateDialog">@(Lang?.T("Products_Add") ?? "Add Product")</MudButton>
 </div>
 
 <MudPaper Elevation="0" Class="data-card pa-4">
@@ -28,17 +28,17 @@
                  QuickFilter="@(new Func<ProductDto, bool>(FilterFunc))">
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="ID" />
-            <PropertyColumn Property="x => x.Name" Title="Name" />
-            <PropertyColumn Property="x => x.BonusPercentage" Title="Bonus %" Format="N6" />
-            <PropertyColumn Property="x => x.AirtimeAccountBalance" Title="Balance" Format="C6" />
-            <TemplateColumn Title="Status" Sortable="false">
+            <PropertyColumn Property="x => x.Name" Title="@(Lang?.T("Name") ?? "Name")" />
+            <PropertyColumn Property="x => x.BonusPercentage" Title="@(Lang?.T("Products_BonusPercent") ?? "Bonus %")" Format="N6" />
+            <PropertyColumn Property="x => x.AirtimeAccountBalance" Title="@(Lang?.T("Balance") ?? "Balance")" Format="C6" />
+            <TemplateColumn Title="@(Lang?.T("Status") ?? "Status")" Sortable="false">
                 <CellTemplate>
                     <MudChip T="string" Color="@(context.Item.IsActive ? Color.Success : Color.Error)" Size="Size.Small">
-                        @(context.Item.IsActive ? "Active" : "Inactive")
+                        @(context.Item.IsActive ? (Lang?.T("Active") ?? "Active") : (Lang?.T("Inactive") ?? "Inactive"))
                     </MudChip>
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn Title="Actions" Sortable="false">
+            <TemplateColumn Title="@(Lang?.T("Actions") ?? "Actions")" Sortable="false">
                 <CellTemplate>
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary"
                                    OnClick="@(() => OpenEditDialog(context.Item))" />
@@ -46,12 +46,14 @@
             </TemplateColumn>
         </Columns>
         <NoRecordsContent>
-            <MudText>No products found.</MudText>
+            <MudText>@(Lang?.T("Products_NotFound") ?? "No products found.")</MudText>
         </NoRecordsContent>
     </MudDataGrid>
 </MudPaper>
 
 @code {
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
+
     private List<ProductDto> _products = new();
     private string _searchString = "";
     private bool _loading = true;
@@ -70,7 +72,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error loading products: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("ErrorLoading") ?? "Error loading"} {Lang?.T("Products_Title")?.ToLower() ?? "products"}: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -85,7 +87,7 @@
     private async Task OpenCreateDialog()
     {
         var parameters = new DialogParameters<ProductDialog> { { x => x.IsEdit, false } };
-        var dialog = await DialogService.ShowAsync<ProductDialog>("Add Product", parameters,
+        var dialog = await DialogService.ShowAsync<ProductDialog>(Lang?.T("Products_Add") ?? "Add Product", parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
         var result = await dialog.Result;
         if (result is { Canceled: false })
@@ -106,7 +108,7 @@
                 }
             }
         };
-        var dialog = await DialogService.ShowAsync<ProductDialog>("Edit Product", parameters,
+        var dialog = await DialogService.ShowAsync<ProductDialog>(Lang?.T("EditProduct") ?? "Edit Product", parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
         var result = await dialog.Result;
         if (result is { Canceled: false })

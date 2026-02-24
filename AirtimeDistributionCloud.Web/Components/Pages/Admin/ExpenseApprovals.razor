@@ -9,26 +9,26 @@
 @inject ISnackbar Snackbar
 @rendermode InteractiveServer
 
-<PageTitle>Expense Approvals - RasidBase</PageTitle>
+<PageTitle>@(Lang?.T("ExpenseApprovals_Title") ?? "Expense Approvals") - RasidBase</PageTitle>
 
 <div class="page-header">
-    <h1>Expense Approvals</h1>
-    <p>Review and approve/reject expenses requiring authorization</p>
+    <h1>@(Lang?.T("ExpenseApprovals_Title") ?? "Expense Approvals")</h1>
+    <p>@(Lang?.T("ExpenseApprovals_Subtitle") ?? "Review and approve/reject expenses requiring authorization")</p>
 </div>
 
 <div class="page-toolbar">
     <MudChipSet T="string" SelectedValue="_currentFilter" SelectedValueChanged="OnFilterChanged" SelectionMode="SelectionMode.SingleSelection">
-        <MudChip T="string" Value="@("Pending")" Color="Color.Warning" Variant="Variant.Outlined">Pending</MudChip>
-        <MudChip T="string" Value="@("Approved")" Color="Color.Success" Variant="Variant.Outlined">Approved</MudChip>
-        <MudChip T="string" Value="@("Rejected")" Color="Color.Error" Variant="Variant.Outlined">Rejected</MudChip>
-        <MudChip T="string" Value="@("All")" Variant="Variant.Outlined">All</MudChip>
+        <MudChip T="string" Value="@("Pending")" Color="Color.Warning" Variant="Variant.Outlined">@(Lang?.T("Pending") ?? "Pending")</MudChip>
+        <MudChip T="string" Value="@("Approved")" Color="Color.Success" Variant="Variant.Outlined">@(Lang?.T("Approved") ?? "Approved")</MudChip>
+        <MudChip T="string" Value="@("Rejected")" Color="Color.Error" Variant="Variant.Outlined">@(Lang?.T("Rejected") ?? "Rejected")</MudChip>
+        <MudChip T="string" Value="@("All")" Variant="Variant.Outlined">@(Lang?.T("All") ?? "All")</MudChip>
     </MudChipSet>
     @if (_pendingCount > 0 && _currentFilter == "Pending")
     {
         <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Small"
                    StartIcon="@Icons.Material.Filled.DoneAll" OnClick="ApproveAll"
                    Disabled="@_approvingAll">
-            Approve All (@_pendingCount)
+            @(Lang?.T("Approvals_ApproveAll") ?? "Approve All") (@_pendingCount)
         </MudButton>
     }
 </div>
@@ -39,22 +39,22 @@
                  QuickFilter="@_quickFilter">
         <ToolBarContent>
             <MudSpacer />
-            <MudTextField @bind-Value="_searchString" Placeholder="Search by description, branch, receipt..."
+            <MudTextField @bind-Value="_searchString" Placeholder="@(Lang?.T("ExpenseApprovals_Search") ?? "Search by description, branch, receipt...")"
                           Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                           IconSize="Size.Medium" Class="mt-0" Immediate="true" />
         </ToolBarContent>
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="ID" />
-            <PropertyColumn Property="x => x.BranchName" Title="Branch" />
-            <PropertyColumn Property="x => x.Description" Title="Description" />
-            <TemplateColumn Title="Category" Sortable="false">
+            <PropertyColumn Property="x => x.BranchName" Title="@(Lang?.T("Branch") ?? "Branch")" />
+            <PropertyColumn Property="x => x.Description" Title="@(Lang?.T("Description") ?? "Description")" />
+            <TemplateColumn Title="@(Lang?.T("Category") ?? "Category")" Sortable="false">
                 <CellTemplate>
                     <MudChip T="string" Color="Color.Info" Size="Size.Small">@context.Item.CategoryName</MudChip>
                 </CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.Amount" Title="Amount" Format="C6" />
-            <PropertyColumn Property="x => x.ExpenseDate" Title="Expense Date" Format="dd MMM yyyy" />
-            <TemplateColumn Title="Status" Sortable="false">
+            <PropertyColumn Property="x => x.Amount" Title="@(Lang?.T("Amount") ?? "Amount")" Format="C6" />
+            <PropertyColumn Property="x => x.ExpenseDate" Title="@(Lang?.T("ExpenseApprovals_ExpenseDate") ?? "Expense Date")" Format="dd MMM yyyy" />
+            <TemplateColumn Title="@(Lang?.T("Status") ?? "Status")" Sortable="false">
                 <CellTemplate>
                     @{
                         var color = context.Item.Status switch
@@ -69,30 +69,32 @@
                     <MudChip T="string" Color="@color" Size="Size.Small">@context.Item.Status</MudChip>
                 </CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.ReceiptNumber" Title="Receipt #" />
-            <TemplateColumn Title="Actions" Sortable="false">
+            <PropertyColumn Property="x => x.ReceiptNumber" Title="@(Lang?.T("ExpenseApprovals_ReceiptNum") ?? "Receipt #")" />
+            <TemplateColumn Title="@(Lang?.T("Actions") ?? "Actions")" Sortable="false">
                 <CellTemplate>
                     @if (context.Item.Status == DepositStatus.Pending)
                     {
                         <MudStack Row="true" Spacing="1">
                             <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Success"
                                        StartIcon="@Icons.Material.Filled.Check"
-                                       OnClick="@(() => ApproveExpense(context.Item))">Approve</MudButton>
+                                       OnClick="@(() => ApproveExpense(context.Item))">@(Lang?.T("Approve") ?? "Approve")</MudButton>
                             <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Error"
                                        StartIcon="@Icons.Material.Filled.Close"
-                                       OnClick="@(() => RejectExpense(context.Item))">Reject</MudButton>
+                                       OnClick="@(() => RejectExpense(context.Item))">@(Lang?.T("Reject") ?? "Reject")</MudButton>
                         </MudStack>
                     }
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
         <NoRecordsContent>
-            <MudText>No expenses found.</MudText>
+            <MudText>@(Lang?.T("Expenses_NotFound") ?? "No expenses found.")</MudText>
         </NoRecordsContent>
     </MudDataGrid>
 </MudPaper>
 
 @code {
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
+
     private List<ExpenseDto> _allExpenses = new();
     private List<ExpenseDto> _filteredExpenses = new();
     private string _currentFilter = "Pending";
@@ -133,7 +135,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error loading expenses: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("ErrorLoading") ?? "Error loading"} {Lang?.T("ExpenseApprovals_Title")?.ToLower() ?? "expenses"}: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -162,11 +164,11 @@
     {
         var parameters = new DialogParameters<ApprovalNotesDialog>
         {
-            { x => x.Title, $"Approve Expense #{expense.Id}" },
-            { x => x.ActionLabel, "Approve" },
+            { x => x.Title, $"{Lang?.T("ExpenseApprovals_ApproveExpense") ?? "Approve Expense"} #{expense.Id}" },
+            { x => x.ActionLabel, Lang?.T("Approve") ?? "Approve" },
             { x => x.ActionColor, Color.Success }
         };
-        var dialog = await DialogService.ShowAsync<ApprovalNotesDialog>("Approve Expense", parameters,
+        var dialog = await DialogService.ShowAsync<ApprovalNotesDialog>(Lang?.T("ExpenseApprovals_ApproveExpense") ?? "Approve Expense", parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
         var result = await dialog.Result;
         if (result is { Canceled: false, Data: string notes })
@@ -174,12 +176,12 @@
             try
             {
                 await ExpenseService.ApproveExpenseAsync(expense.Id, CurrentUser.UserId ?? "", notes);
-                Snackbar.Add("Expense approved successfully", Severity.Success);
+                Snackbar.Add(Lang?.T("ExpenseApprovals_Approved") ?? "Expense approved successfully", Severity.Success);
                 await LoadExpenses();
             }
             catch (Exception ex)
             {
-                Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+                Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
             }
         }
     }
@@ -188,11 +190,11 @@
     {
         var parameters = new DialogParameters<ApprovalNotesDialog>
         {
-            { x => x.Title, $"Reject Expense #{expense.Id}" },
-            { x => x.ActionLabel, "Reject" },
+            { x => x.Title, $"{Lang?.T("ExpenseApprovals_RejectExpense") ?? "Reject Expense"} #{expense.Id}" },
+            { x => x.ActionLabel, Lang?.T("Reject") ?? "Reject" },
             { x => x.ActionColor, Color.Error }
         };
-        var dialog = await DialogService.ShowAsync<ApprovalNotesDialog>("Reject Expense", parameters,
+        var dialog = await DialogService.ShowAsync<ApprovalNotesDialog>(Lang?.T("ExpenseApprovals_RejectExpense") ?? "Reject Expense", parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
         var result = await dialog.Result;
         if (result is { Canceled: false, Data: string notes })
@@ -200,12 +202,12 @@
             try
             {
                 await ExpenseService.RejectExpenseAsync(expense.Id, CurrentUser.UserId ?? "", notes);
-                Snackbar.Add("Expense rejected", Severity.Warning);
+                Snackbar.Add(Lang?.T("ExpenseApprovals_Rejected") ?? "Expense rejected", Severity.Warning);
                 await LoadExpenses();
             }
             catch (Exception ex)
             {
-                Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+                Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
             }
         }
     }
@@ -216,9 +218,9 @@
         if (pending.Count == 0) return;
 
         var confirm = await DialogService.ShowMessageBox(
-            "Approve All Expenses",
-            $"Are you sure you want to approve all {pending.Count} pending expense(s)?",
-            yesText: "Approve All", cancelText: "Cancel");
+            Lang?.T("ExpenseApprovals_ApproveAllTitle") ?? "Approve All Expenses",
+            $"{Lang?.T("ExpenseApprovals_ConfirmApproveAll") ?? "Are you sure you want to approve all"} {pending.Count} {(Lang?.T("Pending")?.ToLower() ?? "pending")} expense(s)?",
+            yesText: Lang?.T("Approvals_ApproveAll") ?? "Approve All", cancelText: Lang?.T("Cancel") ?? "Cancel");
         if (confirm != true) return;
 
         _approvingAll = true;
@@ -238,7 +240,7 @@
             }
         }
         _approvingAll = false;
-        Snackbar.Add($"{approved} expense(s) approved" + (failed > 0 ? $", {failed} failed" : ""), failed > 0 ? Severity.Warning : Severity.Success);
+        Snackbar.Add($"{approved} {Lang?.T("ExpenseApprovals_BulkResult") ?? "expense(s) approved"}" + (failed > 0 ? $", {failed} {Lang?.T("Approvals_BulkFailed") ?? "failed"}" : ""), failed > 0 ? Severity.Warning : Severity.Success);
         await LoadExpenses();
     }
 }

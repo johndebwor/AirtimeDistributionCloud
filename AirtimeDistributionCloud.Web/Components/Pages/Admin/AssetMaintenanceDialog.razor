@@ -9,28 +9,29 @@
 
 <MudDialog>
     <DialogContent>
-        <MudDatePicker @bind-Date="_maintenanceDate" Label="Maintenance Date" Required="true"
-                       RequiredError="Date is required" DateFormat="dd MMM yyyy" Class="mb-3" />
-        <MudTextField @bind-Value="_description" Label="Description" Required="true"
-                      RequiredError="Description is required" Class="mb-3" />
+        <MudDatePicker @bind-Date="_maintenanceDate" Label="@(Lang?.T("AssetMaint_Date") ?? "Maintenance Date")" Required="true"
+                       RequiredError="@(Lang?.T("AssetMaint_DateRequired") ?? "Date is required")" DateFormat="dd MMM yyyy" Class="mb-3" />
+        <MudTextField @bind-Value="_description" Label="@(Lang?.T("AssetMaint_Description") ?? "Description")" Required="true"
+                      RequiredError="@(Lang?.T("AssetMaint_DescRequired") ?? "Description is required")" Class="mb-3" />
         <div @ref="_costRef">
             <MudTextField T="string" Value="@_costDisplay" ValueChanged="OnCostChanged"
-                          Label="Cost" Class="mb-3" />
+                          Label="@(Lang?.T("AssetMaint_Cost") ?? "Cost")" Class="mb-3" />
         </div>
-        <MudDatePicker @bind-Date="_nextScheduledDate" Label="Next Scheduled Date"
+        <MudDatePicker @bind-Date="_nextScheduledDate" Label="@(Lang?.T("AssetMaint_NextDate") ?? "Next Scheduled Date")"
                        DateFormat="dd MMM yyyy" Class="mb-3" />
-        <MudTextField @bind-Value="_performedBy" Label="Performed By" Class="mb-3" />
-        <MudTextField @bind-Value="_notes" Label="Notes" Lines="3" Class="mb-3" />
+        <MudTextField @bind-Value="_performedBy" Label="@(Lang?.T("AssetMaint_PerformedBy") ?? "Performed By")" Class="mb-3" />
+        <MudTextField @bind-Value="_notes" Label="@(Lang?.T("Notes") ?? "Notes")" Lines="3" Class="mb-3" />
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton OnClick="Cancel">@(Lang?.T("Cancel") ?? "Cancel")</MudButton>
         <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit"
-                   Disabled="@_saving">Save</MudButton>
+                   Disabled="@_saving">@(Lang?.T("Save") ?? "Save")</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
     [Parameter] public int AssetId { get; set; }
 
     private bool _saving;
@@ -65,7 +66,7 @@
 
         if (_maintenanceDate is null || string.IsNullOrWhiteSpace(_description))
         {
-            Snackbar.Add("Please fill in all required fields", Severity.Warning);
+            Snackbar.Add(Lang?.T("AssetMaint_FillRequired") ?? "Please fill in all required fields", Severity.Warning);
             return;
         }
 
@@ -76,12 +77,12 @@
                 new CreateAssetMaintenanceRequest(AssetId, _maintenanceDate.Value, _description,
                     _cost, _nextScheduledDate, _performedBy, _notes),
                 CurrentUser.UserId ?? "");
-            Snackbar.Add("Maintenance record added successfully", Severity.Success);
+            Snackbar.Add(Lang?.T("AssetMaint_Success") ?? "Maintenance record added successfully", Severity.Success);
             MudDialog.Close(DialogResult.Ok(true));
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
         }
         finally
         {

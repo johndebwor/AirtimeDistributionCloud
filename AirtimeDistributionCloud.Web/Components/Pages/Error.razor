@@ -1,31 +1,34 @@
 @page "/Error"
 @using System.Diagnostics
+@using AirtimeDistributionCloud.Application.Services
 
-<PageTitle>Error - RasidBase</PageTitle>
+<PageTitle>@(Lang?.T("Error_Title") ?? "Something went wrong") - RasidBase</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Small" Class="d-flex flex-column align-center justify-center" Style="min-height: 60vh;">
     <MudAvatar Color="Color.Error" Variant="Variant.Filled" Size="Size.Large" Class="mb-4">
         <MudIcon Icon="@Icons.Material.Outlined.ErrorOutline" />
     </MudAvatar>
-    <MudText Typo="Typo.h5" GutterBottom="true" Style="font-weight: 700;">Something went wrong</MudText>
+    <MudText Typo="Typo.h5" GutterBottom="true" Style="font-weight: 700;">@(Lang?.T("Error_Title") ?? "Something went wrong")</MudText>
     <MudText Typo="Typo.body1" Color="Color.Secondary" Align="Align.Center" Class="mb-4">
-        An error occurred while processing your request. Please try again.
+        @(Lang?.T("Error_Msg") ?? "An error occurred while processing your request. Please try again.")
     </MudText>
     @if (ShowRequestId)
     {
         <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-4">
-            Request ID: @RequestId
+            @(Lang?.T("Error_RequestId") ?? "Request ID"): @RequestId
         </MudText>
     }
     <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/"
                StartIcon="@Icons.Material.Outlined.Home" Class="text-transform-none">
-        Back to Dashboard
+        @(Lang?.T("NotFound_Back") ?? "Back to Dashboard")
     </MudButton>
 </MudContainer>
 
 @code {
     [CascadingParameter]
     private HttpContext? HttpContext { get; set; }
+
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
 
     private string? RequestId { get; set; }
     private bool ShowRequestId => !string.IsNullOrEmpty(RequestId);

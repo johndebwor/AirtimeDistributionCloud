@@ -6,24 +6,25 @@
 
 <MudDialog>
     <DialogContent>
-        <MudTextField @bind-Value="Model.Name" Label="Name" Required="true"
-                      RequiredError="Name is required" Class="mb-3" />
-        <MudTextField @bind-Value="Model.Location" Label="Location" Required="true"
-                      RequiredError="Location is required" Class="mb-3" />
+        <MudTextField @bind-Value="Model.Name" Label="@(Lang?.T("Name") ?? "Name")" Required="true"
+                      RequiredError="@(Lang?.T("NameRequired") ?? "Name is required")" Class="mb-3" />
+        <MudTextField @bind-Value="Model.Location" Label="@(Lang?.T("Location") ?? "Location")" Required="true"
+                      RequiredError="@(Lang?.T("Branches_LocationRequired") ?? "Location is required")" Class="mb-3" />
         @if (IsEdit)
         {
-            <MudSwitch T="bool" @bind-Value="Model.IsActive" Label="Active" Color="Color.Primary" />
+            <MudSwitch T="bool" @bind-Value="Model.IsActive" Label="@(Lang?.T("Active") ?? "Active")" Color="Color.Primary" />
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton OnClick="Cancel">@(Lang?.T("Cancel") ?? "Cancel")</MudButton>
         <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit"
-                   Disabled="@_saving">Save</MudButton>
+                   Disabled="@_saving">@(Lang?.T("Save") ?? "Save")</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
     [Parameter] public bool IsEdit { get; set; }
     [Parameter] public BranchModel Model { get; set; } = new();
 
@@ -33,7 +34,7 @@
     {
         if (string.IsNullOrWhiteSpace(Model.Name) || string.IsNullOrWhiteSpace(Model.Location))
         {
-            Snackbar.Add("Name and Location are required", Severity.Warning);
+            Snackbar.Add(Lang?.T("Branches_NameAndLocationRequired") ?? "Name and Location are required", Severity.Warning);
             return;
         }
 
@@ -54,7 +55,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
         }
         finally
         {

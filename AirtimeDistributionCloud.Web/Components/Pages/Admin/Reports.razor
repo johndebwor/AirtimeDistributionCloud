@@ -19,11 +19,11 @@
 @inject IWebHostEnvironment WebHostEnv
 @using Microsoft.AspNetCore.Hosting
 
-<PageTitle>Reports - RasidBase</PageTitle>
+<PageTitle>@(Lang?.T("Reports_Title") ?? "Reports") - RasidBase</PageTitle>
 
 <div class="page-header">
-    <h1>Reports</h1>
-    <p>Generate and download reports in PDF or Excel format</p>
+    <h1>@(Lang?.T("Reports_Title") ?? "Reports")</h1>
+    <p>@(Lang?.T("Reports_Subtitle") ?? "Generate and download reports in PDF or Excel format")</p>
 </div>
 
 <MudGrid Spacing="4">
@@ -32,31 +32,31 @@
         <MudPaper Elevation="0" Class="data-card pa-4">
             <MudGrid>
                 <MudItem xs="12" sm="4">
-                    <MudSelect T="string" @bind-Value="_selectedReport" Label="Report Type" Variant="Variant.Outlined"
-                               Placeholder="-- Select Report --">
-                        <MudSelectItem T="string" Value="@("transfers")">Airtime Transfers</MudSelectItem>
-                        <MudSelectItem T="string" Value="@("cash-deposits")">Cash Deposits</MudSelectItem>
-                        <MudSelectItem T="string" Value="@("airtime-deposits")">Airtime Deposits</MudSelectItem>
-                        <MudSelectItem T="string" Value="@("expenses")">Expenses</MudSelectItem>
-                        <MudSelectItem T="string" Value="@("dealers")">Dealers</MudSelectItem>
+                    <MudSelect T="string" @bind-Value="_selectedReport" Label="@(Lang?.T("Reports_ReportType") ?? "Report Type")" Variant="Variant.Outlined"
+                               Placeholder="@(Lang?.T("Reports_SelectReport") ?? "-- Select Report --")">
+                        <MudSelectItem T="string" Value="@("transfers")">@(Lang?.T("Reports_AirtimeTransfers") ?? "Airtime Transfers")</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("cash-deposits")">@(Lang?.T("Reports_CashDeposits") ?? "Cash Deposits")</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("airtime-deposits")">@(Lang?.T("Reports_AirtimeDeposits") ?? "Airtime Deposits")</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("expenses")">@(Lang?.T("Reports_Expenses") ?? "Expenses")</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("dealers")">@(Lang?.T("Reports_Dealers") ?? "Dealers")</MudSelectItem>
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="12" sm="3">
-                    <MudDatePicker @bind-Date="_dateFrom" Label="From Date" Variant="Variant.Outlined" Clearable="true" />
+                    <MudDatePicker @bind-Date="_dateFrom" Label="@(Lang?.T("Reports_FromDate") ?? "From Date")" Variant="Variant.Outlined" Clearable="true" />
                 </MudItem>
                 <MudItem xs="12" sm="3">
-                    <MudDatePicker @bind-Date="_dateTo" Label="To Date" Variant="Variant.Outlined" Clearable="true" />
+                    <MudDatePicker @bind-Date="_dateTo" Label="@(Lang?.T("Reports_ToDate") ?? "To Date")" Variant="Variant.Outlined" Clearable="true" />
                 </MudItem>
                 <MudItem xs="12" sm="2" Class="d-flex align-end gap-2">
                     <MudButton Variant="Variant.Filled" Color="Color.Primary"
                                StartIcon="@Icons.Material.Filled.PictureAsPdf"
                                OnClick="@(() => GenerateReport("pdf"))" Disabled="@(_generating || string.IsNullOrEmpty(_selectedReport))">
-                        PDF
+                        @(Lang?.T("Reports_PDF") ?? "PDF")
                     </MudButton>
                     <MudButton Variant="Variant.Filled" Color="Color.Success"
                                StartIcon="@Icons.Material.Filled.TableChart"
                                OnClick="@(() => GenerateReport("excel"))" Disabled="@(_generating || string.IsNullOrEmpty(_selectedReport))">
-                        Excel
+                        @(Lang?.T("Reports_Excel") ?? "Excel")
                     </MudButton>
                 </MudItem>
             </MudGrid>
@@ -77,8 +77,8 @@
             <MudCardContent>
                 <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
                     <div>
-                        <MudText Typo="Typo.subtitle1" Style="font-weight:600;">Airtime Transfers</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Transfer history with dealer, product, and commission details</MudText>
+                        <MudText Typo="Typo.subtitle1" Style="font-weight:600;">@(Lang?.T("Reports_AirtimeTransfers") ?? "Airtime Transfers")</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Reports_TransfersDesc") ?? "Transfer history with dealer, product, and commission details")</MudText>
                     </div>
                     <MudAvatar Color="Color.Info" Variant="Variant.Outlined">
                         <MudIcon Icon="@Icons.Material.Filled.SwapHoriz" />
@@ -94,8 +94,8 @@
             <MudCardContent>
                 <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
                     <div>
-                        <MudText Typo="Typo.subtitle1" Style="font-weight:600;">Cash Deposits</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">All cash deposits by dealer and branch</MudText>
+                        <MudText Typo="Typo.subtitle1" Style="font-weight:600;">@(Lang?.T("Reports_CashDeposits") ?? "Cash Deposits")</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Reports_CashDepositsDesc") ?? "All cash deposits by dealer and branch")</MudText>
                     </div>
                     <MudAvatar Color="Color.Success" Variant="Variant.Outlined">
                         <MudIcon Icon="@Icons.Material.Filled.AttachMoney" />
@@ -111,8 +111,8 @@
             <MudCardContent>
                 <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
                     <div>
-                        <MudText Typo="Typo.subtitle1" Style="font-weight:600;">Expenses</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Expense records with category and approval status</MudText>
+                        <MudText Typo="Typo.subtitle1" Style="font-weight:600;">@(Lang?.T("Reports_Expenses") ?? "Expenses")</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Reports_ExpensesDesc") ?? "Expense records with category and approval status")</MudText>
                     </div>
                     <MudAvatar Color="Color.Warning" Variant="Variant.Outlined">
                         <MudIcon Icon="@Icons.Material.Filled.Receipt" />
@@ -128,8 +128,8 @@
             <MudCardContent>
                 <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
                     <div>
-                        <MudText Typo="Typo.subtitle1" Style="font-weight:600;">Airtime Deposits</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Airtime deposit records with bonus and status</MudText>
+                        <MudText Typo="Typo.subtitle1" Style="font-weight:600;">@(Lang?.T("Reports_AirtimeDeposits") ?? "Airtime Deposits")</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Reports_DepositsDesc") ?? "Airtime deposit records with bonus and status")</MudText>
                     </div>
                     <MudAvatar Color="Color.Primary" Variant="Variant.Outlined">
                         <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" />
@@ -145,8 +145,8 @@
             <MudCardContent>
                 <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
                     <div>
-                        <MudText Typo="Typo.subtitle1" Style="font-weight:600;">Dealers</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Complete dealer registration list</MudText>
+                        <MudText Typo="Typo.subtitle1" Style="font-weight:600;">@(Lang?.T("Reports_Dealers") ?? "Dealers")</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Reports_DealersDesc") ?? "Complete dealer registration list")</MudText>
                     </div>
                     <MudAvatar Color="Color.Secondary" Variant="Variant.Outlined">
                         <MudIcon Icon="@Icons.Material.Filled.People" />
@@ -158,29 +158,69 @@
 </MudGrid>
 
 @code {
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
+
     private string _selectedReport = "";
     private DateTime? _dateFrom;
     private DateTime? _dateTo;
     private bool _generating;
 
     private string _companyName = "";
+    private string _companyNameAr = "";
     private string _companyAddress = "";
+    private string _companyAddressAr = "";
     private string _companyTel = "";
     private string _logoPath = "";
+
+    private bool IsRtl => Lang?.IsRtl == true;
+
+    // Returns the company name in the current language (falls back to English if Arabic not set)
+    private string CompanyName => IsRtl && !string.IsNullOrEmpty(_companyNameAr) ? _companyNameAr : _companyName;
+    private string CompanyAddress => IsRtl && !string.IsNullOrEmpty(_companyAddressAr) ? _companyAddressAr : _companyAddress;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
         var nameSetting = await SettingsRepo.GetByKeyAsync("CompanyName");
         _companyName = nameSetting?.Value ?? "Airtime Distribution";
+        var nameArSetting = await SettingsRepo.GetByKeyAsync("CompanyNameAr");
+        _companyNameAr = nameArSetting?.Value ?? "";
         var addrSetting = await SettingsRepo.GetByKeyAsync("CompanyAddress");
         _companyAddress = addrSetting?.Value ?? "";
+        var addrArSetting = await SettingsRepo.GetByKeyAsync("CompanyAddressAr");
+        _companyAddressAr = addrArSetting?.Value ?? "";
         var telSetting = await SettingsRepo.GetByKeyAsync("CompanyTel1");
         _companyTel = telSetting?.Value ?? "";
         var logoSetting = await SettingsRepo.GetByKeyAsync("CompanyLogoPath");
         _logoPath = logoSetting?.Value ?? "";
         StateHasChanged();
     }
+
+    private string T(string key) => Lang?.T(key) ?? key;
+
+    private string TranslateTransferType(string type) => type switch
+    {
+        "Airtime" => T("TransferType_Airtime"),
+        "Cash" => T("TransferType_Cash"),
+        "Loan" => T("TransferType_Loan"),
+        _ => type
+    };
+
+    private string TranslateStatus(string status) => status switch
+    {
+        "Pending" => T("Pending"),
+        "Approved" => T("Approved"),
+        "Rejected" => T("Rejected"),
+        "Cancelled" => T("Cancelled"),
+        _ => status
+    };
+
+    private string TranslateDealerType(string type) => type switch
+    {
+        "Person" => T("DealerType_Person"),
+        "Company" => T("DealerType_Company"),
+        _ => type
+    };
 
     private async Task GenerateReport(string format)
     {
@@ -193,12 +233,12 @@
             string mimeType;
             var reportTitle = _selectedReport switch
             {
-                "transfers" => "Airtime Transfers Report",
-                "cash-deposits" => "Cash Deposits Report",
-                "airtime-deposits" => "Airtime Deposits Report",
-                "expenses" => "Expenses Report",
-                "dealers" => "Dealers Report",
-                _ => "Report"
+                "transfers" => T("Reports_AirtimeTransfers"),
+                "cash-deposits" => T("Reports_CashDeposits"),
+                "airtime-deposits" => T("Reports_AirtimeDeposits"),
+                "expenses" => T("Reports_Expenses"),
+                "dealers" => T("Reports_Dealers"),
+                _ => T("Report_Suffix")
             };
 
             var headers = GetHeaders();
@@ -224,11 +264,11 @@
                 link.download = '{fileName}';
                 link.click();
             ");
-            Snackbar.Add($"{reportTitle} downloaded", Severity.Success);
+            Snackbar.Add($"{reportTitle} {T("Reports_Downloaded")}", Severity.Success);
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{T("Error")}: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -238,11 +278,15 @@
 
     private string[] GetHeaders() => _selectedReport switch
     {
-        "transfers" => ["#", "Date", "Dealer", "Product", "Branch", "Amount", "Commission", "Loan Amount", "Type", "Status"],
-        "cash-deposits" => ["#", "Date", "Dealer", "Branch", "Amount"],
-        "airtime-deposits" => ["#", "Date", "Product", "Amount", "Bonus %", "Bonus", "Total", "Status"],
-        "expenses" => ["#", "Date", "Branch", "Category", "Description", "Amount", "Status"],
-        "dealers" => ["#", "Dealer #", "Name", "Type", "Phone", "State", "County", "Status"],
+        "transfers" => [T("Rpt_No"), T("Rpt_Date"), T("Rpt_Dealer"), T("Rpt_Product"), T("Rpt_Branch"),
+                        T("Rpt_Amount"), T("Rpt_Commission"), T("Rpt_LoanAmount"), T("Rpt_Type"), T("Rpt_Status")],
+        "cash-deposits" => [T("Rpt_No"), T("Rpt_Date"), T("Rpt_Dealer"), T("Rpt_Branch"), T("Rpt_Amount")],
+        "airtime-deposits" => [T("Rpt_No"), T("Rpt_Date"), T("Rpt_Product"), T("Rpt_Amount"),
+                               T("Rpt_BonusPercent"), T("Rpt_Bonus"), T("Rpt_Total"), T("Rpt_Status")],
+        "expenses" => [T("Rpt_No"), T("Rpt_Date"), T("Rpt_Branch"), T("Rpt_Category"),
+                       T("Rpt_Description"), T("Rpt_Amount"), T("Rpt_Status")],
+        "dealers" => [T("Rpt_No"), T("Rpt_DealerNo"), T("Rpt_Name"), T("Rpt_Type"),
+                      T("Rpt_Phone"), T("Rpt_State"), T("Rpt_County"), T("Rpt_Status")],
         _ => []
     };
 
@@ -258,7 +302,7 @@
                 foreach (var t in filteredTransfers)
                     rows.Add([(++ti).ToString(), t.CreatedDate.ToString("dd/MM/yyyy"), t.DealerName, t.ProductName, t.BranchName,
                         t.Amount.ToString("N2"), t.CommissionAmount.ToString("N2"), t.LoanAmount.ToString("N2"),
-                        t.TransferType.ToString(), t.Status.ToString()]);
+                        TranslateTransferType(t.TransferType.ToString()), TranslateStatus(t.Status.ToString())]);
                 break;
 
             case "cash-deposits":
@@ -275,7 +319,8 @@
                 int ai = 0;
                 foreach (var d in filteredAir)
                     rows.Add([(++ai).ToString(), d.CreatedDate.ToString("dd/MM/yyyy"), d.ProductName, d.Amount.ToString("N2"),
-                        d.BonusPercentage.ToString("N2"), d.BonusAmount.ToString("N2"), d.TotalAmount.ToString("N2"), d.Status.ToString()]);
+                        d.BonusPercentage.ToString("N2"), d.BonusAmount.ToString("N2"), d.TotalAmount.ToString("N2"),
+                        TranslateStatus(d.Status.ToString())]);
                 break;
 
             case "expenses":
@@ -284,21 +329,22 @@
                 int ei = 0;
                 foreach (var e in filteredExp)
                     rows.Add([(++ei).ToString(), e.ExpenseDate.ToString("dd/MM/yyyy"), e.BranchName, e.CategoryName,
-                        e.Description, e.Amount.ToString("N2"), e.Status.ToString()]);
+                        e.Description, e.Amount.ToString("N2"), TranslateStatus(e.Status.ToString())]);
                 break;
 
             case "dealers":
                 var dealers = await DealerService.GetAllDealersAsync();
                 int di = 0;
                 foreach (var d in dealers)
-                    rows.Add([(++di).ToString(), d.DealerNumber, d.Name, d.Type.ToString(), d.PhoneNumber ?? "",
-                        d.State ?? "", d.County ?? "", d.IsActive ? "Active" : "Inactive"]);
+                    rows.Add([(++di).ToString(), d.DealerNumber, d.Name, TranslateDealerType(d.Type.ToString()),
+                        d.PhoneNumber ?? "", d.State ?? "", d.County ?? "",
+                        d.IsActive ? T("Active") : T("Inactive")]);
                 break;
         }
         return rows;
     }
 
-    private IEnumerable<T> FilterByDate<T>(IEnumerable<T> items, Func<T, DateTime> dateSelector)
+    private IEnumerable<TItem> FilterByDate<TItem>(IEnumerable<TItem> items, Func<TItem, DateTime> dateSelector)
     {
         if (_dateFrom.HasValue)
             items = items.Where(i => dateSelector(i).Date >= _dateFrom.Value.Date);
@@ -307,83 +353,145 @@
         return items;
     }
 
+    private string GetDateRangeText()
+    {
+        if (_dateFrom.HasValue || _dateTo.HasValue)
+            return $"{T("Report_Period")}: {_dateFrom?.ToString("dd/MM/yyyy") ?? T("Report_Start")} - {_dateTo?.ToString("dd/MM/yyyy") ?? T("Report_Present")}";
+        return $"{T("Report_Generated")}: {DateTime.Now:dd/MM/yyyy HH:mm}";
+    }
+
     private byte[] GenerateExcel(string title, string[] headers, List<string[]> rows)
     {
         using var workbook = new ClosedXML.Excel.XLWorkbook();
         var ws = workbook.Worksheets.Add(title.Length > 31 ? title[..31] : title);
 
-        // Company logo - placed in column 1, text starts in column 2
-        bool hasLogo = false;
+        if (IsRtl)
+            ws.RightToLeft = true;
+
+        // Column 1 is reserved for logo; text starts at column 2
+        // Logo goes in column 1 for both LTR and RTL (always "first" in reading order)
+        // When sheet is RTL, column 1 visually appears on the RIGHT side
+        int logoCol = 1;
+        int textCol = 2;
+        int lastCol = headers.Length + 1; // +1 because col 1 is logo
+
+        // Reserve logo column width
+        ws.Column(logoCol).Width = 9;
+
+        // Place logo in column 1, rows 1-3 area
         if (!string.IsNullOrEmpty(_logoPath))
         {
             var physicalPath = Path.Combine(WebHostEnv.WebRootPath, _logoPath.TrimStart('/'));
             if (File.Exists(physicalPath))
             {
-                var picture = ws.AddPicture(physicalPath).MoveTo(ws.Cell(1, 1));
-                picture.WithSize(60, 60);
-                ws.Column(1).Width = 10; // reserve space for logo
-                hasLogo = true;
+                var picture = ws.AddPicture(physicalPath).MoveTo(ws.Cell(1, logoCol), 4, 4);
+                picture.WithSize(52, 52);
             }
         }
 
-        int textCol = hasLogo ? 2 : 1;
-        int lastCol = hasLogo ? headers.Length + 1 : headers.Length;
-
-        ws.Cell(1, textCol).Value = string.IsNullOrEmpty(_companyName) ? "RasidBase" : _companyName;
+        // Row 1: Company name
+        ws.Row(1).Height = 22;
+        ws.Cell(1, textCol).Value = string.IsNullOrEmpty(CompanyName) ? "RasidBase" : CompanyName;
         ws.Cell(1, textCol).Style.Font.Bold = true;
         ws.Cell(1, textCol).Style.Font.FontSize = 14;
         ws.Cell(1, textCol).Style.Font.FontColor = ClosedXML.Excel.XLColor.FromHtml("#1E3A5F");
+        ws.Cell(1, textCol).Style.Alignment.Vertical = ClosedXML.Excel.XLAlignmentVerticalValues.Center;
         ws.Range(1, textCol, 1, lastCol).Merge();
 
-        if (!string.IsNullOrEmpty(_companyAddress))
+        // Row 2: Address
+        if (!string.IsNullOrEmpty(CompanyAddress))
         {
-            ws.Cell(2, textCol).Value = _companyAddress;
+            ws.Cell(2, textCol).Value = CompanyAddress;
+            ws.Cell(2, textCol).Style.Font.FontSize = 9;
             ws.Cell(2, textCol).Style.Font.FontColor = ClosedXML.Excel.XLColor.FromHtml("#64748B");
             ws.Range(2, textCol, 2, lastCol).Merge();
         }
 
-        ws.Cell(3, textCol).Value = title;
-        ws.Cell(3, textCol).Style.Font.Bold = true;
-        ws.Cell(3, textCol).Style.Font.FontColor = ClosedXML.Excel.XLColor.FromHtml("#1E3A5F");
-        ws.Range(3, textCol, 3, lastCol).Merge();
+        // Row 3: Tel
+        if (!string.IsNullOrEmpty(_companyTel))
+        {
+            ws.Cell(3, textCol).Value = $"{T("Report_Tel")}: {_companyTel}";
+            ws.Cell(3, textCol).Style.Font.FontSize = 9;
+            ws.Cell(3, textCol).Style.Font.FontColor = ClosedXML.Excel.XLColor.FromHtml("#64748B");
+            ws.Range(3, textCol, 3, lastCol).Merge();
+        }
 
-        var dateRange = "";
-        if (_dateFrom.HasValue || _dateTo.HasValue)
-            dateRange = $"Period: {_dateFrom?.ToString("dd/MM/yyyy") ?? "Start"} - {_dateTo?.ToString("dd/MM/yyyy") ?? "Present"}";
-        else
-            dateRange = $"Generated: {DateTime.Now:dd/MM/yyyy HH:mm}";
-        ws.Cell(4, textCol).Value = dateRange;
-        ws.Range(4, textCol, 4, lastCol).Merge();
+        // Row 4: Thin separator
+        ws.Row(4).Height = 5;
 
-        // Headers
-        int headerRow = 6;
+        // Row 5: Report title
+        ws.Cell(5, textCol).Value = title;
+        ws.Cell(5, textCol).Style.Font.Bold = true;
+        ws.Cell(5, textCol).Style.Font.FontSize = 12;
+        ws.Cell(5, textCol).Style.Font.FontColor = ClosedXML.Excel.XLColor.FromHtml("#1E3A5F");
+        ws.Range(5, textCol, 5, lastCol).Merge();
+
+        // Row 6: Date range
+        ws.Cell(6, textCol).Value = GetDateRangeText();
+        ws.Cell(6, textCol).Style.Font.FontSize = 9;
+        ws.Cell(6, textCol).Style.Font.FontColor = ClosedXML.Excel.XLColor.FromHtml("#94A3B8");
+        ws.Range(6, textCol, 6, lastCol).Merge();
+
+        // Row 7: Separator
+        ws.Row(7).Height = 5;
+
+        // Headers row (data columns start at col 1 to use full width)
+        int headerRow = 8;
         for (int c = 0; c < headers.Length; c++)
         {
             var cell = ws.Cell(headerRow, c + 1);
             cell.Value = headers[c];
             cell.Style.Font.Bold = true;
+            cell.Style.Font.FontSize = 10;
             cell.Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.FromHtml("#1E3A5F");
             cell.Style.Font.FontColor = ClosedXML.Excel.XLColor.White;
+            cell.Style.Alignment.Horizontal = ClosedXML.Excel.XLAlignmentHorizontalValues.Center;
             cell.Style.Border.BottomBorder = ClosedXML.Excel.XLBorderStyleValues.Thin;
+            cell.Style.Border.BottomBorderColor = ClosedXML.Excel.XLColor.FromHtml("#1E3A5F");
         }
+        ws.Row(headerRow).Height = 22;
 
-        // Data
+        // Data rows
         for (int r = 0; r < rows.Count; r++)
         {
             for (int c = 0; c < rows[r].Length; c++)
             {
                 var cell = ws.Cell(headerRow + 1 + r, c + 1);
-                if (decimal.TryParse(rows[r][c], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var numVal) && c > 0)
+                if (decimal.TryParse(rows[r][c], System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.InvariantCulture, out var numVal) && c > 0)
+                {
                     cell.Value = numVal;
+                    cell.Style.NumberFormat.Format = "#,##0.00";
+                }
                 else
                     cell.Value = rows[r][c];
 
+                cell.Style.Font.FontSize = 10;
+                cell.Style.Alignment.Horizontal = ClosedXML.Excel.XLAlignmentHorizontalValues.Center;
+                cell.Style.Border.BottomBorder = ClosedXML.Excel.XLBorderStyleValues.Hair;
+                cell.Style.Border.BottomBorderColor = ClosedXML.Excel.XLColor.FromHtml("#E2E8F0");
+
                 if (r % 2 == 1)
-                    cell.Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.FromHtml("#F8FAFC");
+                    cell.Style.Fill.BackgroundColor = ClosedXML.Excel.XLColor.FromHtml("#F1F5F9");
             }
         }
 
+        // Summary row
+        if (rows.Count > 0)
+        {
+            int summaryRow = headerRow + 1 + rows.Count + 1;
+            ws.Cell(summaryRow, 1).Value = $"{T("Rpt_Total")}: {rows.Count}";
+            ws.Cell(summaryRow, 1).Style.Font.Bold = true;
+            ws.Cell(summaryRow, 1).Style.Font.FontSize = 10;
+            ws.Cell(summaryRow, 1).Style.Font.FontColor = ClosedXML.Excel.XLColor.FromHtml("#1E3A5F");
+        }
+
         ws.Columns().AdjustToContents();
+        for (int c = 1; c <= headers.Length; c++)
+        {
+            if (ws.Column(c).Width < 10)
+                ws.Column(c).Width = 10;
+        }
 
         using var ms = new MemoryStream();
         workbook.SaveAs(ms);
@@ -394,6 +502,21 @@
     {
         QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
+        // Register Arabic font for RTL support
+        var fontsPath = Path.Combine(WebHostEnv.WebRootPath, "fonts");
+        var arabicRegularPath = Path.Combine(fontsPath, "NotoSansArabic-Regular.ttf");
+        var arabicBoldPath = Path.Combine(fontsPath, "NotoSansArabic-Bold.ttf");
+        if (File.Exists(arabicRegularPath))
+        {
+            using var regularStream = File.OpenRead(arabicRegularPath);
+            QuestPDF.Drawing.FontManager.RegisterFont(regularStream);
+        }
+        if (File.Exists(arabicBoldPath))
+        {
+            using var boldStream = File.OpenRead(arabicBoldPath);
+            QuestPDF.Drawing.FontManager.RegisterFont(boldStream);
+        }
+
         // Load company logo
         byte[]? logoBytes = null;
         if (!string.IsNullOrEmpty(_logoPath))
@@ -403,52 +526,66 @@
                 logoBytes = File.ReadAllBytes(physicalPath);
         }
 
+        var companyDisplayName = string.IsNullOrEmpty(CompanyName) ? "RasidBase" : CompanyName;
+
         var doc = Document.Create(container =>
         {
             container.Page(page =>
             {
                 page.Size(297, 210, QuestPDF.Infrastructure.Unit.Millimetre);
-                page.Margin(30);
-                page.DefaultTextStyle(x => x.FontSize(9));
+                page.Margin(25);
+                if (IsRtl) page.ContentFromRightToLeft();
+                page.DefaultTextStyle(x =>
+                {
+                    var style = x.FontSize(9);
+                    if (IsRtl) style = style.FontFamily("Noto Sans Arabic");
+                    return style;
+                });
 
+                // Header: Logo first → Company info → (spacer) → Report title + date
+                // QuestPDF RTL flips the visual order automatically, so the code
+                // always reads: logo | info | title. In LTR it renders left-to-right;
+                // in RTL it renders right-to-left (logo on the right).
                 page.Header().Column(col =>
                 {
                     col.Item().Row(row =>
                     {
-                        // Company logo
+                        // 1) Logo (first in reading direction)
                         if (logoBytes is { Length: > 0 })
                         {
-                            row.ConstantItem(60).Padding(2).Image(logoBytes);
+                            row.ConstantItem(50).Height(50).Image(logoBytes);
+                            row.ConstantItem(10); // spacer between logo and text
                         }
 
-                        row.RelativeItem().PaddingLeft(logoBytes is { Length: > 0 } ? 8 : 0).Column(c =>
+                        // 2) Company info (next to logo)
+                        row.RelativeItem().PaddingTop(3).Column(info =>
                         {
-                            c.Item().Text(string.IsNullOrEmpty(_companyName) ? "RasidBase" : _companyName)
+                            info.Item().Text(companyDisplayName)
                                 .Bold().FontSize(14).FontColor(QuestPDF.Helpers.Colors.Blue.Darken4);
-                            if (!string.IsNullOrEmpty(_companyAddress))
-                                c.Item().Text(_companyAddress).FontSize(8).FontColor(QuestPDF.Helpers.Colors.Grey.Darken2);
+                            if (!string.IsNullOrEmpty(CompanyAddress))
+                                info.Item().Text(CompanyAddress).FontSize(8).FontColor(QuestPDF.Helpers.Colors.Grey.Darken2);
                             if (!string.IsNullOrEmpty(_companyTel))
-                                c.Item().Text($"Tel: {_companyTel}").FontSize(8).FontColor(QuestPDF.Helpers.Colors.Grey.Darken2);
+                                info.Item().Text($"{T("Report_Tel")}: {_companyTel}").FontSize(8).FontColor(QuestPDF.Helpers.Colors.Grey.Darken2);
                         });
-                        row.ConstantItem(150).AlignRight().Column(c =>
+
+                        // 3) Report title + date (opposite end)
+                        row.ConstantItem(180).AlignRight().PaddingTop(3).Column(rt =>
                         {
-                            c.Item().Text(title).Bold().FontSize(11).FontColor(QuestPDF.Helpers.Colors.Blue.Darken4);
-                            var dateRange = "";
-                            if (_dateFrom.HasValue || _dateTo.HasValue)
-                                dateRange = $"{_dateFrom?.ToString("dd/MM/yyyy") ?? "Start"} - {_dateTo?.ToString("dd/MM/yyyy") ?? "Present"}";
-                            else
-                                dateRange = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
-                            c.Item().Text(dateRange).FontSize(8).FontColor(QuestPDF.Helpers.Colors.Grey.Darken1);
+                            rt.Item().AlignRight().Text(title).Bold().FontSize(13).FontColor(QuestPDF.Helpers.Colors.Blue.Darken4);
+                            rt.Item().AlignRight().PaddingTop(2).Text(GetDateRangeText())
+                                .FontSize(8).FontColor(QuestPDF.Helpers.Colors.Grey.Darken1);
                         });
                     });
-                    col.Item().PaddingVertical(5).LineHorizontal(1).LineColor(QuestPDF.Helpers.Colors.Blue.Darken4);
+
+                    col.Item().PaddingVertical(6).LineHorizontal(1.5f).LineColor(QuestPDF.Helpers.Colors.Blue.Darken4);
                 });
 
-                page.Content().Table(table =>
+                page.Content().PaddingTop(5).Table(table =>
                 {
                     table.ColumnsDefinition(cd =>
                     {
-                        for (int i = 0; i < headers.Length; i++)
+                        cd.ConstantColumn(25); // # column
+                        for (int i = 1; i < headers.Length; i++)
                             cd.RelativeColumn();
                     });
 
@@ -457,30 +594,44 @@
                         foreach (var h in headers)
                         {
                             header.Cell().Background("#1E3A5F")
-                                .Padding(4).Text(h).FontColor(QuestPDF.Helpers.Colors.White).Bold().FontSize(8);
+                                .Padding(5).AlignCenter()
+                                .Text(h).FontColor(QuestPDF.Helpers.Colors.White).Bold().FontSize(8);
                         }
                     });
 
                     for (int r = 0; r < rows.Count; r++)
                     {
-                        var bgColor = r % 2 == 0 ? "#FFFFFF" : "#F8FAFC";
-                        foreach (var cell in rows[r])
+                        var bgColor = r % 2 == 0 ? "#FFFFFF" : "#F1F5F9";
+                        foreach (var cellVal in rows[r])
                         {
-                            table.Cell().Background(bgColor).BorderBottom(0.5f)
-                                .BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2)
-                                .Padding(3).Text(cell).FontSize(8);
+                            table.Cell().Background(bgColor)
+                                .BorderBottom(0.5f).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten2)
+                                .Padding(4).AlignCenter()
+                                .Text(cellVal).FontSize(8);
                         }
                     }
                 });
 
-                page.Footer().AlignCenter().Text(text =>
+                page.Footer().Row(footerRow =>
                 {
-                    text.DefaultTextStyle(x => x.FontSize(8).FontColor(QuestPDF.Helpers.Colors.Grey.Darken1));
-                    text.Span("Page ");
-                    text.CurrentPageNumber();
-                    text.Span(" of ");
-                    text.TotalPages();
-                    text.Span($"  |  {(string.IsNullOrEmpty(_companyName) ? "RasidBase" : _companyName)}");
+                    footerRow.RelativeItem().AlignLeft().Text(text =>
+                    {
+                        text.DefaultTextStyle(x => x.FontSize(7).FontColor(QuestPDF.Helpers.Colors.Grey.Darken1));
+                        text.Span(companyDisplayName);
+                    });
+                    footerRow.RelativeItem().AlignCenter().Text(text =>
+                    {
+                        text.DefaultTextStyle(x => x.FontSize(7).FontColor(QuestPDF.Helpers.Colors.Grey.Darken1));
+                        text.Span($"{T("Report_Page")} ");
+                        text.CurrentPageNumber();
+                        text.Span($" {T("Report_Of")} ");
+                        text.TotalPages();
+                    });
+                    footerRow.RelativeItem().AlignRight().Text(text =>
+                    {
+                        text.DefaultTextStyle(x => x.FontSize(7).FontColor(QuestPDF.Helpers.Colors.Grey.Darken1));
+                        text.Span(DateTime.Now.ToString("dd/MM/yyyy HH:mm"));
+                    });
                 });
             });
         });

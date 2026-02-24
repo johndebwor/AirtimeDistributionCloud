@@ -9,11 +9,11 @@
 @inject IBranchService BranchService
 @inject ISnackbar Snackbar
 
-<PageTitle>My Profile - RasidBase</PageTitle>
+<PageTitle>@(Lang?.T("Profile_Title") ?? "My Profile") - RasidBase</PageTitle>
 
 <div class="page-header">
-    <h1>My Profile</h1>
-    <p>Manage your account settings</p>
+    <h1>@(Lang?.T("Profile_Title") ?? "My Profile")</h1>
+    <p>@(Lang?.T("Profile_Subtitle") ?? "Manage your account settings")</p>
 </div>
 
 @if (_loading)
@@ -22,7 +22,7 @@
 }
 else if (_user is null)
 {
-    <MudAlert Severity="Severity.Error">Unable to load user profile.</MudAlert>
+    <MudAlert Severity="Severity.Error">@(Lang?.T("Profile_UnableToLoad") ?? "Unable to load user profile.")</MudAlert>
 }
 else
 {
@@ -30,7 +30,7 @@ else
         <!-- Left Column: Account Information -->
         <MudItem xs="12" md="6">
             <MudPaper Elevation="0" Class="data-card pa-6">
-                <MudText Typo="Typo.h6" Class="mb-4">Account Information</MudText>
+                <MudText Typo="Typo.h6" Class="mb-4">@(Lang?.T("Profile_AccountInfo") ?? "Account Information")</MudText>
 
                 <MudStack AlignItems="AlignItems.Center" Class="mb-4">
                     <MudAvatar Size="Size.Large" Color="Color.Primary">
@@ -40,26 +40,26 @@ else
 
                 <MudStack Spacing="3">
                     <MudTextField @bind-Value="_fullName"
-                                  Label="Full Name"
+                                  Label="@(Lang?.T("FullName") ?? "Full Name")"
                                   Variant="Variant.Outlined"
                                   Adornment="Adornment.Start"
                                   AdornmentIcon="@Icons.Material.Outlined.Person" />
 
                     <MudTextField @bind-Value="_phoneNumber"
-                                  Label="Phone Number"
+                                  Label="@(Lang?.T("PhoneNumber") ?? "Phone Number")"
                                   Variant="Variant.Outlined"
                                   Adornment="Adornment.Start"
                                   AdornmentIcon="@Icons.Material.Outlined.Phone" />
 
                     <MudTextField Value="@_email"
-                                  Label="Email"
+                                  Label="@(Lang?.T("Email") ?? "Email")"
                                   Variant="Variant.Outlined"
                                   Disabled="true"
                                   Adornment="Adornment.Start"
                                   AdornmentIcon="@Icons.Material.Outlined.Email" />
 
                     <MudTextField Value="@(_branchName ?? "-")"
-                                  Label="Branch"
+                                  Label="@(Lang?.T("Branch") ?? "Branch")"
                                   Variant="Variant.Outlined"
                                   Disabled="true"
                                   Adornment="Adornment.Start"
@@ -75,11 +75,11 @@ else
                         @if (_saving)
                         {
                             <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                            <span>Saving...</span>
+                            <span>@(Lang?.T("Saving") ?? "Saving...")</span>
                         }
                         else
                         {
-                            <span>Save Changes</span>
+                            <span>@(Lang?.T("Profile_SaveChanges") ?? "Save Changes")</span>
                         }
                     </MudButton>
                 </MudStack>
@@ -89,11 +89,11 @@ else
         <!-- Right Column: Account Details -->
         <MudItem xs="12" md="6">
             <MudPaper Elevation="0" Class="data-card pa-6">
-                <MudText Typo="Typo.h6" Class="mb-4">Account Details</MudText>
+                <MudText Typo="Typo.h6" Class="mb-4">@(Lang?.T("Profile_AccountDetails") ?? "Account Details")</MudText>
 
                 <MudStack Spacing="3">
                     <div>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Roles</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Roles") ?? "Roles")</MudText>
                         <MudStack Row="true" Spacing="1" Class="mt-1">
                             @if (_roles.Any())
                             {
@@ -104,7 +104,7 @@ else
                             }
                             else
                             {
-                                <MudChip T="string" Color="Color.Default" Size="Size.Small">No roles assigned</MudChip>
+                                <MudChip T="string" Color="Color.Default" Size="Size.Small">@(Lang?.T("Profile_NoRoles") ?? "No roles assigned")</MudChip>
                             }
                         </MudStack>
                     </div>
@@ -112,28 +112,28 @@ else
                     <MudDivider />
 
                     <div>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Account Created</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Profile_AccountCreated") ?? "Account Created")</MudText>
                         <MudText Typo="Typo.body1">@_user.CreatedDate.ToString("MMMM dd, yyyy")</MudText>
                     </div>
 
                     <MudDivider />
 
                     <div>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Email Confirmed</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Profile_EmailConfirmed") ?? "Email Confirmed")</MudText>
                         <MudChip T="string"
                                  Color="@(_user.EmailConfirmed ? Color.Success : Color.Warning)"
                                  Size="Size.Small"
                                  Class="mt-1">
-                            @(_user.EmailConfirmed ? "Confirmed" : "Not Confirmed")
+                            @(_user.EmailConfirmed ? (Lang?.T("Confirmed") ?? "Confirmed") : (Lang?.T("NotConfirmed") ?? "Not Confirmed"))
                         </MudChip>
                     </div>
 
                     <MudDivider />
 
                     <div>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Last Modified</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Profile_LastModified") ?? "Last Modified")</MudText>
                         <MudText Typo="Typo.body1">
-                            @(_user.ModifiedDate.HasValue ? _user.ModifiedDate.Value.ToString("MMMM dd, yyyy") : "Never")
+                            @(_user.ModifiedDate.HasValue ? _user.ModifiedDate.Value.ToString("MMMM dd, yyyy") : (Lang?.T("Never") ?? "Never"))
                         </MudText>
                     </div>
 
@@ -145,7 +145,7 @@ else
                                Href="/Account/Manage/ChangePassword"
                                FullWidth="true"
                                Class="mt-2">
-                        Change Password
+                        @(Lang?.T("Profile_ChangePassword") ?? "Change Password")
                     </MudButton>
                 </MudStack>
             </MudPaper>
@@ -154,6 +154,8 @@ else
 }
 
 @code {
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
+
     private ApplicationUser? _user;
     private string _fullName = string.Empty;
     private string? _phoneNumber;
@@ -207,7 +209,7 @@ else
 
             if (result.Succeeded)
             {
-                Snackbar.Add("Profile updated", Severity.Success);
+                Snackbar.Add(Lang?.T("ProfileUpdated") ?? "Profile updated", Severity.Success);
             }
             else
             {
@@ -219,7 +221,7 @@ else
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error updating profile: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
         }
         finally
         {

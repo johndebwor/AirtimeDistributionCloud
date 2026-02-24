@@ -7,24 +7,24 @@
 
 <MudDialog>
     <DialogContent>
-        <MudTextField @bind-Value="Model.FullName" Label="Full Name" Required="true"
-                      RequiredError="Full name is required" Class="mb-3" />
-        <MudTextField @bind-Value="Model.Email" Label="Email" Required="true"
-                      RequiredError="Email is required" InputType="InputType.Email" Class="mb-3" />
-        <MudTextField @bind-Value="Model.Password" Label="@(IsEdit ? "New Password (leave blank to keep)" : "Password")"
-                      Required="@(!IsEdit)" RequiredError="Password is required"
+        <MudTextField @bind-Value="Model.FullName" Label="@(Lang?.T("FullName") ?? "Full Name")" Required="true"
+                      RequiredError="@(Lang?.T("NameRequired") ?? "Full name is required")" Class="mb-3" />
+        <MudTextField @bind-Value="Model.Email" Label="@(Lang?.T("Email") ?? "Email")" Required="true"
+                      RequiredError="@(Lang?.T("EmailRequired") ?? "Email is required")" InputType="InputType.Email" Class="mb-3" />
+        <MudTextField @bind-Value="Model.Password" Label="@(IsEdit ? (Lang?.T("Users_NewPassword") ?? "New Password (leave blank to keep)") : (Lang?.T("Password") ?? "Password"))"
+                      Required="@(!IsEdit)" RequiredError="@(Lang?.T("Users_PasswordRequiredField") ?? "Password is required")"
                       InputType="@(_showPassword ? InputType.Text : InputType.Password)"
                       Adornment="Adornment.End"
                       AdornmentIcon="@(_showPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
                       OnAdornmentClick="@(() => _showPassword = !_showPassword)"
                       Class="mb-3" />
-        <MudSelect T="int?" @bind-Value="Model.BranchId" Label="Branch" Clearable="true" Class="mb-3">
+        <MudSelect T="int?" @bind-Value="Model.BranchId" Label="@(Lang?.T("Branch") ?? "Branch")" Clearable="true" Class="mb-3">
             @foreach (var b in Branches)
             {
                 <MudSelectItem T="int?" Value="@((int?)b.Id)">@b.Name</MudSelectItem>
             }
         </MudSelect>
-        <MudSelect T="string" Label="Roles" MultiSelection="true" @bind-SelectedValues="_selectedRolesValues" Class="mb-3">
+        <MudSelect T="string" Label="@(Lang?.T("Roles") ?? "Roles")" MultiSelection="true" @bind-SelectedValues="_selectedRolesValues" Class="mb-3">
             @foreach (var role in AvailableRoles)
             {
                 <MudSelectItem T="string" Value="@role">@role</MudSelectItem>
@@ -32,14 +32,15 @@
         </MudSelect>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton OnClick="Cancel">@(Lang?.T("Cancel") ?? "Cancel")</MudButton>
         <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit"
-                   Disabled="@_saving">@(IsEdit ? "Update" : "Save")</MudButton>
+                   Disabled="@_saving">@(IsEdit ? (Lang?.T("Update") ?? "Update") : (Lang?.T("Save") ?? "Save"))</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
     [Parameter] public bool IsEdit { get; set; }
     [Parameter] public UserModel Model { get; set; } = new();
     [Parameter] public List<string> AvailableRoles { get; set; } = new();
@@ -68,13 +69,13 @@
     {
         if (string.IsNullOrWhiteSpace(Model.FullName) || string.IsNullOrWhiteSpace(Model.Email))
         {
-            Snackbar.Add("Full name and email are required", Severity.Warning);
+            Snackbar.Add(Lang?.T("Users_FullNameRequired") ?? "Full name and email are required", Severity.Warning);
             return;
         }
 
         if (!IsEdit && string.IsNullOrWhiteSpace(Model.Password))
         {
-            Snackbar.Add("Password is required for new users", Severity.Warning);
+            Snackbar.Add(Lang?.T("Users_PasswordRequired") ?? "Password is required for new users", Severity.Warning);
             return;
         }
 
@@ -86,7 +87,7 @@
                 var user = await UserManager.FindByIdAsync(Model.Id);
                 if (user == null)
                 {
-                    Snackbar.Add("User not found", Severity.Error);
+                    Snackbar.Add(Lang?.T("Users_NotFoundUser") ?? "User not found", Severity.Error);
                     return;
                 }
 
@@ -107,7 +108,7 @@
                     await UserManager.ResetPasswordAsync(user, token, Model.Password);
                 }
 
-                Snackbar.Add("User updated", Severity.Success);
+                Snackbar.Add(Lang?.T("Users_Updated") ?? "User updated", Severity.Success);
                 MudDialog.Close(DialogResult.Ok(true));
             }
             else
@@ -127,7 +128,7 @@
                     if (Model.SelectedRoles.Any())
                         await UserManager.AddToRolesAsync(user, Model.SelectedRoles);
 
-                    Snackbar.Add("User created", Severity.Success);
+                    Snackbar.Add(Lang?.T("Users_Created") ?? "User created", Severity.Success);
                     MudDialog.Close(DialogResult.Ok(true));
                 }
                 else
@@ -138,7 +139,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
         }
         finally
         {

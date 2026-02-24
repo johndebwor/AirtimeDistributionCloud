@@ -5,6 +5,7 @@ public interface IUserPreferenceService
     public const string LastBranchId = "LastBranchId";
     public const string LastProductId = "LastProductId";
     public const string ThemeMode = "ThemeMode";
+    public const string Language = "Language";
 
     Task<int?> GetIntAsync(string userId, string key, CancellationToken cancellationToken = default);
     Task<string?> GetStringAsync(string userId, string key, CancellationToken cancellationToken = default);

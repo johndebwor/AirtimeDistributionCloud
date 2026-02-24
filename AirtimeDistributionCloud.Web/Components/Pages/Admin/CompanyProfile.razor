@@ -9,11 +9,11 @@
 @inject IWebHostEnvironment Env
 @rendermode InteractiveServer
 
-<PageTitle>Company Profile - RasidBase</PageTitle>
+<PageTitle>@(Lang?.T("Company_Title") ?? "Company Profile") - RasidBase</PageTitle>
 
 <div class="page-header">
-    <h1>Company Profile</h1>
-    <p>Configure your company details for reports and documents</p>
+    <h1>@(Lang?.T("Company_Title") ?? "Company Profile")</h1>
+    <p>@(Lang?.T("Company_Subtitle") ?? "Configure your company details for reports and documents")</p>
 </div>
 
 @if (_loading)
@@ -26,37 +26,60 @@ else
         <!-- Company Information -->
         <MudItem xs="12" md="8">
             <MudPaper Elevation="0" Class="data-card pa-6">
-                <MudText Typo="Typo.h6" Class="mb-4">Company Information</MudText>
+                <MudText Typo="Typo.h6" Class="mb-4">@(Lang?.T("Company_Info") ?? "Company Information")</MudText>
+                <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" Class="mb-4">
+                    <MudTabPanel Text="@(Lang?.T("Company_English") ?? "English")" Icon="@Icons.Material.Filled.Language">
+                        <MudGrid Class="pt-3">
+                            <MudItem xs="12" sm="8">
+                                <MudTextField @bind-Value="_companyName" Label="@(Lang?.T("Company_Name") ?? "Company Name")" Variant="Variant.Outlined"
+                                              Placeholder="Enter company name in English" />
+                            </MudItem>
+                            <MudItem xs="12" sm="4">
+                                <MudTextField @bind-Value="_companyAbbreviation" Label="@(Lang?.T("Company_Abbreviation") ?? "Abbreviation")" Variant="Variant.Outlined"
+                                              Placeholder="e.g. RB" HelperText="@(Lang?.T("Company_AbbreviationDesc") ?? "Shown in sidebar navigation")" />
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="_companyAddress" Label="@(Lang?.T("Company_Address") ?? "Address")" Variant="Variant.Outlined"
+                                              Lines="2" Placeholder="Enter company address in English" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudTabPanel>
+                    <MudTabPanel Text="@(Lang?.T("Company_Arabic") ?? "العربية (Arabic)")" Icon="@Icons.Material.Filled.Translate">
+                        <MudGrid Class="pt-3">
+                            <MudItem xs="12" sm="8">
+                                <MudTextField @bind-Value="_companyNameAr" Label="@(Lang?.T("Company_NameAr") ?? "Company Name (Arabic)")" Variant="Variant.Outlined"
+                                              Placeholder="أدخل اسم الشركة بالعربية" Style="direction:rtl;text-align:right;" />
+                            </MudItem>
+                            <MudItem xs="12" sm="4">
+                                <MudTextField @bind-Value="_companyAbbreviationAr" Label="@(Lang?.T("Company_AbbreviationAr") ?? "Abbreviation (Arabic)")" Variant="Variant.Outlined"
+                                              Placeholder="مثال: رب" Style="direction:rtl;text-align:right;" />
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="_companyAddressAr" Label="@(Lang?.T("Company_AddressAr") ?? "Address (Arabic)")" Variant="Variant.Outlined"
+                                              Lines="2" Placeholder="أدخل عنوان الشركة بالعربية" Style="direction:rtl;text-align:right;" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudTabPanel>
+                </MudTabs>
+
                 <MudGrid>
-                    <MudItem xs="12" sm="8">
-                        <MudTextField @bind-Value="_companyName" Label="Company Name" Variant="Variant.Outlined"
-                                      Placeholder="Enter company name" />
-                    </MudItem>
                     <MudItem xs="12" sm="4">
-                        <MudTextField @bind-Value="_companyAbbreviation" Label="Abbreviation" Variant="Variant.Outlined"
-                                      Placeholder="e.g. RB" HelperText="Shown in sidebar navigation" />
-                    </MudItem>
-                    <MudItem xs="12">
-                        <MudTextField @bind-Value="_companyAddress" Label="Address" Variant="Variant.Outlined"
-                                      Lines="2" Placeholder="Enter company address" />
-                    </MudItem>
-                    <MudItem xs="12" sm="4">
-                        <MudTextField @bind-Value="_tel1" Label="Tel 1 (Primary)" Variant="Variant.Outlined"
+                        <MudTextField @bind-Value="_tel1" Label="@(Lang?.T("Company_Tel1") ?? "Tel 1 (Primary)")" Variant="Variant.Outlined"
                                       Placeholder="+211..." />
                     </MudItem>
                     <MudItem xs="12" sm="4">
-                        <MudTextField @bind-Value="_tel2" Label="Tel 2" Variant="Variant.Outlined"
+                        <MudTextField @bind-Value="_tel2" Label="@(Lang?.T("Company_Tel2") ?? "Tel 2")" Variant="Variant.Outlined"
                                       Placeholder="+211..." />
                     </MudItem>
                     <MudItem xs="12" sm="4">
-                        <MudTextField @bind-Value="_tel3" Label="Tel 3" Variant="Variant.Outlined"
+                        <MudTextField @bind-Value="_tel3" Label="@(Lang?.T("Company_Tel3") ?? "Tel 3")" Variant="Variant.Outlined"
                                       Placeholder="+211..." />
                     </MudItem>
                 </MudGrid>
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4"
                            StartIcon="@Icons.Material.Filled.Save" OnClick="SaveCompanyInfo"
                            Disabled="@_saving">
-                    Save Changes
+                    @(Lang?.T("Save") ?? "Save Changes")
                 </MudButton>
             </MudPaper>
         </MudItem>
@@ -65,7 +88,7 @@ else
         <MudItem xs="12" md="4">
             <!-- Company Logo -->
             <MudPaper Elevation="0" Class="data-card pa-6 mb-4">
-                <MudText Typo="Typo.h6" Class="mb-3">Company Logo</MudText>
+                <MudText Typo="Typo.h6" Class="mb-3">@(Lang?.T("Company_Logo") ?? "Company Logo")</MudText>
                 <div style="text-align:center; margin-bottom:16px;">
                     @if (!string.IsNullOrEmpty(_logoPath))
                     {
@@ -84,7 +107,7 @@ else
                     <ActivatorContent>
                         <MudButton Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true"
                                    StartIcon="@Icons.Material.Filled.CloudUpload">
-                            Upload Logo
+                            @(Lang?.T("Company_UploadLogo") ?? "Upload Logo")
                         </MudButton>
                     </ActivatorContent>
                 </MudFileUpload>
@@ -93,19 +116,19 @@ else
                     <MudText Typo="Typo.caption" Color="Color.Success" Class="mt-1">@_logoFile.Name selected</MudText>
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-2"
                                OnClick="SaveLogo" Disabled="@_saving"
-                               StartIcon="@Icons.Material.Filled.Save">Save Logo</MudButton>
+                               StartIcon="@Icons.Material.Filled.Save">@(Lang?.T("Company_SaveLogo") ?? "Save Logo")</MudButton>
                 }
                 @if (!string.IsNullOrEmpty(_logoPath))
                 {
                     <MudButton Variant="Variant.Text" Color="Color.Error" FullWidth="true" Class="mt-1"
                                OnClick="RemoveLogo" Disabled="@_saving"
-                               StartIcon="@Icons.Material.Filled.Delete">Remove Logo</MudButton>
+                               StartIcon="@Icons.Material.Filled.Delete">@(Lang?.T("Company_RemoveLogo") ?? "Remove Logo")</MudButton>
                 }
             </MudPaper>
 
             <!-- Electronic Stamp -->
             <MudPaper Elevation="0" Class="data-card pa-6">
-                <MudText Typo="Typo.h6" Class="mb-3">Electronic Stamp</MudText>
+                <MudText Typo="Typo.h6" Class="mb-3">@(Lang?.T("Company_Stamp") ?? "Electronic Stamp")</MudText>
                 <div style="text-align:center; margin-bottom:16px;">
                     @if (!string.IsNullOrEmpty(_stampPath))
                     {
@@ -124,7 +147,7 @@ else
                     <ActivatorContent>
                         <MudButton Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true"
                                    StartIcon="@Icons.Material.Filled.CloudUpload">
-                            Upload Stamp
+                            @(Lang?.T("Company_UploadStamp") ?? "Upload Stamp")
                         </MudButton>
                     </ActivatorContent>
                 </MudFileUpload>
@@ -133,13 +156,13 @@ else
                     <MudText Typo="Typo.caption" Color="Color.Success" Class="mt-1">@_stampFile.Name selected</MudText>
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-2"
                                OnClick="SaveStamp" Disabled="@_saving"
-                               StartIcon="@Icons.Material.Filled.Save">Save Stamp</MudButton>
+                               StartIcon="@Icons.Material.Filled.Save">@(Lang?.T("Company_SaveStamp") ?? "Save Stamp")</MudButton>
                 }
                 @if (!string.IsNullOrEmpty(_stampPath))
                 {
                     <MudButton Variant="Variant.Text" Color="Color.Error" FullWidth="true" Class="mt-1"
                                OnClick="RemoveStamp" Disabled="@_saving"
-                               StartIcon="@Icons.Material.Filled.Delete">Remove Stamp</MudButton>
+                               StartIcon="@Icons.Material.Filled.Delete">@(Lang?.T("Company_RemoveStamp") ?? "Remove Stamp")</MudButton>
                 }
             </MudPaper>
         </MudItem>
@@ -147,12 +170,17 @@ else
 }
 
 @code {
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
+
     private bool _loading = true;
     private bool _saving;
 
     private string _companyName = "";
     private string _companyAbbreviation = "";
     private string _companyAddress = "";
+    private string _companyNameAr = "";
+    private string _companyAbbreviationAr = "";
+    private string _companyAddressAr = "";
     private string _tel1 = "";
     private string _tel2 = "";
     private string _tel3 = "";
@@ -174,6 +202,9 @@ else
         _companyName = GetValue("CompanyName");
         _companyAbbreviation = GetValue("CompanyAbbreviation");
         _companyAddress = GetValue("CompanyAddress");
+        _companyNameAr = GetValue("CompanyNameAr");
+        _companyAbbreviationAr = GetValue("CompanyAbbreviationAr");
+        _companyAddressAr = GetValue("CompanyAddressAr");
         _tel1 = GetValue("CompanyTel1");
         _tel2 = GetValue("CompanyTel2");
         _tel3 = GetValue("CompanyTel3");
@@ -211,14 +242,17 @@ else
             await SetValue("CompanyName", _companyName);
             await SetValue("CompanyAbbreviation", _companyAbbreviation);
             await SetValue("CompanyAddress", _companyAddress);
+            await SetValue("CompanyNameAr", _companyNameAr);
+            await SetValue("CompanyAbbreviationAr", _companyAbbreviationAr);
+            await SetValue("CompanyAddressAr", _companyAddressAr);
             await SetValue("CompanyTel1", _tel1);
             await SetValue("CompanyTel2", _tel2);
             await SetValue("CompanyTel3", _tel3);
-            Snackbar.Add("Company information saved", Severity.Success);
+            Snackbar.Add(Lang?.T("Company_InfoSaved") ?? "Company information saved", Severity.Success);
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
         }
         finally
         {
@@ -238,11 +272,11 @@ else
             _logoPath = await SaveUploadedFile(_logoFile, "company");
             await SetValue("CompanyLogoPath", _logoPath);
             _logoFile = null;
-            Snackbar.Add("Logo saved", Severity.Success);
+            Snackbar.Add(Lang?.T("Company_LogoSaved") ?? "Logo saved", Severity.Success);
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
         }
         finally { _saving = false; }
     }
@@ -256,11 +290,11 @@ else
             _stampPath = await SaveUploadedFile(_stampFile, "company");
             await SetValue("CompanyStampPath", _stampPath);
             _stampFile = null;
-            Snackbar.Add("Stamp saved", Severity.Success);
+            Snackbar.Add(Lang?.T("Company_StampSaved") ?? "Stamp saved", Severity.Success);
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
         }
         finally { _saving = false; }
     }
@@ -272,7 +306,7 @@ else
         {
             _logoPath = "";
             await SetValue("CompanyLogoPath", "");
-            Snackbar.Add("Logo removed", Severity.Success);
+            Snackbar.Add(Lang?.T("Company_LogoRemoved") ?? "Logo removed", Severity.Success);
         }
         finally { _saving = false; }
     }
@@ -284,7 +318,7 @@ else
         {
             _stampPath = "";
             await SetValue("CompanyStampPath", "");
-            Snackbar.Add("Stamp removed", Severity.Success);
+            Snackbar.Add(Lang?.T("Company_StampRemoved") ?? "Stamp removed", Severity.Success);
         }
         finally { _saving = false; }
     }

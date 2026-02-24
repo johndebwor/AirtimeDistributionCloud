@@ -12,37 +12,37 @@
     <DialogContent>
         <MudGrid>
             <MudItem xs="12" sm="6">
-                <MudSelect T="DealerType" @bind-Value="_type" Label="Type" Required="true"
-                           RequiredError="Dealer type is required" Class="mb-3">
-                    <MudSelectItem T="DealerType" Value="DealerType.Person">Person</MudSelectItem>
-                    <MudSelectItem T="DealerType" Value="DealerType.Company">Company</MudSelectItem>
+                <MudSelect T="DealerType" @bind-Value="_type" Label="@(Lang?.T("Type") ?? "Type")" Required="true"
+                           RequiredError="@(Lang?.T("DealerTypeRequired") ?? "Dealer type is required")" Class="mb-3">
+                    <MudSelectItem T="DealerType" Value="DealerType.Person">@(Lang?.T("DealerDialog_Person") ?? "Person")</MudSelectItem>
+                    <MudSelectItem T="DealerType" Value="DealerType.Company">@(Lang?.T("DealerDialog_Company") ?? "Company")</MudSelectItem>
                 </MudSelect>
             </MudItem>
             <MudItem xs="12" sm="6">
-                <MudTextField @bind-Value="_name" Label="Name" Required="true"
-                              RequiredError="Name is required" Class="mb-3" />
+                <MudTextField @bind-Value="_name" Label="@(Lang?.T("Name") ?? "Name")" Required="true"
+                              RequiredError="@(Lang?.T("NameRequired") ?? "Name is required")" Class="mb-3" />
             </MudItem>
 
             @if (_type == DealerType.Person)
             {
                 <MudItem xs="12" sm="6">
-                    <MudSelect T="string" @bind-Value="_gender" Label="Gender" Clearable="true" Class="mb-3">
-                        <MudSelectItem T="string" Value="@("Male")">Male</MudSelectItem>
-                        <MudSelectItem T="string" Value="@("Female")">Female</MudSelectItem>
+                    <MudSelect T="string" @bind-Value="_gender" Label="@(Lang?.T("Registration_Gender") ?? "Gender")" Clearable="true" Class="mb-3">
+                        <MudSelectItem T="string" Value="@("Male")">@(Lang?.T("DealerDialog_Male") ?? "Male")</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("Female")">@(Lang?.T("DealerDialog_Female") ?? "Female")</MudSelectItem>
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudSelect T="string" Value="@_idType" Label="ID Type" Clearable="true" Class="mb-3"
+                    <MudSelect T="string" Value="@_idType" Label="@(Lang?.T("DealerDialog_IDType") ?? "ID Type")" Clearable="true" Class="mb-3"
                                ValueChanged="OnIdTypeChanged">
-                        <MudSelectItem T="string" Value="@("National ID")">National ID</MudSelectItem>
-                        <MudSelectItem T="string" Value="@("Passport")">Passport</MudSelectItem>
-                        <MudSelectItem T="string" Value="@("Others")">Others</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("National ID")">@(Lang?.T("DealerDialog_NationalID") ?? "National ID")</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("Passport")">@(Lang?.T("DealerDialog_Passport") ?? "Passport")</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("Others")">@(Lang?.T("DealerDialog_Others") ?? "Others")</MudSelectItem>
                     </MudSelect>
                 </MudItem>
                 @if (_idType == "Others")
                 {
                     <MudItem xs="12" sm="6">
-                        <MudTextField @bind-Value="_idTypeSpecification" Label="Specify ID Type" Class="mb-3" />
+                        <MudTextField @bind-Value="_idTypeSpecification" Label="@(Lang?.T("DealerDialog_SpecifyIDType") ?? "Specify ID Type")" Class="mb-3" />
                     </MudItem>
                 }
                 @if (!string.IsNullOrEmpty(_idType))
@@ -52,7 +52,7 @@
                     </MudItem>
                 }
                 <MudItem xs="12" sm="6">
-                    <MudAutocomplete T="string" @bind-Value="_nationality" Label="Nationality"
+                    <MudAutocomplete T="string" @bind-Value="_nationality" Label="@(Lang?.T("DealerDialog_Nationality") ?? "Nationality")"
                                      SearchFunc="SearchNationality" Class="mb-3"
                                      ResetValueOnEmptyText="false" CoerceText="true" />
                 </MudItem>
@@ -61,13 +61,13 @@
             @if (_type == DealerType.Company)
             {
                 <MudItem xs="12" sm="6">
-                    <MudTextField @bind-Value="_companyRegNumber" Label="Company Reg Number" Class="mb-3" />
+                    <MudTextField @bind-Value="_companyRegNumber" Label="@(Lang?.T("DealerDialog_CompanyRegNum") ?? "Company Reg Number")" Class="mb-3" />
                 </MudItem>
             }
 
             <MudItem xs="12" sm="6">
-                <MudSelect T="string" Value="@_state" Label="State / Administrative Area"
-                           Clearable="true" Placeholder="-- Select State --" Class="mb-3" ValueChanged="OnStateChanged">
+                <MudSelect T="string" Value="@_state" Label="@(Lang?.T("DealerDialog_StateAdmin") ?? "State / Administrative Area")"
+                           Clearable="true" Placeholder="@(Lang?.T("DealerDialog_SelectState") ?? "-- Select State --")" Class="mb-3" ValueChanged="OnStateChanged">
                     @foreach (var state in StatesAndCounties.Keys)
                     {
                         <MudSelectItem T="string" Value="@state">@state</MudSelectItem>
@@ -75,8 +75,8 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="12" sm="6">
-                <MudSelect T="string" @bind-Value="_county" Label="County" Clearable="true"
-                           Placeholder="-- Select County --" Class="mb-3"
+                <MudSelect T="string" @bind-Value="_county" Label="@(Lang?.T("DealerDialog_County") ?? "County")" Clearable="true"
+                           Placeholder="@(Lang?.T("DealerDialog_SelectCounty") ?? "-- Select County --")" Class="mb-3"
                            Disabled="@string.IsNullOrEmpty(_state)">
                     @foreach (var county in _counties)
                     {
@@ -85,12 +85,12 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="12" sm="6">
-                <MudTextField @bind-Value="_phoneNumber" Label="Phone Number" Class="mb-3"
+                <MudTextField @bind-Value="_phoneNumber" Label="@(Lang?.T("PhoneNumber") ?? "Phone Number")" Class="mb-3"
                               Placeholder="+211..." />
             </MudItem>
             <MudItem xs="12">
-                <MudTextField @bind-Value="_physicalAddress" Label="Physical Address" Lines="2" Class="mb-3"
-                              Required="true" RequiredError="Physical address is required" />
+                <MudTextField @bind-Value="_physicalAddress" Label="@(Lang?.T("DealerDialog_PhysicalAddress") ?? "Physical Address")" Lines="2" Class="mb-3"
+                              Required="true" RequiredError="@(Lang?.T("DealerDialog_AddressRequired") ?? "Physical address is required")" />
             </MudItem>
 
             <!-- Document Upload -->
@@ -131,13 +131,14 @@
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="@_saving">Save</MudButton>
+        <MudButton OnClick="Cancel">@(Lang?.T("Cancel") ?? "Cancel")</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="@_saving">@(Lang?.T("Save") ?? "Save")</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
     [Parameter] public DealerDto? EditDealer { get; set; }
 
     private bool _saving;
@@ -182,7 +183,7 @@
     private string IdNumberLabel => _idType switch
     {
         "Passport" => "Passport Number",
-        "National ID" => "ID Number",
+        "National ID" => Lang?.T("Registration_IDNumber") ?? "ID Number",
         _ => "ID / Reference Number"
     };
 
@@ -291,12 +292,12 @@
     {
         if (string.IsNullOrWhiteSpace(_name))
         {
-            Snackbar.Add("Name is required", Severity.Warning);
+            Snackbar.Add(Lang?.T("NameRequired") ?? "Name is required", Severity.Warning);
             return;
         }
         if (string.IsNullOrWhiteSpace(_physicalAddress))
         {
-            Snackbar.Add("Physical address is required", Severity.Warning);
+            Snackbar.Add(Lang?.T("DealerDialog_AddressRequired") ?? "Physical address is required", Severity.Warning);
             return;
         }
 
@@ -316,20 +317,20 @@
                 await DealerService.UpdateDealerAsync(new UpdateDealerRequest(
                     EditDealer.Id, _type, _name, gender, idType, idTypeSpec, idNumber,
                     _companyRegNumber, nationality, _state, _county, _physicalAddress, _phoneNumber, documentPath));
-                Snackbar.Add("Dealer updated successfully", Severity.Success);
+                Snackbar.Add(Lang?.T("DealerDialog_Updated") ?? "Dealer updated successfully", Severity.Success);
             }
             else
             {
                 await DealerService.CreateDealerAsync(new CreateDealerRequest(
                     _type, _name, gender, idType, idTypeSpec, idNumber,
                     _companyRegNumber, nationality, _state, _county, _physicalAddress, _phoneNumber, documentPath));
-                Snackbar.Add("Dealer registered successfully", Severity.Success);
+                Snackbar.Add(Lang?.T("DealerDialog_Created") ?? "Dealer registered successfully", Severity.Success);
             }
             MudDialog.Close(DialogResult.Ok(true));
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
         }
         finally
         {

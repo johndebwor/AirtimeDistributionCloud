@@ -13,45 +13,46 @@
 
 <MudDialog>
     <DialogContent>
-        <MudTextField @bind-Value="_name" Label="Name" Required="true"
-                      RequiredError="Name is required" Class="mb-3" />
-        <MudSelect T="int" @bind-Value="_categoryId" Label="Category" Required="true"
-                   RequiredError="Category is required" Placeholder="-- Select Category --" Class="mb-3">
+        <MudTextField @bind-Value="_name" Label="@(Lang?.T("Name") ?? "Name")" Required="true"
+                      RequiredError="@(Lang?.T("NameRequired") ?? "Name is required")" Class="mb-3" />
+        <MudSelect T="int" @bind-Value="_categoryId" Label="@(Lang?.T("Category") ?? "Category")" Required="true"
+                   RequiredError="@(Lang?.T("CategoryRequired") ?? "Category is required")" Placeholder="@(Lang?.T("SelectCategory") ?? "-- Select Category --")" Class="mb-3">
             @foreach (var cat in Categories)
             {
                 <MudSelectItem T="int" Value="@cat.Id">@cat.Name</MudSelectItem>
             }
         </MudSelect>
-        <MudTextField @bind-Value="_serialNumber" Label="Serial Number" Class="mb-3" />
-        <MudTextField @bind-Value="_assetTag" Label="Asset Tag" Class="mb-3" />
-        <MudSelect T="int" @bind-Value="_branchId" Label="Branch" Required="true"
-                   RequiredError="Branch is required" Placeholder="-- Select Branch --" Class="mb-3">
+        <MudTextField @bind-Value="_serialNumber" Label="@(Lang?.T("AssetDetail_SerialNumber") ?? "Serial Number")" Class="mb-3" />
+        <MudTextField @bind-Value="_assetTag" Label="@(Lang?.T("AssetDetail_AssetTag") ?? "Asset Tag")" Class="mb-3" />
+        <MudSelect T="int" @bind-Value="_branchId" Label="@(Lang?.T("Branch") ?? "Branch")" Required="true"
+                   RequiredError="@(Lang?.T("BranchRequired") ?? "Branch is required")" Placeholder="@(Lang?.T("SelectBranch") ?? "-- Select Branch --")" Class="mb-3">
             @foreach (var b in Branches)
             {
                 <MudSelectItem T="int" Value="@b.Id">@b.Name</MudSelectItem>
             }
         </MudSelect>
-        <MudDatePicker @bind-Date="_purchaseDate" Label="Purchase Date" Class="mb-3"
+        <MudDatePicker @bind-Date="_purchaseDate" Label="@(Lang?.T("AssetDialog_PurchaseDate") ?? "Purchase Date")" Class="mb-3"
                        DateFormat="dd MMM yyyy" />
-        <MudSelect T="string" @bind-Value="_currency" Label="Currency" Required="true" Class="mb-3">
-            <MudSelectItem T="string" Value="@("SSP")">SSP - South Sudan Pound</MudSelectItem>
-            <MudSelectItem T="string" Value="@("USD")">USD - United States Dollar</MudSelectItem>
+        <MudSelect T="string" @bind-Value="_currency" Label="@(Lang?.T("AssetDetail_Currency") ?? "Currency")" Required="true"
+                   RequiredError="@(Lang?.T("AssetDialog_CurrencyRequired") ?? "Currency is required")" Class="mb-3">
+            <MudSelectItem T="string" Value="@("SSP")">@(Lang?.T("Settings_SSP") ?? "SSP - South Sudan Pound")</MudSelectItem>
+            <MudSelectItem T="string" Value="@("USD")">@(Lang?.T("Settings_USD") ?? "USD - United States Dollar")</MudSelectItem>
         </MudSelect>
         <div @ref="_purchaseValueRef">
             <MudTextField T="string" Value="@_purchaseValueDisplay" ValueChanged="OnPurchaseValueChanged"
-                          Label="Purchase Value" Required="true" RequiredError="Purchase value is required" Class="mb-3" />
+                          Label="@(Lang?.T("AssetDialog_PurchaseValue") ?? "Purchase Value")" Required="true" RequiredError="@(Lang?.T("AssetDialog_PurchaseValueRequired") ?? "Purchase value is required")" Class="mb-3" />
         </div>
         <div @ref="_currentValueRef">
             <MudTextField T="string" Value="@_currentValueDisplay" ValueChanged="OnCurrentValueChanged"
-                          Label="Current Value" Required="true" RequiredError="Current value is required" Class="mb-3" />
+                          Label="@(Lang?.T("AssetDialog_CurrentValue") ?? "Current Value")" Required="true" RequiredError="@(Lang?.T("AssetDialog_CurrentValueRequired") ?? "Current value is required")" Class="mb-3" />
         </div>
-        <MudNumericField T="int" @bind-Value="_usefulLifeMonths" Label="Useful Life (months)"
+        <MudNumericField T="int" @bind-Value="_usefulLifeMonths" Label="@(Lang?.T("AssetDialog_UsefulLife") ?? "Useful Life (months)")"
                          Min="1" Class="mb-3" />
-        <MudSelect T="string" @bind-Value="_depreciationMethod" Label="Depreciation Method" Class="mb-3">
-            <MudSelectItem T="string" Value="@("StraightLine")">Straight Line</MudSelectItem>
-            <MudSelectItem T="string" Value="@("DecliningBalance")">Declining Balance</MudSelectItem>
+        <MudSelect T="string" @bind-Value="_depreciationMethod" Label="@(Lang?.T("AssetDialog_DepreciationMethod") ?? "Depreciation Method")" Class="mb-3">
+            <MudSelectItem T="string" Value="@("StraightLine")">@(Lang?.T("AssetDialog_StraightLine") ?? "Straight Line")</MudSelectItem>
+            <MudSelectItem T="string" Value="@("DecliningBalance")">@(Lang?.T("AssetDialog_DecliningBalance") ?? "Declining Balance")</MudSelectItem>
         </MudSelect>
-        <MudSelect T="AssetCondition" @bind-Value="_condition" Label="Condition" Class="mb-3">
+        <MudSelect T="AssetCondition" @bind-Value="_condition" Label="@(Lang?.T("Assets_Condition") ?? "Condition")" Class="mb-3">
             @foreach (AssetCondition cond in Enum.GetValues<AssetCondition>())
             {
                 <MudSelectItem T="AssetCondition" Value="@cond">@cond</MudSelectItem>
@@ -59,7 +60,7 @@
         </MudSelect>
 
         @* --- Photos (multiple) --- *@
-        <MudText Typo="Typo.subtitle2" Class="mt-2 mb-1">Photos</MudText>
+        <MudText Typo="Typo.subtitle2" Class="mt-2 mb-1">@(Lang?.T("Photos") ?? "Photos")</MudText>
         @if (_existingPhotoPaths.Count > 0 || _newPhotoFiles.Count > 0)
         {
             <div class="d-flex flex-wrap gap-2 mb-2">
@@ -81,13 +82,13 @@
             <ActivatorContent>
                 <MudButton Variant="Variant.Outlined" Color="Color.Primary"
                            StartIcon="@Icons.Material.Filled.PhotoCamera" Class="mb-3">
-                    Add Photos
+                    @(Lang?.T("AssetDialog_AddPhotos") ?? "Add Photos")
                 </MudButton>
             </ActivatorContent>
         </MudFileUpload>
 
         @* --- Documents (multiple) --- *@
-        <MudText Typo="Typo.subtitle2" Class="mt-2 mb-1">Documents</MudText>
+        <MudText Typo="Typo.subtitle2" Class="mt-2 mb-1">@(Lang?.T("Documents") ?? "Documents")</MudText>
         @if (_existingDocumentPaths.Count > 0 || _newDocumentFiles.Count > 0)
         {
             <div class="d-flex flex-wrap gap-2 mb-2">
@@ -109,22 +110,23 @@
             <ActivatorContent>
                 <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
                            StartIcon="@Icons.Material.Filled.Description" Class="mb-3">
-                    Add Documents
+                    @(Lang?.T("AssetDialog_AddDocuments") ?? "Add Documents")
                 </MudButton>
             </ActivatorContent>
         </MudFileUpload>
 
-        <MudTextField @bind-Value="_notes" Label="Notes" Lines="3" Class="mb-3" />
+        <MudTextField @bind-Value="_notes" Label="@(Lang?.T("Notes") ?? "Notes")" Lines="3" Class="mb-3" />
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton OnClick="Cancel">@(Lang?.T("Cancel") ?? "Cancel")</MudButton>
         <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit"
-                   Disabled="@_saving">Save</MudButton>
+                   Disabled="@_saving">@(Lang?.T("Save") ?? "Save")</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
     [Parameter] public AssetDto? Asset { get; set; }
     [Parameter] public List<BranchDto> Branches { get; set; } = new();
     [Parameter] public List<AssetCategoryDto> Categories { get; set; } = new();
@@ -225,7 +227,7 @@
 
         if (string.IsNullOrWhiteSpace(_name) || _categoryId == 0 || _branchId == 0 || _purchaseValue <= 0)
         {
-            Snackbar.Add("Please fill in all required fields", Severity.Warning);
+            Snackbar.Add(Lang?.T("FillRequiredFields") ?? "Please fill in all required fields", Severity.Warning);
             return;
         }
 
@@ -259,7 +261,7 @@
                     _purchaseDate, _currency, _purchaseValue, _currentValue,
                     _usefulLifeMonths, _depreciationMethod,
                     _condition, photoPath, documentPath, _notes));
-                Snackbar.Add("Asset updated successfully", Severity.Success);
+                Snackbar.Add(Lang?.T("AssetDialog_Updated") ?? "Asset updated successfully", Severity.Success);
             }
             else
             {
@@ -270,14 +272,14 @@
                     _usefulLifeMonths, _depreciationMethod,
                     _condition, photoPath, documentPath, _notes),
                     CurrentUser.UserId ?? "");
-                Snackbar.Add("Asset created successfully", Severity.Success);
+                Snackbar.Add(Lang?.T("AssetDialog_Created") ?? "Asset created successfully", Severity.Success);
             }
 
             MudDialog.Close(DialogResult.Ok(true));
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
         }
         finally
         {
