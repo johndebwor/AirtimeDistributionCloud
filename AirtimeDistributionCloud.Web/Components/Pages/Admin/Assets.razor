@@ -1,0 +1,209 @@
+@page "/admin/assets"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "SystemAdmin,SuperAdministrator")]
+@using AirtimeDistributionCloud.Application.DTOs
+@using AirtimeDistributionCloud.Application.Services
+@using AirtimeDistributionCloud.Core.Enums
+@inject IAssetService AssetService
+@inject IBranchService BranchService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Asset Registry - RasidBase</PageTitle>
+
+<div class="page-header">
+    <h1>Asset Registry</h1>
+    <p>Track and manage company assets across all branches</p>
+</div>
+
+<div class="page-toolbar">
+    <MudTextField @bind-Value="_searchString" Placeholder="Search assets..." Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"
+                  Immediate="true" Style="max-width: 300px;" />
+    <MudChipSet T="string" SelectionMode="SelectionMode.SingleSelection" SelectedValue="_selectedStatus"
+                SelectedValueChanged="OnStatusFilterChanged" Class="ms-4">
+        <MudChip T="string" Value="@("All")" Default="true" Variant="Variant.Outlined">All</MudChip>
+        <MudChip T="string" Value="@("Active")" Color="Color.Success" Variant="Variant.Outlined">Active</MudChip>
+        <MudChip T="string" Value="@("InMaintenance")" Color="Color.Warning" Variant="Variant.Outlined">In Maintenance</MudChip>
+        <MudChip T="string" Value="@("Disposed")" Color="Color.Error" Variant="Variant.Outlined">Disposed</MudChip>
+        <MudChip T="string" Value="@("WrittenOff")" Color="Color.Dark" Variant="Variant.Outlined">Written Off</MudChip>
+    </MudChipSet>
+    <MudSpacer />
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+               OnClick="OpenCreateDialog">New Asset</MudButton>
+</div>
+
+<MudPaper Elevation="0" Class="data-card pa-4">
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    <MudDataGrid T="AssetDto" Items="@_filteredAssets" Filterable="false" SortMode="SortMode.Multiple"
+                 Loading="@_loading" Dense="true" Hover="true" Striped="true"
+                 QuickFilter="@(new Func<AssetDto, bool>(FilterFunc))">
+        <Columns>
+            <PropertyColumn Property="x => x.Id" Title="ID" />
+            <PropertyColumn Property="x => x.Name" Title="Name" />
+            <TemplateColumn Title="Category" Sortable="false">
+                <CellTemplate>
+                    <MudChip T="string" Color="Color.Info" Size="Size.Small">@context.Item.CategoryName</MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.SerialNumber" Title="Serial #" />
+            <PropertyColumn Property="x => x.BranchName" Title="Branch" />
+            <TemplateColumn Title="Condition" Sortable="false">
+                <CellTemplate>
+                    @{
+                        var condColor = context.Item.Condition switch
+                        {
+                            AssetCondition.New => Color.Info,
+                            AssetCondition.Good => Color.Success,
+                            AssetCondition.Fair => Color.Warning,
+                            AssetCondition.Poor => Color.Error,
+                            _ => Color.Default
+                        };
+                    }
+                    <MudChip T="string" Color="@condColor" Size="Size.Small">@context.Item.Condition</MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Status" Sortable="false">
+                <CellTemplate>
+                    @{
+                        var statusColor = context.Item.Status switch
+                        {
+                            AssetStatus.Active => Color.Success,
+                            AssetStatus.InMaintenance => Color.Warning,
+                            AssetStatus.Disposed => Color.Error,
+                            AssetStatus.WrittenOff => Color.Dark,
+                            _ => Color.Default
+                        };
+                    }
+                    <MudChip T="string" Color="@statusColor" Size="Size.Small">@context.Item.Status</MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Purchase Value" Sortable="true">
+                <CellTemplate>
+                    @context.Item.PurchaseValue.ToString("N2")
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Book Value" Sortable="true">
+                <CellTemplate>
+                    @context.Item.BookValue.ToString("N2")
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Actions" Sortable="false">
+                <CellTemplate>
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary"
+                                   OnClick="@(() => OpenEditDialog(context.Item))" Title="Edit" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Color="Color.Info"
+                                   OnClick="@(() => ViewAsset(context.Item.Id))" Title="View Details" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <NoRecordsContent>
+            <MudText>No assets found.</MudText>
+        </NoRecordsContent>
+    </MudDataGrid>
+</MudPaper>
+
+@code {
+    private List<AssetDto> _assets = new();
+    private List<AssetDto> _filteredAssets = new();
+    private string _searchString = "";
+    private string _selectedStatus = "All";
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAssets();
+    }
+
+    private async Task LoadAssets()
+    {
+        _loading = true;
+        try
+        {
+            _assets = (await AssetService.GetAllAssetsAsync()).ToList();
+            ApplyStatusFilter();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading assets: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void OnStatusFilterChanged(string value)
+    {
+        _selectedStatus = value ?? "All";
+        ApplyStatusFilter();
+    }
+
+    private void ApplyStatusFilter()
+    {
+        if (_selectedStatus == "All" || string.IsNullOrEmpty(_selectedStatus))
+        {
+            _filteredAssets = _assets;
+        }
+        else if (Enum.TryParse<AssetStatus>(_selectedStatus, out var status))
+        {
+            _filteredAssets = _assets.Where(a => a.Status == status).ToList();
+        }
+        else
+        {
+            _filteredAssets = _assets;
+        }
+    }
+
+    private bool FilterFunc(AssetDto asset) =>
+        string.IsNullOrWhiteSpace(_searchString) ||
+        asset.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ||
+        (asset.SerialNumber?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false) ||
+        (asset.AssetTag?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false) ||
+        asset.CategoryName.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ||
+        asset.BranchName.Contains(_searchString, StringComparison.OrdinalIgnoreCase);
+
+    private async Task OpenCreateDialog()
+    {
+        var branches = (await BranchService.GetAllBranchesAsync()).Where(b => b.IsActive).ToList();
+        var categories = (await AssetService.GetActiveCategoriesAsync()).ToList();
+
+        var parameters = new DialogParameters<AssetDialog>
+        {
+            { x => x.Branches, branches },
+            { x => x.Categories, categories }
+        };
+        var dialog = await DialogService.ShowAsync<AssetDialog>("New Asset", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+            await LoadAssets();
+    }
+
+    private async Task OpenEditDialog(AssetDto asset)
+    {
+        var branches = (await BranchService.GetAllBranchesAsync()).Where(b => b.IsActive).ToList();
+        var categories = (await AssetService.GetActiveCategoriesAsync()).ToList();
+
+        var parameters = new DialogParameters<AssetDialog>
+        {
+            { x => x.Asset, asset },
+            { x => x.Branches, branches },
+            { x => x.Categories, categories }
+        };
+        var dialog = await DialogService.ShowAsync<AssetDialog>("Edit Asset", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+            await LoadAssets();
+    }
+
+    private void ViewAsset(int assetId)
+    {
+        Navigation.NavigateTo($"/admin/assets/{assetId}");
+    }
+}

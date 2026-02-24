@@ -1,0 +1,117 @@
+@rendermode InteractiveServer
+@using AirtimeDistributionCloud.Application.DTOs
+@using AirtimeDistributionCloud.Application.Services
+@using AirtimeDistributionCloud.Core.Interfaces
+@inject IAssetService AssetService
+@inject ICurrentUserService CurrentUser
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+
+<MudDialog>
+    <DialogContent>
+        <MudDatePicker @bind-Date="_maintenanceDate" Label="Maintenance Date" Required="true"
+                       RequiredError="Date is required" DateFormat="dd MMM yyyy" Class="mb-3" />
+        <MudTextField @bind-Value="_description" Label="Description" Required="true"
+                      RequiredError="Description is required" Class="mb-3" />
+        <div @ref="_costRef">
+            <MudTextField T="string" Value="@_costDisplay" ValueChanged="OnCostChanged"
+                          Label="Cost" Class="mb-3" />
+        </div>
+        <MudDatePicker @bind-Date="_nextScheduledDate" Label="Next Scheduled Date"
+                       DateFormat="dd MMM yyyy" Class="mb-3" />
+        <MudTextField @bind-Value="_performedBy" Label="Performed By" Class="mb-3" />
+        <MudTextField @bind-Value="_notes" Label="Notes" Lines="3" Class="mb-3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit"
+                   Disabled="@_saving">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public int AssetId { get; set; }
+
+    private bool _saving;
+    private DateTime? _maintenanceDate = DateTime.Today;
+    private string _description = string.Empty;
+    private decimal _cost;
+    private string _costDisplay = "";
+    private DateTime? _nextScheduledDate;
+    private string? _performedBy;
+    private string? _notes;
+
+    private ElementReference _costRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("initNumericFormat", _costRef);
+        }
+    }
+
+    private void OnCostChanged(string value)
+    {
+        _costDisplay = FormatNumber(value);
+        _cost = ParseNumber(value);
+    }
+
+    private async Task Submit()
+    {
+        var rawCost = await JS.InvokeAsync<string>("getNumericInputValue", _costRef);
+        _cost = ParseNumber(rawCost);
+
+        if (_maintenanceDate is null || string.IsNullOrWhiteSpace(_description))
+        {
+            Snackbar.Add("Please fill in all required fields", Severity.Warning);
+            return;
+        }
+
+        _saving = true;
+        try
+        {
+            await AssetService.AddMaintenanceRecordAsync(
+                new CreateAssetMaintenanceRequest(AssetId, _maintenanceDate.Value, _description,
+                    _cost, _nextScheduledDate, _performedBy, _notes),
+                CurrentUser.UserId ?? "");
+            Snackbar.Add("Maintenance record added successfully", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private static string FormatNumber(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return "";
+        var clean = "";
+        var hasDecimal = false;
+        foreach (var c in input)
+        {
+            if (char.IsDigit(c)) clean += c;
+            else if (c == '.' && !hasDecimal) { clean += c; hasDecimal = true; }
+        }
+        if (string.IsNullOrEmpty(clean)) return "";
+        var parts = clean.Split('.');
+        if (long.TryParse(parts[0], out var intPart))
+            parts[0] = intPart.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("en-US"));
+        return parts.Length > 1 ? $"{parts[0]}.{parts[1]}" : parts[0];
+    }
+
+    private static decimal ParseNumber(string formatted)
+    {
+        var clean = new string(formatted.Where(c => char.IsDigit(c) || c == '.').ToArray());
+        return decimal.TryParse(clean, System.Globalization.NumberStyles.Any,
+            System.Globalization.CultureInfo.InvariantCulture, out var val) ? val : 0;
+    }
+}

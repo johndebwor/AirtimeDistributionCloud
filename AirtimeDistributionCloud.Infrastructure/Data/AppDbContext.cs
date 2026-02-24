@@ -33,6 +33,10 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
     public DbSet<UserPreference> UserPreferences => Set<UserPreference>();
     public DbSet<PagePermission> PagePermissions => Set<PagePermission>();
+    public DbSet<Asset> Assets => Set<Asset>();
+    public DbSet<AssetCategory> AssetCategories => Set<AssetCategory>();
+    public DbSet<AssetAssignment> AssetAssignments => Set<AssetAssignment>();
+    public DbSet<AssetMaintenance> AssetMaintenanceRecords => Set<AssetMaintenance>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

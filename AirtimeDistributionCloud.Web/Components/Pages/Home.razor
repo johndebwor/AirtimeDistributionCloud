@@ -561,6 +561,47 @@ else
             </MudCard>
         </MudItem>
 
+        <!-- Analytics Quick-Glance Cards -->
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Class="stat-card" Elevation="0" Style="border-left: 4px solid #0D9488 !important;"
+                     @onclick="@(() => Navigation.NavigateTo("/admin/analytics"))">
+                <MudCardContent>
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <div>
+                            <MudText Typo="Typo.overline" Color="Color.Secondary">STOCK VALUE</MudText>
+                            <MudText Typo="Typo.h5" Style="font-weight:700;">@_currentStockValue.ToString("C2")</MudText>
+                            <MudText Typo="Typo.caption" Style="color:#0D9488;">@_stockUtilization.ToString("N1")% utilized</MudText>
+                        </div>
+                        <MudAvatar Style="color:#0D9488; border-color:#0D9488;" Variant="Variant.Outlined" Size="Size.Large">
+                            <MudIcon Icon="@Icons.Material.Filled.Inventory2" />
+                        </MudAvatar>
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Class="stat-card" Elevation="0" Style="border-left: 4px solid #7C3AED !important;"
+                     @onclick="@(() => Navigation.NavigateTo("/admin/analytics"))">
+                <MudCardContent>
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <div>
+                            <MudText Typo="Typo.overline" Color="Color.Secondary">NET CAPITAL</MudText>
+                            <MudText Typo="Typo.h5" Style="@($"font-weight:700;{(_netCapital < 0 ? "color:#EF4444;" : "")}")">
+                                @(_netCapital < 0 ? $"-{Math.Abs(_netCapital).ToString("C2")}" : _netCapital.ToString("C2"))
+                            </MudText>
+                            <MudText Typo="Typo.caption" Style="@(_grossProfit >= 0 ? "color:#16A34A;" : "color:#EF4444;")">
+                                Profit: @_grossProfit.ToString("C2")
+                            </MudText>
+                        </div>
+                        <MudAvatar Style="color:#7C3AED; border-color:#7C3AED;" Variant="Variant.Outlined" Size="Size.Large">
+                            <MudIcon Icon="@Icons.Material.Filled.TrendingUp" />
+                        </MudAvatar>
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
         <!-- Quick Actions -->
         <MudItem xs="12">
             <MudPaper Elevation="0" Class="data-card pa-4">
@@ -854,6 +895,7 @@ else
     private int _pendingDepositsCount, _approvedDepositsCount, _rejectedDepositsCount, _cancelledDepositsCount;
     private int _pendingTransfersCount;
     private decimal _totalTransferAmount, _totalCashDeposits, _totalApprovedValue, _totalBalance;
+    private decimal _currentStockValue, _stockUtilization, _netCapital, _grossProfit;
     private string[] _monthlyLabels = [];
     private double[] _monthlyTransferAmounts = [];
     private double[] _monthlyCashDepositAmounts = [];
@@ -977,15 +1019,16 @@ else
         var airtimeDepositsTask = RunInScope(sp => sp.GetRequiredService<IAirtimeDepositService>().GetAllDepositsAsync());
         var branchesTask = RunInScope(sp => sp.GetRequiredService<IBranchService>().GetAllBranchesAsync());
         var auditTask = RunInScope(sp => sp.GetRequiredService<IAuditLogService>().GetRecentLogsAsync(8));
+        var expensesTask = RunInScope(sp => sp.GetRequiredService<IExpenseService>().GetAllExpensesAsync());
 
-        await Task.WhenAll(productsTask, dealersTask, transfersTask, cashDepositsTask, airtimeDepositsTask, branchesTask, auditTask);
+        await Task.WhenAll(productsTask, dealersTask, transfersTask, cashDepositsTask, airtimeDepositsTask, branchesTask, auditTask, expensesTask);
 
         _products = productsTask.Result.ToList();
         _dealerCount = dealersTask.Result.Count;
 
         var transfers = transfersTask.Result;
         _transferCount = transfers.Count;
-        _totalTransferAmount = transfers.Where(t => t.Status == DepositStatus.Approved).Sum(t => t.Amount);
+        _totalTransferAmount = transfers.Where(t => t.Status == DepositStatus.Approved).Sum(t => t.LoanAmount);
         _recentTransfers = transfers.OrderByDescending(t => t.CreatedDate).Take(5).ToList();
         _pendingTransfersCount = transfers.Count(t => t.Status == DepositStatus.Pending);
 
@@ -1014,6 +1057,16 @@ else
         _monthlyCashDepositAmounts = months.Select(m =>
             (double)cashDeposits.Where(d => d.DepositDate.Year == m.Year && d.DepositDate.Month == m.Month)
                 .Sum(d => d.Amount)).ToArray();
+
+        // Analytics quick-glance
+        _currentStockValue = _products.Sum(p => p.AirtimeAccountBalance);
+        var totalPurchased = airtimeDeposits.Where(d => d.Status == DepositStatus.Approved).Sum(d => d.TotalAmount);
+        var totalDistributed = transfers.Where(t => t.Status == DepositStatus.Approved).Sum(t => t.LoanAmount);
+        _stockUtilization = totalPurchased > 0 ? totalDistributed / totalPurchased * 100 : 0;
+        var totalInvestment = airtimeDeposits.Where(d => d.Status == DepositStatus.Approved).Sum(d => d.Amount);
+        var totalExpenses = expensesTask.Result.Where(e => e.Status == DepositStatus.Approved).Sum(e => e.Amount);
+        _netCapital = _totalCashDeposits + _currentStockValue - totalExpenses;
+        _grossProfit = _totalCashDeposits - totalInvestment - totalExpenses;
     }
 
     private async Task LoadDealerData()

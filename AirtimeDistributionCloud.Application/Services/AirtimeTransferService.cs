@@ -98,7 +98,7 @@ public class AirtimeTransferService : IAirtimeTransferService
             transfer.TransferType, transfer.Status, transfer.CreatedDate);
     }
 
-    public async Task<AirtimeTransferDto> ApproveTransferAsync(int transferId, string approvedByUserId, string notes, CancellationToken cancellationToken = default)
+    public async Task<(AirtimeTransferDto Transfer, NotificationResult Notification)> ApproveTransferAsync(int transferId, string approvedByUserId, string notes, CancellationToken cancellationToken = default)
     {
         var transfer = await _transferRepository.GetByIdAsync(transferId, cancellationToken)
             ?? throw new KeyNotFoundException($"Transfer with Id {transferId} not found");
@@ -132,9 +132,10 @@ public class AirtimeTransferService : IAirtimeTransferService
         await _productRepository.UpdateAsync(product, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        var notification = new NotificationResult(new List<string>());
         try
         {
-            await _notificationService.SendTransferApprovalNotificationAsync(transfer.Id, cancellationToken);
+            notification = await _notificationService.SendTransferApprovalNotificationAsync(transfer.Id, cancellationToken);
         }
         catch
         {
@@ -142,10 +143,11 @@ public class AirtimeTransferService : IAirtimeTransferService
         }
 
         var branch = await _unitOfWork.Repository<Branch>().GetByIdAsync(transfer.BranchId, cancellationToken);
-        return new AirtimeTransferDto(transfer.Id, transfer.BranchId, branch?.Name ?? "",
+        var dto = new AirtimeTransferDto(transfer.Id, transfer.BranchId, branch?.Name ?? "",
             transfer.ProductId, product.Name, transfer.DealerId, dealer.Name,
             transfer.Amount, transfer.LoanAmount, transfer.CommissionAmount,
             transfer.TransferType, transfer.Status, transfer.CreatedDate);
+        return (dto, notification);
     }
 
     public async Task<AirtimeTransferDto> CancelTransferAsync(int transferId, string cancelledByUserId, string reason, CancellationToken cancellationToken = default)

@@ -70,6 +70,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
 
+app.UseStaticFiles(); // Serve runtime-uploaded files (e.g. /uploads/)
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

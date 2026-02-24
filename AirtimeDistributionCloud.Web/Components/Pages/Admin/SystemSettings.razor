@@ -154,7 +154,8 @@ else
                         Available placeholders:
                         <code>@("{{Name}}")</code>, <code>@("{{DealerNumber}}")</code>, <code>@("{{AirtimeTransferId}}")</code>,
                         <code>@("{{Product}}")</code>, <code>@("{{AirtimeAmount}}")</code>, <code>@("{{CommissionAmount}}")</code>,
-                        <code>@("{{Branch}}")</code>, <code>@("{{CreatedDate}}")</code>, <code>@("{{TotalBalance}}")</code>
+                        <code>@("{{Branch}}")</code>, <code>@("{{CreatedDate}}")</code>, <code>@("{{TotalBalance}}")</code>,
+                        <code>@("{{TotalCommission}}")</code>, <code>@("{{CashBalance}}")</code>, <code>@("{{CompanyName}}")</code>
                     </MudText>
                     <MudGrid>
                         <MudItem xs="12" md="6">
@@ -256,6 +257,42 @@ else
         </MudGrid>
     </MudPaper>
 
+    <!-- WhatsApp Business API Configuration -->
+    <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
+        <div class="d-flex align-center gap-2 mb-3">
+            <MudIcon Icon="@Icons.Custom.Brands.WhatsApp" />
+            <MudText Typo="Typo.h6">WhatsApp Business API</MudText>
+        </div>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+            Configure Meta WhatsApp Business Cloud API credentials to send messages directly to dealers.
+            Required when using the "Dealer WhatsApp" notification method.
+        </MudText>
+
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_whatsAppApiPhoneNumberId" Label="Phone Number ID" Variant="Variant.Outlined"
+                              Margin="Margin.Dense" Placeholder="e.g. 123456789012345"
+                              HelperText="From your Meta WhatsApp Business dashboard" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_whatsAppApiAccessToken" Label="Access Token" Variant="Variant.Outlined"
+                              Margin="Margin.Dense" Placeholder="EAAxxxxxxx..."
+                              InputType="@(_showWhatsAppToken ? InputType.Text : InputType.Password)"
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@(_showWhatsAppToken ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                              OnAdornmentClick="@(() => _showWhatsAppToken = !_showWhatsAppToken)" />
+            </MudItem>
+
+            <MudItem xs="12">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                           OnClick="SaveWhatsAppApiSettings" Disabled="@_savingWhatsApp"
+                           StartIcon="@Icons.Material.Filled.Save">
+                    @(_savingWhatsApp ? "Saving..." : "Save WhatsApp API Settings")
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
     <!-- Danger Zone (Formulas) -->
     @if (_settings.Any(s => IsDangerSetting(s.Key)))
     {
@@ -341,6 +378,12 @@ else
     private string _testEmailAddress = "";
     private bool _showPassword;
 
+    // WhatsApp API configuration state
+    private string _whatsAppApiAccessToken = "";
+    private string _whatsAppApiPhoneNumberId = "";
+    private bool _savingWhatsApp;
+    private bool _showWhatsAppToken;
+
     // General settings display order (AirtimeDepositAutoApprove handled as toggle above)
     private static readonly string[] GeneralSettingsOrder =
         ["ExpenseApprovalThreshold", "CommissionMinPercentage", "CommissionMaxPercentage"];
@@ -355,6 +398,9 @@ else
     private static readonly HashSet<string> EmailKeys =
         ["SmtpHost", "SmtpPort", "SmtpUsername", "SmtpPassword",
          "SmtpSenderEmail", "SmtpSenderName", "SmtpUseSsl"];
+
+    private static readonly HashSet<string> WhatsAppApiKeys =
+        ["WhatsAppApiAccessToken", "WhatsAppApiPhoneNumberId"];
 
     private static readonly HashSet<string> CompanyKeys =
         ["CompanyName", "CompanyAbbreviation", "CompanyAddress", "CompanyTel1", "CompanyTel2", "CompanyTel3",
@@ -413,6 +459,10 @@ else
         _smtpSenderName = dict.GetValueOrDefault("SmtpSenderName", "");
         _smtpUseSsl = !dict.TryGetValue("SmtpUseSsl", out var ssl) ||
                       string.Equals(ssl, "Yes", StringComparison.OrdinalIgnoreCase);
+
+        // WhatsApp API configuration
+        _whatsAppApiAccessToken = dict.GetValueOrDefault("WhatsAppApiAccessToken", "");
+        _whatsAppApiPhoneNumberId = dict.GetValueOrDefault("WhatsAppApiPhoneNumberId", "");
     }
 
     private IEnumerable<SystemSetting> GetGeneralSettings()
@@ -429,7 +479,8 @@ else
                                                !GeneralSettingsOrder.Contains(s.Key) &&
                                                !ToggleKeys.Contains(s.Key) &&
                                                !CompanyKeys.Contains(s.Key) &&
-                                               !EmailKeys.Contains(s.Key)))
+                                               !EmailKeys.Contains(s.Key) &&
+                                               !WhatsAppApiKeys.Contains(s.Key)))
             yield return s;
     }
 
@@ -561,6 +612,9 @@ else
             .Replace("{{Branch}}", "<strong>Main Branch</strong>")
             .Replace("{{CreatedDate}}", $"<strong>{DateTime.Now:dd/MM/yyyy HH:mm}</strong>")
             .Replace("{{TotalBalance}}", "<strong>150,000.00</strong>")
+            .Replace("{{TotalCommission}}", "<strong>25,000.00</strong>")
+            .Replace("{{CashBalance}}", "<strong>75,000.00</strong>")
+            .Replace("{{CompanyName}}", "<strong>Guru Brothers Ltd</strong>")
             .Replace("\n", "<br />");
 
         return preview;
@@ -637,6 +691,41 @@ else
         finally
         {
             _savingEmail = false;
+        }
+    }
+
+    // --- WhatsApp API configuration ---
+
+    private async Task SaveWhatsAppApiSettings()
+    {
+        _savingWhatsApp = true;
+        try
+        {
+            var waSettings = new Dictionary<string, string>
+            {
+                ["WhatsAppApiAccessToken"] = _whatsAppApiAccessToken,
+                ["WhatsAppApiPhoneNumberId"] = _whatsAppApiPhoneNumberId
+            };
+
+            foreach (var (key, value) in waSettings)
+            {
+                var setting = _settings.FirstOrDefault(s => s.Key == key);
+                if (setting is not null)
+                {
+                    setting.Value = value;
+                    await UnitOfWork.Repository<SystemSetting>().UpdateAsync(setting);
+                }
+            }
+            await UnitOfWork.SaveChangesAsync();
+            Snackbar.Add("WhatsApp API settings saved", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _savingWhatsApp = false;
         }
     }
 

@@ -17,8 +17,8 @@
 </div>
 
 <div class="page-toolbar">
-    <MudChipSet T="string" SelectedValuesChanged="OnFilterChanged" SelectionMode="SelectionMode.SingleSelection">
-        <MudChip T="string" Value="@("Pending")" Default="true" Color="Color.Warning" Variant="Variant.Outlined">Pending</MudChip>
+    <MudChipSet T="string" SelectedValue="_currentFilter" SelectedValueChanged="OnFilterChanged" SelectionMode="SelectionMode.SingleSelection">
+        <MudChip T="string" Value="@("Pending")" Color="Color.Warning" Variant="Variant.Outlined">Pending</MudChip>
         <MudChip T="string" Value="@("Approved")" Color="Color.Success" Variant="Variant.Outlined">Approved</MudChip>
         <MudChip T="string" Value="@("Rejected")" Color="Color.Error" Variant="Variant.Outlined">Rejected</MudChip>
         <MudChip T="string" Value="@("All")" Variant="Variant.Outlined">All</MudChip>
@@ -141,9 +141,9 @@
         }
     }
 
-    private void OnFilterChanged(IReadOnlyCollection<string> values)
+    private void OnFilterChanged(string value)
     {
-        _currentFilter = values.FirstOrDefault() ?? "Pending";
+        _currentFilter = value ?? "Pending";
         ApplyFilter();
     }
 

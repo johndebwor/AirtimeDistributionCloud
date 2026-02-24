@@ -1,0 +1,64 @@
+@rendermode InteractiveServer
+@using AirtimeDistributionCloud.Application.DTOs
+@using AirtimeDistributionCloud.Application.Services
+@using AirtimeDistributionCloud.Core.Interfaces
+@inject IAssetService AssetService
+@inject ICurrentUserService CurrentUser
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudSelect T="int" @bind-Value="_branchId" Label="Branch" Required="true"
+                   RequiredError="Branch is required" Placeholder="-- Select Branch --" Class="mb-3">
+            @foreach (var b in Branches)
+            {
+                <MudSelectItem T="int" Value="@b.Id">@b.Name</MudSelectItem>
+            }
+        </MudSelect>
+        <MudTextField @bind-Value="_notes" Label="Notes" Lines="3" Class="mb-3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit"
+                   Disabled="@_saving">Assign</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public int AssetId { get; set; }
+    [Parameter] public List<BranchDto> Branches { get; set; } = new();
+
+    private bool _saving;
+    private int _branchId;
+    private string? _notes;
+
+    private async Task Submit()
+    {
+        if (_branchId == 0)
+        {
+            Snackbar.Add("Please select a branch", Severity.Warning);
+            return;
+        }
+
+        _saving = true;
+        try
+        {
+            await AssetService.AssignAssetAsync(
+                new CreateAssetAssignmentRequest(AssetId, _branchId, null, _notes),
+                CurrentUser.UserId ?? "");
+            Snackbar.Add("Asset assigned successfully", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

@@ -23,7 +23,7 @@
             <PropertyColumn Property="x => x.DealerType" Title="Type" />
             <TemplateColumn Title="Cash Balance">
                 <CellTemplate>
-                    <MudText Color="@(context.Item.CashBalance == 0 ? Color.Success : Color.Error)">
+                    <MudText Color="@(context.Item.CashBalance > 0 ? Color.Success : context.Item.CashBalance < 0 ? Color.Error : Color.Default)">
                         @context.Item.CashBalance.ToString("C6")
                     </MudText>
                 </CellTemplate>

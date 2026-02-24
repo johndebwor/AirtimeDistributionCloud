@@ -89,13 +89,16 @@ public static class SeedData
                 ["SmtpSenderEmail"] = ("", "Email address shown as the sender (From)"),
                 ["SmtpSenderName"] = ("RasidBase", "Display name shown as the sender"),
                 ["SmtpUseSsl"] = ("Yes", "Use SSL/TLS encryption for SMTP connection (Yes/No)"),
+                // WhatsApp Business API
+                ["WhatsAppApiAccessToken"] = ("", "Meta WhatsApp Business API access token (Bearer token)"),
+                ["WhatsAppApiPhoneNumberId"] = ("", "WhatsApp Business phone number ID from Meta dashboard"),
                 // Notifications
                 ["TransferNotificationEnabled"] = ("No", "Enable dealer notifications on transfer approval (Yes/No)"),
                 ["TransferNotificationMethod"] = ("Email", "Notification method: Email, DealerWhatsApp, or WhatsAppGroup"),
                 ["TransferNotificationWhatsAppGroupUrl"] = ("", "WhatsApp group invite URL (used when method is WhatsAppGroup)"),
                 ["TransferNotificationTemplate"] = (
-                    "Dear {{Name}},\nYour request to transfer {{AirtimeAmount}} SSP of airtime has been approved.\n\nDetails of the transfer to dealer Number [{{DealerNumber}}]:\nReference No.: {{AirtimeTransferId}}\nProduct: {{Product}}\nAirtime Amount: {{AirtimeAmount}} SSP\nCommission Amount: {{CommissionAmount}} SSP\nBranch: {{Branch}}\nDate/Time: {{CreatedDate}}\n------------------------------\nTotal balance: {{TotalBalance}} SSP",
-                    "Message template for transfer approval notifications. Placeholders: {{Name}}, {{DealerNumber}}, {{AirtimeTransferId}}, {{Product}}, {{AirtimeAmount}}, {{CommissionAmount}}, {{Branch}}, {{CreatedDate}}, {{TotalBalance}}"
+                    "Dear {{Name}},\nYour request to transfer {{AirtimeAmount}} SSP of airtime has been approved.\n\nDetails of the transfer to dealer Number [{{DealerNumber}}]:\nReference No.: {{AirtimeTransferId}}\nProduct: {{Product}}\nAirtime Amount: {{AirtimeAmount}} SSP\nCommission Amount: {{CommissionAmount}} SSP\nBranch: {{Branch}}\nDate/Time: {{CreatedDate}}\n------------------------------\nTotal balance: {{TotalBalance}} SSP\nTotal commission: {{TotalCommission}} SSP\nCash balance: {{CashBalance}} SSP\n\nBest regards,\n{{CompanyName}} Administration",
+                    "Message template for transfer approval notifications. Placeholders: {{Name}}, {{DealerNumber}}, {{AirtimeTransferId}}, {{Product}}, {{AirtimeAmount}}, {{CommissionAmount}}, {{Branch}}, {{CreatedDate}}, {{TotalBalance}}, {{TotalCommission}}, {{CashBalance}}, {{CompanyName}}"
                 ),
             };
             var existingKeys = context.SystemSettings.Select(s => s.Key).ToHashSet();
@@ -112,6 +115,16 @@ public static class SeedData
             {
                 await context.SaveChangesAsync();
                 logger.LogInformation("Seeded default system settings");
+            }
+
+            // Remove deprecated settings no longer in defaults
+            var deprecatedKeys = new[] { "CashDepositFormula" };
+            var toRemove = context.SystemSettings.Where(s => deprecatedKeys.Contains(s.Key)).ToList();
+            if (toRemove.Count > 0)
+            {
+                context.SystemSettings.RemoveRange(toRemove);
+                await context.SaveChangesAsync();
+                logger.LogInformation("Removed deprecated settings: {Keys}", string.Join(", ", toRemove.Select(s => s.Key)));
             }
 
             // Seed default expense categories
@@ -144,6 +157,38 @@ public static class SeedData
                 logger.LogInformation("Seeded default expense categories");
             }
 
+            // Seed default asset categories
+            var defaultAssetCategories = new (string Name, string Description)[]
+            {
+                ("IT Equipment", "Computers, laptops, tablets, printers, and peripherals"),
+                ("Telecom Equipment", "SIM cards, modems, routers, Starlink devices"),
+                ("Vehicles", "Cars, trucks, and other motor vehicles"),
+                ("Motorbikes", "Motorcycles and scooters"),
+                ("Furniture", "Office desks, chairs, cabinets, and furnishings"),
+                ("Office Equipment", "Projectors, whiteboards, safes, and general equipment"),
+                ("Other", "Miscellaneous assets not covered by other categories"),
+            };
+            var existingAssetCatNames = context.AssetCategories.Select(c => c.Name).ToHashSet();
+            var assetCatsAdded = false;
+            foreach (var (name, description) in defaultAssetCategories)
+            {
+                if (!existingAssetCatNames.Contains(name))
+                {
+                    context.AssetCategories.Add(new Core.Entities.AssetCategory
+                    {
+                        Name = name,
+                        Description = description,
+                        IsActive = true
+                    });
+                    assetCatsAdded = true;
+                }
+            }
+            if (assetCatsAdded)
+            {
+                await context.SaveChangesAsync();
+                logger.LogInformation("Seeded default asset categories");
+            }
+
             // Seed default page permissions
             var defaultPermissions = new (string Role, string Page)[]
             {
@@ -156,6 +201,9 @@ public static class SeedData
                 ("SuperAdministrator", "admin.expense-approvals"),
                 ("SuperAdministrator", "admin.expense-categories"),
                 ("SuperAdministrator", "admin.settings"),
+                ("SuperAdministrator", "admin.analytics"),
+                ("SuperAdministrator", "admin.assets"),
+                ("SuperAdministrator", "admin.asset-categories"),
                 ("SuperAdministrator", "dealer.registration"),
                 ("SuperAdministrator", "dealer.transfers"),
                 ("SuperAdministrator", "dealer.commissions"),

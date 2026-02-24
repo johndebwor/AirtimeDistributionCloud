@@ -19,7 +19,10 @@ public static class DependencyInjection
         services.AddScoped<Services.IUserPreferenceService, Services.UserPreferenceService>();
         services.AddScoped<Services.IPermissionService, Services.PermissionService>();
         services.AddScoped<Services.IExpenseCategoryService, Services.ExpenseCategoryService>();
+        services.AddHttpClient();
         services.AddScoped<Services.INotificationService, Services.NotificationService>();
+        services.AddScoped<Services.IAnalyticsService, Services.AnalyticsService>();
+        services.AddScoped<Services.IAssetService, Services.AssetService>();
 
         return services;
     }

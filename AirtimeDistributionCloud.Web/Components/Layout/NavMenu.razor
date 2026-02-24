@@ -44,6 +44,14 @@
         {
             <MudNavLink Href="/admin/reports" Icon="@Icons.Material.Outlined.Assessment">Reports</MudNavLink>
         }
+        @if (_allowed.Contains("admin.analytics"))
+        {
+            <MudNavLink Href="/admin/analytics" Icon="@Icons.Material.Outlined.TrendingUp">Sales & Capital</MudNavLink>
+        }
+        @if (_allowed.Contains("admin.assets"))
+        {
+            <MudNavLink Href="/admin/assets" Icon="@Icons.Material.Outlined.Inventory">Asset Registry</MudNavLink>
+        }
         @if (_settingsVisible)
         {
             <MudNavGroup Title="System Settings" Icon="@Icons.Material.Outlined.Settings" Expanded="false">
@@ -55,6 +63,10 @@
                 @if (_allowed.Contains("admin.expense-categories"))
                 {
                     <MudNavLink Href="/admin/expense-categories" Icon="@Icons.Material.Outlined.Category">Expense Categories</MudNavLink>
+                }
+                @if (_allowed.Contains("admin.asset-categories"))
+                {
+                    <MudNavLink Href="/admin/asset-categories" Icon="@Icons.Material.Outlined.Class">Asset Categories</MudNavLink>
                 }
             </MudNavGroup>
         }
@@ -160,7 +172,7 @@
         }
 
         _adminVisible = IPermissionService.AdminKeys.Any(k => _allowed.Contains(k));
-        _settingsVisible = _allowed.Contains("admin.settings") || _allowed.Contains("admin.expense-categories");
+        _settingsVisible = _allowed.Contains("admin.settings") || _allowed.Contains("admin.expense-categories") || _allowed.Contains("admin.asset-categories");
         _dealersVisible = IPermissionService.DealerKeys.Any(k => _allowed.Contains(k));
         _cashierVisible = IPermissionService.CashierKeys.Any(k => _allowed.Contains(k));
         _systemVisible = _isSystemAdmin || IPermissionService.SystemKeys.Any(k => _allowed.Contains(k));

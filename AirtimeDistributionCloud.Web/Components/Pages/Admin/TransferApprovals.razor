@@ -8,6 +8,7 @@
 @inject ICurrentUserService CurrentUser
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@inject IJSRuntime JS
 @rendermode InteractiveServer
 
 <PageTitle>Transfer Approvals - RasidBase</PageTitle>
@@ -18,8 +19,8 @@
 </div>
 
 <div class="page-toolbar">
-    <MudChipSet T="string" SelectedValuesChanged="OnFilterChanged" SelectionMode="SelectionMode.SingleSelection">
-        <MudChip T="string" Value="@("Pending")" Default="true" Color="Color.Warning" Variant="Variant.Outlined">Pending</MudChip>
+    <MudChipSet T="string" SelectedValue="_currentFilter" SelectedValueChanged="OnFilterChanged" SelectionMode="SelectionMode.SingleSelection">
+        <MudChip T="string" Value="@("Pending")" Color="Color.Warning" Variant="Variant.Outlined">Pending</MudChip>
         <MudChip T="string" Value="@("Approved")" Color="Color.Success" Variant="Variant.Outlined">Approved</MudChip>
         <MudChip T="string" Value="@("Rejected")" Color="Color.Error" Variant="Variant.Outlined">Rejected</MudChip>
         <MudChip T="string" Value="@("Cancelled")" Color="Color.Dark" Variant="Variant.Outlined">Cancelled</MudChip>
@@ -157,9 +158,9 @@
         }
     }
 
-    private void OnFilterChanged(IReadOnlyCollection<string> values)
+    private void OnFilterChanged(string value)
     {
-        _currentFilter = values.FirstOrDefault() ?? "Pending";
+        _currentFilter = value ?? "Pending";
         ApplyFilter();
     }
 
@@ -190,9 +191,10 @@
         {
             try
             {
-                await TransferService.ApproveTransferAsync(transfer.Id, CurrentUser.UserId ?? "", notes);
+                var (_, notification) = await TransferService.ApproveTransferAsync(transfer.Id, CurrentUser.UserId ?? "", notes);
                 Snackbar.Add("Transfer approved successfully", Severity.Success);
                 await LoadTransfers();
+                await HandleNotification(notification);
             }
             catch (Exception ex)
             {
@@ -268,11 +270,22 @@
         StateHasChanged();
         var approved = 0;
         var failed = 0;
+        var allMessages = new List<string>();
+        string? groupUrl = null;
+        var allWhatsAppUrls = new List<string>();
+        var allApiResults = new List<string>();
         foreach (var transfer in pending)
         {
             try
             {
-                await TransferService.ApproveTransferAsync(transfer.Id, CurrentUser.UserId ?? "", "Bulk approved");
+                var (_, notification) = await TransferService.ApproveTransferAsync(transfer.Id, CurrentUser.UserId ?? "", "Bulk approved");
+                allWhatsAppUrls.AddRange(notification.WhatsAppUrls);
+                if (notification.WhatsAppApiResults is { Count: > 0 })
+                    allApiResults.AddRange(notification.WhatsAppApiResults);
+                if (!string.IsNullOrWhiteSpace(notification.FormattedMessage))
+                    allMessages.Add(notification.FormattedMessage);
+                if (!string.IsNullOrWhiteSpace(notification.WhatsAppGroupUrl))
+                    groupUrl = notification.WhatsAppGroupUrl;
                 approved++;
             }
             catch
@@ -283,5 +296,76 @@
         _approvingAll = false;
         Snackbar.Add($"{approved} transfer(s) approved" + (failed > 0 ? $", {failed} failed" : ""), failed > 0 ? Severity.Warning : Severity.Success);
         await LoadTransfers();
+
+        // Show WhatsApp API send results
+        if (allApiResults.Count > 0)
+        {
+            Snackbar.Add($"WhatsApp messages sent to {allApiResults.Count} dealer(s)", Severity.Success);
+        }
+
+        // Open DealerWhatsApp URLs directly (fallback if API not configured)
+        foreach (var url in allWhatsAppUrls)
+        {
+            try { await JS.InvokeVoidAsync("open", url, "_blank"); } catch { }
+        }
+
+        // Auto-copy combined messages and open WhatsApp group
+        if (allMessages.Count > 0)
+        {
+            var combined = string.Join("\n\n━━━━━━━━━━━━━━━━━━━━\n\n", allMessages);
+            try
+            {
+                await JS.InvokeVoidAsync("navigator.clipboard.writeText", combined);
+                Snackbar.Add($"{allMessages.Count} message(s) copied to clipboard — paste in the WhatsApp group", Severity.Info,
+                    config => config.VisibleStateDuration = 5000);
+            }
+            catch
+            {
+                Snackbar.Add("Could not auto-copy messages", Severity.Warning);
+            }
+
+            if (!string.IsNullOrWhiteSpace(groupUrl))
+            {
+                try { await JS.InvokeVoidAsync("open", groupUrl, "_blank"); } catch { }
+            }
+        }
+    }
+
+    private async Task HandleNotification(NotificationResult notification)
+    {
+        // Show WhatsApp API send results
+        if (notification.WhatsAppApiResults is { Count: > 0 })
+        {
+            foreach (var result in notification.WhatsAppApiResults)
+            {
+                Snackbar.Add($"WhatsApp sent: {result}", Severity.Success);
+            }
+        }
+
+        // Open DealerWhatsApp URLs directly in browser (fallback if API not configured)
+        foreach (var url in notification.WhatsAppUrls)
+        {
+            try { await JS.InvokeVoidAsync("open", url, "_blank"); } catch { }
+        }
+
+        // Auto-copy message to clipboard and open WhatsApp group
+        if (!string.IsNullOrWhiteSpace(notification.FormattedMessage))
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("navigator.clipboard.writeText", notification.FormattedMessage);
+                Snackbar.Add("Message copied to clipboard — paste it in the WhatsApp group", Severity.Info,
+                    config => config.VisibleStateDuration = 5000);
+            }
+            catch
+            {
+                Snackbar.Add("Could not auto-copy message", Severity.Warning);
+            }
+
+            if (!string.IsNullOrWhiteSpace(notification.WhatsAppGroupUrl))
+            {
+                try { await JS.InvokeVoidAsync("open", notification.WhatsAppGroupUrl, "_blank"); } catch { }
+            }
+        }
     }
 }

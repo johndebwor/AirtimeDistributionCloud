@@ -35,7 +35,8 @@
             <PropertyColumn Property="x => x.BranchName" Title="Branch" />
             <PropertyColumn Property="x => x.ProductName" Title="Product" />
             <PropertyColumn Property="x => x.DealerName" Title="Dealer" />
-            <PropertyColumn Property="x => x.Amount" Title="Amount" Format="C6" />
+            <PropertyColumn Property="x => x.Amount" Title="Airtime + Comm" Format="C6" />
+            <PropertyColumn Property="x => x.LoanAmount" Title="Airtime" Format="C6" />
             <TemplateColumn Title="Type" Sortable="false">
                 <CellTemplate>
                     <MudChip T="string" Color="@(context.Item.TransferType == TransferType.Airtime ? Color.Warning : Color.Success)"

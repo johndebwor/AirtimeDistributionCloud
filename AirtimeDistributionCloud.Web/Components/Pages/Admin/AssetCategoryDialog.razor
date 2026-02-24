@@ -1,0 +1,78 @@
+@rendermode InteractiveServer
+@using AirtimeDistributionCloud.Application.DTOs
+@using AirtimeDistributionCloud.Application.Services
+@inject IAssetService AssetService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField @bind-Value="_name" Label="Category Name" Required="true"
+                      RequiredError="Name is required" Class="mb-3" />
+        <MudTextField @bind-Value="_description" Label="Description (Optional)"
+                      Lines="2" Class="mb-3" />
+        @if (Category is not null)
+        {
+            <MudSwitch @bind-Value="_isActive" Color="Color.Success" Label="Active" />
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit"
+                   Disabled="@_saving">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public AssetCategoryDto? Category { get; set; }
+
+    private bool _saving;
+    private string _name = string.Empty;
+    private string? _description;
+    private bool _isActive = true;
+
+    protected override void OnParametersSet()
+    {
+        if (Category is not null)
+        {
+            _name = Category.Name;
+            _description = Category.Description;
+            _isActive = Category.IsActive;
+        }
+    }
+
+    private async Task Submit()
+    {
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            Snackbar.Add("Category name is required", Severity.Warning);
+            return;
+        }
+
+        _saving = true;
+        try
+        {
+            if (Category is null)
+            {
+                await AssetService.CreateCategoryAsync(new CreateAssetCategoryRequest(_name, _description));
+                Snackbar.Add("Category created successfully", Severity.Success);
+            }
+            else
+            {
+                await AssetService.UpdateCategoryAsync(new UpdateAssetCategoryRequest(Category.Id, _name, _description, _isActive));
+                Snackbar.Add("Category updated successfully", Severity.Success);
+            }
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

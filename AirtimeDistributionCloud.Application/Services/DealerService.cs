@@ -113,11 +113,9 @@ public class DealerService : IDealerService
     public async Task<decimal> GetDealerCashBalanceAsync(int dealerId, CancellationToken cancellationToken = default)
     {
         var totalDeposits = await _cashDepositRepository.GetTotalDepositsByDealerAsync(dealerId, cancellationToken);
-        var transfers = await _transferRepository.GetByDealerAsync(dealerId, cancellationToken);
-        var cashTransfers = transfers.Where(t => t.TransferType == TransferType.Cash).Sum(t => t.Amount);
         var dps = await _unitOfWork.Repository<DealerProduct>().FindAsync(dp => dp.DealerId == dealerId, cancellationToken);
-        var totalBalance = dps.Sum(dp => dp.Balance);
-        return totalDeposits - cashTransfers + totalBalance;
+        var airtimeBalance = dps.Sum(dp => dp.Balance);
+        return totalDeposits - airtimeBalance;
     }
 
     public async Task<IReadOnlyList<DealerProductRateDto>> GetAllDealerProductRatesAsync(CancellationToken cancellationToken = default)

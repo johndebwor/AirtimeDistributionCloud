@@ -6,7 +6,8 @@ public interface IPermissionService
     [
         "admin.products", "admin.branches", "admin.deposits",
         "admin.approvals", "admin.transfer-approvals", "admin.expense-approvals",
-        "admin.expense-categories", "admin.settings", "admin.reports"
+        "admin.expense-categories", "admin.assets", "admin.asset-categories",
+        "admin.settings", "admin.reports", "admin.analytics"
     ];
 
     static readonly string[] DealerKeys =
@@ -40,6 +41,9 @@ public interface IPermissionService
         ["admin.expense-categories"] = "Expense Categories",
         ["admin.settings"] = "System Settings",
         ["admin.reports"] = "Reports",
+        ["admin.analytics"] = "Sales & Capital",
+        ["admin.assets"] = "Asset Registry",
+        ["admin.asset-categories"] = "Asset Categories",
         ["dealer.registration"] = "Dealer Registration",
         ["dealer.transfers"] = "Airtime Transfers",
         ["dealer.commissions"] = "Commissions",

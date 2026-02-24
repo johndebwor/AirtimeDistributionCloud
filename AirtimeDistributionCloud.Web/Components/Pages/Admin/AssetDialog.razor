@@ -1,0 +1,277 @@
+@rendermode InteractiveServer
+@using AirtimeDistributionCloud.Application.DTOs
+@using AirtimeDistributionCloud.Application.Services
+@using AirtimeDistributionCloud.Core.Enums
+@using AirtimeDistributionCloud.Core.Interfaces
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Hosting
+@inject IAssetService AssetService
+@inject ICurrentUserService CurrentUser
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+@inject IWebHostEnvironment Env
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField @bind-Value="_name" Label="Name" Required="true"
+                      RequiredError="Name is required" Class="mb-3" />
+        <MudSelect T="int" @bind-Value="_categoryId" Label="Category" Required="true"
+                   RequiredError="Category is required" Placeholder="-- Select Category --" Class="mb-3">
+            @foreach (var cat in Categories)
+            {
+                <MudSelectItem T="int" Value="@cat.Id">@cat.Name</MudSelectItem>
+            }
+        </MudSelect>
+        <MudTextField @bind-Value="_serialNumber" Label="Serial Number" Class="mb-3" />
+        <MudTextField @bind-Value="_assetTag" Label="Asset Tag" Class="mb-3" />
+        <MudSelect T="int" @bind-Value="_branchId" Label="Branch" Required="true"
+                   RequiredError="Branch is required" Placeholder="-- Select Branch --" Class="mb-3">
+            @foreach (var b in Branches)
+            {
+                <MudSelectItem T="int" Value="@b.Id">@b.Name</MudSelectItem>
+            }
+        </MudSelect>
+        <MudDatePicker @bind-Date="_purchaseDate" Label="Purchase Date" Class="mb-3"
+                       DateFormat="dd MMM yyyy" />
+        <div @ref="_purchaseValueRef">
+            <MudTextField T="string" Value="@_purchaseValueDisplay" ValueChanged="OnPurchaseValueChanged"
+                          Label="Purchase Value" Required="true" RequiredError="Purchase value is required" Class="mb-3" />
+        </div>
+        <div @ref="_currentValueRef">
+            <MudTextField T="string" Value="@_currentValueDisplay" ValueChanged="OnCurrentValueChanged"
+                          Label="Current Value" Required="true" RequiredError="Current value is required" Class="mb-3" />
+        </div>
+        <MudNumericField T="int" @bind-Value="_usefulLifeMonths" Label="Useful Life (months)"
+                         Min="1" Class="mb-3" />
+        <MudSelect T="string" @bind-Value="_depreciationMethod" Label="Depreciation Method" Class="mb-3">
+            <MudSelectItem T="string" Value="@("StraightLine")">Straight Line</MudSelectItem>
+            <MudSelectItem T="string" Value="@("DecliningBalance")">Declining Balance</MudSelectItem>
+        </MudSelect>
+        <MudSelect T="AssetCondition" @bind-Value="_condition" Label="Condition" Class="mb-3">
+            @foreach (AssetCondition cond in Enum.GetValues<AssetCondition>())
+            {
+                <MudSelectItem T="AssetCondition" Value="@cond">@cond</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudFileUpload T="IBrowserFile" Accept=".jpg,.jpeg,.png" MaximumFileCount="1"
+                       FilesChanged="@(f => _photoFile = f)">
+            <ActivatorContent>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.PhotoCamera" Class="mb-1">
+                    Upload Photo (Optional)
+                </MudButton>
+            </ActivatorContent>
+        </MudFileUpload>
+        @if (_photoFile is not null)
+        {
+            <MudText Typo="Typo.caption" Color="Color.Success" Class="mb-3">@_photoFile.Name (@($"{_photoFile.Size / 1024.0:F0} KB"))</MudText>
+        }
+        else if (!string.IsNullOrEmpty(_existingPhotoPath))
+        {
+            <MudText Typo="Typo.caption" Class="mb-3">Current photo: @Path.GetFileName(_existingPhotoPath)</MudText>
+        }
+
+        <MudFileUpload T="IBrowserFile" Accept=".pdf,.jpg,.jpeg,.png" MaximumFileCount="1"
+                       FilesChanged="@(f => _documentFile = f)">
+            <ActivatorContent>
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
+                           StartIcon="@Icons.Material.Filled.Description" Class="mb-1">
+                    Upload Document (Optional)
+                </MudButton>
+            </ActivatorContent>
+        </MudFileUpload>
+        @if (_documentFile is not null)
+        {
+            <MudText Typo="Typo.caption" Color="Color.Success" Class="mb-3">@_documentFile.Name (@($"{_documentFile.Size / 1024.0:F0} KB"))</MudText>
+        }
+        else if (!string.IsNullOrEmpty(_existingDocumentPath))
+        {
+            <MudText Typo="Typo.caption" Class="mb-3">Current document: @Path.GetFileName(_existingDocumentPath)</MudText>
+        }
+
+        <MudTextField @bind-Value="_notes" Label="Notes" Lines="3" Class="mb-3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit"
+                   Disabled="@_saving">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public AssetDto? Asset { get; set; }
+    [Parameter] public List<BranchDto> Branches { get; set; } = new();
+    [Parameter] public List<AssetCategoryDto> Categories { get; set; } = new();
+
+    private bool _saving;
+    private string _name = string.Empty;
+    private int _categoryId;
+    private string? _serialNumber;
+    private string? _assetTag;
+    private int _branchId;
+    private DateTime? _purchaseDate;
+    private decimal _purchaseValue;
+    private string _purchaseValueDisplay = "";
+    private decimal _currentValue;
+    private string _currentValueDisplay = "";
+    private int _usefulLifeMonths = 12;
+    private string _depreciationMethod = "StraightLine";
+    private AssetCondition _condition = AssetCondition.New;
+    private IBrowserFile? _photoFile;
+    private IBrowserFile? _documentFile;
+    private string? _existingPhotoPath;
+    private string? _existingDocumentPath;
+    private string? _notes;
+
+    private ElementReference _purchaseValueRef;
+    private ElementReference _currentValueRef;
+
+    protected override void OnInitialized()
+    {
+        if (Asset is not null)
+        {
+            _name = Asset.Name;
+            _categoryId = Asset.AssetCategoryId;
+            _serialNumber = Asset.SerialNumber;
+            _assetTag = Asset.AssetTag;
+            _branchId = Asset.BranchId;
+            _purchaseDate = Asset.PurchaseDate;
+            _purchaseValue = Asset.PurchaseValue;
+            _purchaseValueDisplay = Asset.PurchaseValue > 0 ? FormatNumber(Asset.PurchaseValue.ToString("F2")) : "";
+            _currentValue = Asset.CurrentValue;
+            _currentValueDisplay = Asset.CurrentValue > 0 ? FormatNumber(Asset.CurrentValue.ToString("F2")) : "";
+            _usefulLifeMonths = Asset.UsefulLifeMonths;
+            _depreciationMethod = Asset.DepreciationMethod;
+            _condition = Asset.Condition;
+            _existingPhotoPath = Asset.PhotoPath;
+            _existingDocumentPath = Asset.DocumentPath;
+            _notes = Asset.Notes;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("initNumericFormat", _purchaseValueRef);
+            await JS.InvokeVoidAsync("initNumericFormat", _currentValueRef);
+        }
+    }
+
+    private void OnPurchaseValueChanged(string value)
+    {
+        _purchaseValueDisplay = FormatNumber(value);
+        _purchaseValue = ParseNumber(value);
+    }
+
+    private void OnCurrentValueChanged(string value)
+    {
+        _currentValueDisplay = FormatNumber(value);
+        _currentValue = ParseNumber(value);
+    }
+
+    private async Task Submit()
+    {
+        var rawPurchase = await JS.InvokeAsync<string>("getNumericInputValue", _purchaseValueRef);
+        _purchaseValue = ParseNumber(rawPurchase);
+
+        var rawCurrent = await JS.InvokeAsync<string>("getNumericInputValue", _currentValueRef);
+        _currentValue = ParseNumber(rawCurrent);
+
+        if (string.IsNullOrWhiteSpace(_name) || _categoryId == 0 || _branchId == 0 || _purchaseValue <= 0)
+        {
+            Snackbar.Add("Please fill in all required fields", Severity.Warning);
+            return;
+        }
+
+        _saving = true;
+        try
+        {
+            string? photoPath = _existingPhotoPath;
+            if (_photoFile is not null)
+            {
+                var uploadsDir = Path.Combine(Env.WebRootPath, "uploads", "assets");
+                Directory.CreateDirectory(uploadsDir);
+                var ext = Path.GetExtension(_photoFile.Name);
+                var fileName = $"{Guid.NewGuid()}{ext}";
+                var filePath = Path.Combine(uploadsDir, fileName);
+                await using var stream = new FileStream(filePath, FileMode.Create);
+                await _photoFile.OpenReadStream(5 * 1024 * 1024).CopyToAsync(stream);
+                photoPath = $"/uploads/assets/{fileName}";
+            }
+
+            string? documentPath = _existingDocumentPath;
+            if (_documentFile is not null)
+            {
+                var docsDir = Path.Combine(Env.WebRootPath, "uploads", "assets", "docs");
+                Directory.CreateDirectory(docsDir);
+                var ext = Path.GetExtension(_documentFile.Name);
+                var fileName = $"{Guid.NewGuid()}{ext}";
+                var filePath = Path.Combine(docsDir, fileName);
+                await using var stream = new FileStream(filePath, FileMode.Create);
+                await _documentFile.OpenReadStream(10 * 1024 * 1024).CopyToAsync(stream);
+                documentPath = $"/uploads/assets/docs/{fileName}";
+            }
+
+            if (Asset is not null)
+            {
+                await AssetService.UpdateAssetAsync(new UpdateAssetRequest(
+                    Asset.Id, _name, _categoryId, _serialNumber, _assetTag,
+                    _branchId, Asset.AssignedToUserId,
+                    _purchaseDate, _purchaseValue, _currentValue,
+                    _usefulLifeMonths, _depreciationMethod,
+                    _condition, photoPath, documentPath, _notes));
+                Snackbar.Add("Asset updated successfully", Severity.Success);
+            }
+            else
+            {
+                await AssetService.CreateAssetAsync(new CreateAssetRequest(
+                    _name, _categoryId, _serialNumber, _assetTag,
+                    _branchId, null,
+                    _purchaseDate, _purchaseValue, _currentValue,
+                    _usefulLifeMonths, _depreciationMethod,
+                    _condition, photoPath, documentPath, _notes),
+                    CurrentUser.UserId ?? "");
+                Snackbar.Add("Asset created successfully", Severity.Success);
+            }
+
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private static string FormatNumber(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return "";
+        var clean = "";
+        var hasDecimal = false;
+        foreach (var c in input)
+        {
+            if (char.IsDigit(c)) clean += c;
+            else if (c == '.' && !hasDecimal) { clean += c; hasDecimal = true; }
+        }
+        if (string.IsNullOrEmpty(clean)) return "";
+        var parts = clean.Split('.');
+        if (long.TryParse(parts[0], out var intPart))
+            parts[0] = intPart.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("en-US"));
+        return parts.Length > 1 ? $"{parts[0]}.{parts[1]}" : parts[0];
+    }
+
+    private static decimal ParseNumber(string formatted)
+    {
+        var clean = new string(formatted.Where(c => char.IsDigit(c) || c == '.').ToArray());
+        return decimal.TryParse(clean, System.Globalization.NumberStyles.Any,
+            System.Globalization.CultureInfo.InvariantCulture, out var val) ? val : 0;
+    }
+}
