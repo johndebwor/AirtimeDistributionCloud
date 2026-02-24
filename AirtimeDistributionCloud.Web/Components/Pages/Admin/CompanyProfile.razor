@@ -291,7 +291,8 @@ else
 
     private async Task<string> SaveUploadedFile(IBrowserFile file, string folder)
     {
-        var uploadsDir = Path.Combine(Env.WebRootPath, "uploads", folder);
+        var webRoot = Env.WebRootPath ?? Path.Combine(Env.ContentRootPath, "wwwroot");
+        var uploadsDir = Path.Combine(webRoot, "uploads", folder);
         Directory.CreateDirectory(uploadsDir);
         var ext = Path.GetExtension(file.Name);
         var fileName = $"{Guid.NewGuid()}{ext}";

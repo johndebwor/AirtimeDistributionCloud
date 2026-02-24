@@ -10,7 +10,13 @@ public class AssetAssignmentConfiguration : IEntityTypeConfiguration<AssetAssign
     {
         builder.ToTable("AssetAssignments");
         builder.HasKey(a => a.Id);
+        builder.Property(a => a.AssignmentType).IsRequired().HasMaxLength(20).HasDefaultValue("Branch");
         builder.Property(a => a.AssignedToUserId).HasMaxLength(450);
+        builder.Property(a => a.ContactName).HasMaxLength(200);
+        builder.Property(a => a.ContactPhone).HasMaxLength(20);
+        builder.Property(a => a.DepartmentName).HasMaxLength(200);
+        builder.Property(a => a.OfficeName).HasMaxLength(200);
+        builder.Property(a => a.Location).HasMaxLength(500);
         builder.Property(a => a.Notes).HasMaxLength(1000);
         builder.Property(a => a.CreatedBy).HasMaxLength(256);
         builder.Property(a => a.ModifiedBy).HasMaxLength(256);

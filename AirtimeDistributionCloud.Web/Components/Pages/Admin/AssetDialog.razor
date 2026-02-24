@@ -33,6 +33,10 @@
         </MudSelect>
         <MudDatePicker @bind-Date="_purchaseDate" Label="Purchase Date" Class="mb-3"
                        DateFormat="dd MMM yyyy" />
+        <MudSelect T="string" @bind-Value="_currency" Label="Currency" Required="true" Class="mb-3">
+            <MudSelectItem T="string" Value="@("SSP")">SSP - South Sudan Pound</MudSelectItem>
+            <MudSelectItem T="string" Value="@("USD")">USD - United States Dollar</MudSelectItem>
+        </MudSelect>
         <div @ref="_purchaseValueRef">
             <MudTextField T="string" Value="@_purchaseValueDisplay" ValueChanged="OnPurchaseValueChanged"
                           Label="Purchase Value" Required="true" RequiredError="Purchase value is required" Class="mb-3" />
@@ -54,41 +58,61 @@
             }
         </MudSelect>
 
-        <MudFileUpload T="IBrowserFile" Accept=".jpg,.jpeg,.png" MaximumFileCount="1"
-                       FilesChanged="@(f => _photoFile = f)">
+        @* --- Photos (multiple) --- *@
+        <MudText Typo="Typo.subtitle2" Class="mt-2 mb-1">Photos</MudText>
+        @if (_existingPhotoPaths.Count > 0 || _newPhotoFiles.Count > 0)
+        {
+            <div class="d-flex flex-wrap gap-2 mb-2">
+                @foreach (var path in _existingPhotoPaths)
+                {
+                    <MudChip T="string" Color="Color.Default" OnClose="@(() => _existingPhotoPaths.Remove(path))">
+                        @Path.GetFileName(path)
+                    </MudChip>
+                }
+                @foreach (var file in _newPhotoFiles)
+                {
+                    <MudChip T="string" Color="Color.Success" OnClose="@(() => _newPhotoFiles.Remove(file))">
+                        @file.Name (@($"{file.Size / 1024.0:F0} KB"))
+                    </MudChip>
+                }
+            </div>
+        }
+        <MudFileUpload T="IReadOnlyList<IBrowserFile>" Accept=".jpg,.jpeg,.png" FilesChanged="OnPhotosSelected">
             <ActivatorContent>
                 <MudButton Variant="Variant.Outlined" Color="Color.Primary"
-                           StartIcon="@Icons.Material.Filled.PhotoCamera" Class="mb-1">
-                    Upload Photo (Optional)
+                           StartIcon="@Icons.Material.Filled.PhotoCamera" Class="mb-3">
+                    Add Photos
                 </MudButton>
             </ActivatorContent>
         </MudFileUpload>
-        @if (_photoFile is not null)
-        {
-            <MudText Typo="Typo.caption" Color="Color.Success" Class="mb-3">@_photoFile.Name (@($"{_photoFile.Size / 1024.0:F0} KB"))</MudText>
-        }
-        else if (!string.IsNullOrEmpty(_existingPhotoPath))
-        {
-            <MudText Typo="Typo.caption" Class="mb-3">Current photo: @Path.GetFileName(_existingPhotoPath)</MudText>
-        }
 
-        <MudFileUpload T="IBrowserFile" Accept=".pdf,.jpg,.jpeg,.png" MaximumFileCount="1"
-                       FilesChanged="@(f => _documentFile = f)">
+        @* --- Documents (multiple) --- *@
+        <MudText Typo="Typo.subtitle2" Class="mt-2 mb-1">Documents</MudText>
+        @if (_existingDocumentPaths.Count > 0 || _newDocumentFiles.Count > 0)
+        {
+            <div class="d-flex flex-wrap gap-2 mb-2">
+                @foreach (var path in _existingDocumentPaths)
+                {
+                    <MudChip T="string" Color="Color.Default" OnClose="@(() => _existingDocumentPaths.Remove(path))">
+                        @Path.GetFileName(path)
+                    </MudChip>
+                }
+                @foreach (var file in _newDocumentFiles)
+                {
+                    <MudChip T="string" Color="Color.Success" OnClose="@(() => _newDocumentFiles.Remove(file))">
+                        @file.Name (@($"{file.Size / 1024.0:F0} KB"))
+                    </MudChip>
+                }
+            </div>
+        }
+        <MudFileUpload T="IReadOnlyList<IBrowserFile>" Accept=".pdf,.jpg,.jpeg,.png" FilesChanged="OnDocumentsSelected">
             <ActivatorContent>
                 <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
-                           StartIcon="@Icons.Material.Filled.Description" Class="mb-1">
-                    Upload Document (Optional)
+                           StartIcon="@Icons.Material.Filled.Description" Class="mb-3">
+                    Add Documents
                 </MudButton>
             </ActivatorContent>
         </MudFileUpload>
-        @if (_documentFile is not null)
-        {
-            <MudText Typo="Typo.caption" Color="Color.Success" Class="mb-3">@_documentFile.Name (@($"{_documentFile.Size / 1024.0:F0} KB"))</MudText>
-        }
-        else if (!string.IsNullOrEmpty(_existingDocumentPath))
-        {
-            <MudText Typo="Typo.caption" Class="mb-3">Current document: @Path.GetFileName(_existingDocumentPath)</MudText>
-        }
 
         <MudTextField @bind-Value="_notes" Label="Notes" Lines="3" Class="mb-3" />
     </DialogContent>
@@ -119,11 +143,14 @@
     private int _usefulLifeMonths = 12;
     private string _depreciationMethod = "StraightLine";
     private AssetCondition _condition = AssetCondition.New;
-    private IBrowserFile? _photoFile;
-    private IBrowserFile? _documentFile;
-    private string? _existingPhotoPath;
-    private string? _existingDocumentPath;
+    private string _currency = "SSP";
     private string? _notes;
+
+    // Multi-file state
+    private List<string> _existingPhotoPaths = new();
+    private List<IBrowserFile> _newPhotoFiles = new();
+    private List<string> _existingDocumentPaths = new();
+    private List<IBrowserFile> _newDocumentFiles = new();
 
     private ElementReference _purchaseValueRef;
     private ElementReference _currentValueRef;
@@ -138,6 +165,7 @@
             _assetTag = Asset.AssetTag;
             _branchId = Asset.BranchId;
             _purchaseDate = Asset.PurchaseDate;
+            _currency = Asset.Currency;
             _purchaseValue = Asset.PurchaseValue;
             _purchaseValueDisplay = Asset.PurchaseValue > 0 ? FormatNumber(Asset.PurchaseValue.ToString("F2")) : "";
             _currentValue = Asset.CurrentValue;
@@ -145,9 +173,12 @@
             _usefulLifeMonths = Asset.UsefulLifeMonths;
             _depreciationMethod = Asset.DepreciationMethod;
             _condition = Asset.Condition;
-            _existingPhotoPath = Asset.PhotoPath;
-            _existingDocumentPath = Asset.DocumentPath;
             _notes = Asset.Notes;
+
+            if (!string.IsNullOrEmpty(Asset.PhotoPath))
+                _existingPhotoPaths = Asset.PhotoPath.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList();
+            if (!string.IsNullOrEmpty(Asset.DocumentPath))
+                _existingDocumentPaths = Asset.DocumentPath.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList();
         }
     }
 
@@ -172,6 +203,18 @@
         _currentValue = ParseNumber(value);
     }
 
+    private void OnPhotosSelected(IReadOnlyList<IBrowserFile> files)
+    {
+        foreach (var f in files)
+            _newPhotoFiles.Add(f);
+    }
+
+    private void OnDocumentsSelected(IReadOnlyList<IBrowserFile> files)
+    {
+        foreach (var f in files)
+            _newDocumentFiles.Add(f);
+    }
+
     private async Task Submit()
     {
         var rawPurchase = await JS.InvokeAsync<string>("getNumericInputValue", _purchaseValueRef);
@@ -189,38 +232,31 @@
         _saving = true;
         try
         {
-            string? photoPath = _existingPhotoPath;
-            if (_photoFile is not null)
+            // Upload new photos
+            var allPhotoPaths = new List<string>(_existingPhotoPaths);
+            foreach (var file in _newPhotoFiles)
             {
-                var uploadsDir = Path.Combine(Env.WebRootPath, "uploads", "assets");
-                Directory.CreateDirectory(uploadsDir);
-                var ext = Path.GetExtension(_photoFile.Name);
-                var fileName = $"{Guid.NewGuid()}{ext}";
-                var filePath = Path.Combine(uploadsDir, fileName);
-                await using var stream = new FileStream(filePath, FileMode.Create);
-                await _photoFile.OpenReadStream(5 * 1024 * 1024).CopyToAsync(stream);
-                photoPath = $"/uploads/assets/{fileName}";
+                var path = await UploadFile(file, "uploads/assets", 5 * 1024 * 1024);
+                allPhotoPaths.Add(path);
             }
 
-            string? documentPath = _existingDocumentPath;
-            if (_documentFile is not null)
+            // Upload new documents
+            var allDocumentPaths = new List<string>(_existingDocumentPaths);
+            foreach (var file in _newDocumentFiles)
             {
-                var docsDir = Path.Combine(Env.WebRootPath, "uploads", "assets", "docs");
-                Directory.CreateDirectory(docsDir);
-                var ext = Path.GetExtension(_documentFile.Name);
-                var fileName = $"{Guid.NewGuid()}{ext}";
-                var filePath = Path.Combine(docsDir, fileName);
-                await using var stream = new FileStream(filePath, FileMode.Create);
-                await _documentFile.OpenReadStream(10 * 1024 * 1024).CopyToAsync(stream);
-                documentPath = $"/uploads/assets/docs/{fileName}";
+                var path = await UploadFile(file, "uploads/assets/docs", 10 * 1024 * 1024);
+                allDocumentPaths.Add(path);
             }
+
+            var photoPath = allPhotoPaths.Count > 0 ? string.Join(";", allPhotoPaths) : null;
+            var documentPath = allDocumentPaths.Count > 0 ? string.Join(";", allDocumentPaths) : null;
 
             if (Asset is not null)
             {
                 await AssetService.UpdateAssetAsync(new UpdateAssetRequest(
                     Asset.Id, _name, _categoryId, _serialNumber, _assetTag,
                     _branchId, Asset.AssignedToUserId,
-                    _purchaseDate, _purchaseValue, _currentValue,
+                    _purchaseDate, _currency, _purchaseValue, _currentValue,
                     _usefulLifeMonths, _depreciationMethod,
                     _condition, photoPath, documentPath, _notes));
                 Snackbar.Add("Asset updated successfully", Severity.Success);
@@ -230,7 +266,7 @@
                 await AssetService.CreateAssetAsync(new CreateAssetRequest(
                     _name, _categoryId, _serialNumber, _assetTag,
                     _branchId, null,
-                    _purchaseDate, _purchaseValue, _currentValue,
+                    _purchaseDate, _currency, _purchaseValue, _currentValue,
                     _usefulLifeMonths, _depreciationMethod,
                     _condition, photoPath, documentPath, _notes),
                     CurrentUser.UserId ?? "");
@@ -247,6 +283,18 @@
         {
             _saving = false;
         }
+    }
+
+    private async Task<string> UploadFile(IBrowserFile file, string subFolder, long maxSize)
+    {
+        var uploadsDir = Path.Combine(Env.WebRootPath, subFolder);
+        Directory.CreateDirectory(uploadsDir);
+        var ext = Path.GetExtension(file.Name);
+        var fileName = $"{Guid.NewGuid()}{ext}";
+        var filePath = Path.Combine(uploadsDir, fileName);
+        await using var stream = new FileStream(filePath, FileMode.Create);
+        await file.OpenReadStream(maxSize).CopyToAsync(stream);
+        return $"/{subFolder}/{fileName}";
     }
 
     private void Cancel() => MudDialog.Cancel();

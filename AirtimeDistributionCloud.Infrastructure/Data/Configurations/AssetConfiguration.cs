@@ -14,6 +14,7 @@ public class AssetConfiguration : IEntityTypeConfiguration<Asset>
         builder.Property(a => a.Name).IsRequired().HasMaxLength(200);
         builder.Property(a => a.SerialNumber).HasMaxLength(100);
         builder.Property(a => a.AssetTag).HasMaxLength(50);
+        builder.Property(a => a.Currency).IsRequired().HasMaxLength(10).HasDefaultValue("SSP");
         builder.Property(a => a.PurchaseValue).HasColumnType("decimal(18,2)");
         builder.Property(a => a.CurrentValue).HasColumnType("decimal(18,2)");
         builder.Property(a => a.DepreciationMethod).HasMaxLength(50);

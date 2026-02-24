@@ -92,6 +92,9 @@ public static class SeedData
                 // WhatsApp Business API
                 ["WhatsAppApiAccessToken"] = ("", "Meta WhatsApp Business API access token (Bearer token)"),
                 ["WhatsAppApiPhoneNumberId"] = ("", "WhatsApp Business phone number ID from Meta dashboard"),
+                // Currency Configuration
+                ["DefaultCurrency"] = ("SSP", "Default currency for the application (SSP or USD)"),
+                ["AvailableCurrencies"] = ("SSP, USD", "Comma-separated list of available currencies"),
                 // Notifications
                 ["TransferNotificationEnabled"] = ("No", "Enable dealer notifications on transfer approval (Yes/No)"),
                 ["TransferNotificationMethod"] = ("Email", "Notification method: Email, DealerWhatsApp, or WhatsAppGroup"),

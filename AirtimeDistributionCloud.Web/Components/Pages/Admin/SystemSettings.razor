@@ -293,6 +293,31 @@ else
         </MudGrid>
     </MudPaper>
 
+    <!-- Currency Configuration -->
+    <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
+        <div class="d-flex align-center gap-2 mb-3">
+            <MudIcon Icon="@Icons.Material.Outlined.CurrencyExchange" />
+            <MudText Typo="Typo.h6">Currency Configuration</MudText>
+        </div>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+            Configure the default currency and available currencies for the asset registry.
+        </MudText>
+
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudSelect T="string" Value="_defaultCurrency" ValueChanged="OnDefaultCurrencyChanged"
+                           Label="Default Currency" Variant="Variant.Outlined" Disabled="@_saving">
+                    <MudSelectItem T="string" Value="@("SSP")">SSP - South Sudan Pound</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("USD")">USD - United States Dollar</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField Value="@_availableCurrencies" Label="Available Currencies" Variant="Variant.Outlined"
+                              ReadOnly="true" HelperText="SSP, USD" />
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
     <!-- Danger Zone (Formulas) -->
     @if (_settings.Any(s => IsDangerSetting(s.Key)))
     {
@@ -384,6 +409,10 @@ else
     private bool _savingWhatsApp;
     private bool _showWhatsAppToken;
 
+    // Currency configuration state
+    private string _defaultCurrency = "SSP";
+    private string _availableCurrencies = "SSP, USD";
+
     // General settings display order (AirtimeDepositAutoApprove handled as toggle above)
     private static readonly string[] GeneralSettingsOrder =
         ["ExpenseApprovalThreshold", "CommissionMinPercentage", "CommissionMaxPercentage"];
@@ -401,6 +430,9 @@ else
 
     private static readonly HashSet<string> WhatsAppApiKeys =
         ["WhatsAppApiAccessToken", "WhatsAppApiPhoneNumberId"];
+
+    private static readonly HashSet<string> CurrencyKeys =
+        ["DefaultCurrency", "AvailableCurrencies"];
 
     private static readonly HashSet<string> CompanyKeys =
         ["CompanyName", "CompanyAbbreviation", "CompanyAddress", "CompanyTel1", "CompanyTel2", "CompanyTel3",
@@ -463,6 +495,10 @@ else
         // WhatsApp API configuration
         _whatsAppApiAccessToken = dict.GetValueOrDefault("WhatsAppApiAccessToken", "");
         _whatsAppApiPhoneNumberId = dict.GetValueOrDefault("WhatsAppApiPhoneNumberId", "");
+
+        // Currency configuration
+        _defaultCurrency = dict.GetValueOrDefault("DefaultCurrency", "SSP");
+        _availableCurrencies = dict.GetValueOrDefault("AvailableCurrencies", "SSP, USD");
     }
 
     private IEnumerable<SystemSetting> GetGeneralSettings()
@@ -480,7 +516,8 @@ else
                                                !ToggleKeys.Contains(s.Key) &&
                                                !CompanyKeys.Contains(s.Key) &&
                                                !EmailKeys.Contains(s.Key) &&
-                                               !WhatsAppApiKeys.Contains(s.Key)))
+                                               !WhatsAppApiKeys.Contains(s.Key) &&
+                                               !CurrencyKeys.Contains(s.Key)))
             yield return s;
     }
 
@@ -727,6 +764,14 @@ else
         {
             _savingWhatsApp = false;
         }
+    }
+
+    // --- Currency configuration ---
+
+    private async Task OnDefaultCurrencyChanged(string value)
+    {
+        _defaultCurrency = value;
+        await SaveNotificationSetting("DefaultCurrency", value);
     }
 
     private async Task SendTestEmail()

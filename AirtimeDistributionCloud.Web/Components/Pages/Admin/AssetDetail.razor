@@ -10,6 +10,7 @@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
+@inject IJSRuntime JS
 @rendermode InteractiveServer
 
 <PageTitle>Asset Detail - RasidBase</PageTitle>
@@ -102,16 +103,20 @@ else
                 <MudText Typo="Typo.body1">@(_asset.PurchaseDate?.ToString("dd MMM yyyy") ?? "N/A")</MudText>
             </MudItem>
             <MudItem xs="12" md="6" lg="4">
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Currency</MudText>
+                <MudText Typo="Typo.body1">@_asset.Currency</MudText>
+            </MudItem>
+            <MudItem xs="12" md="6" lg="4">
                 <MudText Typo="Typo.caption" Color="Color.Secondary">Purchase Value</MudText>
-                <MudText Typo="Typo.body1">@_asset.PurchaseValue.ToString("N2")</MudText>
+                <MudText Typo="Typo.body1">@_asset.Currency @_asset.PurchaseValue.ToString("N2")</MudText>
             </MudItem>
             <MudItem xs="12" md="6" lg="4">
                 <MudText Typo="Typo.caption" Color="Color.Secondary">Current Value</MudText>
-                <MudText Typo="Typo.body1">@_asset.CurrentValue.ToString("N2")</MudText>
+                <MudText Typo="Typo.body1">@_asset.Currency @_asset.CurrentValue.ToString("N2")</MudText>
             </MudItem>
             <MudItem xs="12" md="6" lg="4">
                 <MudText Typo="Typo.caption" Color="Color.Secondary">Book Value</MudText>
-                <MudText Typo="Typo.body1">@_asset.BookValue.ToString("N2")</MudText>
+                <MudText Typo="Typo.body1">@_asset.Currency @_asset.BookValue.ToString("N2")</MudText>
             </MudItem>
             <MudItem xs="12" md="6" lg="4">
                 <MudText Typo="Typo.caption" Color="Color.Secondary">Useful Life</MudText>
@@ -123,7 +128,7 @@ else
             </MudItem>
             <MudItem xs="12" md="6" lg="4">
                 <MudText Typo="Typo.caption" Color="Color.Secondary">Created</MudText>
-                <MudText Typo="Typo.body1">@_asset.CreatedDate.ToString("dd MMM yyyy") by @_asset.CreatedBy</MudText>
+                <MudText Typo="Typo.body1">@_asset.CreatedDate.ToString("dd MMM yyyy") by @(_asset.CreatedByName ?? _asset.CreatedBy)</MudText>
             </MudItem>
             @if (!string.IsNullOrEmpty(_asset.Notes))
             {
@@ -132,21 +137,52 @@ else
                     <MudText Typo="Typo.body1">@_asset.Notes</MudText>
                 </MudItem>
             }
-            @if (!string.IsNullOrEmpty(_asset.PhotoPath))
+            @{
+                var photos = (_asset.PhotoPath ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries);
+                var documents = (_asset.DocumentPath ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries);
+            }
+            @if (photos.Length > 0)
             {
-                <MudItem xs="12" md="6">
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Photo</MudText>
-                    <MudImage Src="@_asset.PhotoPath" Alt="Asset Photo" Width="300" Elevation="2" Class="rounded mt-1" />
+                <MudItem xs="12">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-1">Photos</MudText>
+                    <div class="d-flex flex-wrap gap-3">
+                        @foreach (var photo in photos)
+                        {
+                            <div style="cursor:pointer" @onclick="@(() => { _previewImage = photo; _showPreview = true; })">
+                                <MudImage Src="@photo" Alt="Asset Photo" Width="150" Elevation="2" Class="rounded" />
+                            </div>
+                        }
+                    </div>
                 </MudItem>
             }
-            @if (!string.IsNullOrEmpty(_asset.DocumentPath))
+            @if (documents.Length > 0)
             {
-                <MudItem xs="12" md="6">
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Document</MudText>
-                    <MudLink Href="@_asset.DocumentPath" Target="_blank" Typo="Typo.body1">
-                        <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small" Class="me-1" />
-                        Download Document
-                    </MudLink>
+                <MudItem xs="12">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-1">Documents</MudText>
+                    <div class="d-flex flex-wrap gap-3">
+                        @foreach (var doc in documents)
+                        {
+                            <MudPaper Class="pa-2 d-flex align-center gap-2" Elevation="1">
+                                @if (IsImage(doc))
+                                {
+                                    <MudImage Src="@doc" Alt="Document" Width="60" Class="rounded" />
+                                }
+                                else
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.PictureAsPdf" Size="Size.Large" Color="Color.Error" />
+                                }
+                                <div>
+                                    <MudText Typo="Typo.caption">@Path.GetFileName(doc)</MudText>
+                                    <div class="d-flex gap-1">
+                                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
+                                                   Href="@doc" Target="_blank">View</MudButton>
+                                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Secondary"
+                                                   OnClick="@(() => DownloadFile(doc))">Download</MudButton>
+                                    </div>
+                                </div>
+                            </MudPaper>
+                        }
+                    </div>
                 </MudItem>
             }
         </MudGrid>
@@ -165,8 +201,12 @@ else
                 <MudDataGrid T="AssetAssignmentDto" Items="@_assignments" Dense="true" Hover="true" Striped="true"
                              Loading="@_loadingAssignments">
                     <Columns>
+                        <PropertyColumn Property="x => x.AssignmentType" Title="Type" />
                         <PropertyColumn Property="x => x.BranchName" Title="Branch" />
-                        <PropertyColumn Property="x => x.AssignedToUserName" Title="User" />
+                        <PropertyColumn Property="x => x.ContactName" Title="Contact" />
+                        <PropertyColumn Property="x => x.ContactPhone" Title="Phone" />
+                        <PropertyColumn Property="x => x.DepartmentName" Title="Department" />
+                        <PropertyColumn Property="x => x.OfficeName" Title="Office" />
                         <PropertyColumn Property="x => x.AssignedDate" Title="Assigned Date" Format="dd MMM yyyy" />
                         <TemplateColumn Title="Returned Date">
                             <CellTemplate>
@@ -242,6 +282,18 @@ else
         }
     </MudTabs>
 
+    @* Photo preview overlay *@
+    <MudOverlay Visible="@_showPreview" DarkBackground="true" AutoClose="true" OnClick="@(() => _showPreview = false)" ZIndex="1300">
+        <div class="d-flex flex-column align-center" @onclick:stopPropagation="true">
+            <MudImage Src="@_previewImage" Alt="Preview" Style="max-width:90vw;max-height:80vh;" Elevation="4" Class="rounded mb-3" />
+            <div class="d-flex gap-2">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download"
+                           OnClick="@(() => DownloadFile(_previewImage))">Download</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick="@(() => _showPreview = false)">Close</MudButton>
+            </div>
+        </div>
+    </MudOverlay>
+
     @* Dispose / Write-Off Overlay Dialog *@
     <MudOverlay Visible="@_showDisposeDialog" DarkBackground="true" AutoClose="false" ZIndex="1300">
         <MudPaper Class="pa-6" Style="max-width: 500px; width: 100%;" Elevation="8">
@@ -281,6 +333,10 @@ else
     private string _disposeAction = "Dispose";
     private string _disposeReason = string.Empty;
     private string _disposeNotes = string.Empty;
+
+    // Photo preview
+    private bool _showPreview;
+    private string _previewImage = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -420,5 +476,16 @@ else
         {
             _disposing = false;
         }
+    }
+
+    private static bool IsImage(string path)
+    {
+        var ext = Path.GetExtension(path)?.ToLowerInvariant();
+        return ext is ".jpg" or ".jpeg" or ".png" or ".gif" or ".webp" or ".bmp";
+    }
+
+    private async Task DownloadFile(string url)
+    {
+        await JS.InvokeVoidAsync("open", url, "_blank");
     }
 }

@@ -42,6 +42,7 @@ public class AssetService(IUnitOfWork unitOfWork) : IAssetService
             BranchId = request.BranchId,
             AssignedToUserId = request.AssignedToUserId,
             PurchaseDate = request.PurchaseDate,
+            Currency = request.Currency,
             PurchaseValue = request.PurchaseValue,
             CurrentValue = request.CurrentValue,
             UsefulLifeMonths = request.UsefulLifeMonths,
@@ -76,6 +77,7 @@ public class AssetService(IUnitOfWork unitOfWork) : IAssetService
         asset.BranchId = request.BranchId;
         asset.AssignedToUserId = request.AssignedToUserId;
         asset.PurchaseDate = request.PurchaseDate;
+        asset.Currency = request.Currency;
         asset.PurchaseValue = request.PurchaseValue;
         asset.CurrentValue = request.CurrentValue;
         asset.UsefulLifeMonths = request.UsefulLifeMonths;
@@ -167,9 +169,12 @@ public class AssetService(IUnitOfWork unitOfWork) : IAssetService
 
         return assignments.OrderByDescending(a => a.AssignedDate).Select(a => new AssetAssignmentDto(
             a.Id, a.AssetId, asset?.Name ?? "",
+            a.AssignmentType,
             a.BranchId, a.BranchId.HasValue && branches.TryGetValue(a.BranchId.Value, out var b) ? b.Name : null,
             a.AssignedToUserId,
             a.AssignedToUserId != null && users.TryGetValue(a.AssignedToUserId, out var u) ? u.FullName : null,
+            a.ContactName, a.ContactPhone,
+            a.DepartmentName, a.OfficeName, a.Location,
             a.AssignedDate, a.ReturnedDate, a.Notes,
             a.CreatedDate, a.CreatedBy)).ToList();
     }
@@ -192,8 +197,14 @@ public class AssetService(IUnitOfWork unitOfWork) : IAssetService
         var assignment = new AssetAssignment
         {
             AssetId = request.AssetId,
+            AssignmentType = request.AssignmentType,
             BranchId = request.BranchId,
             AssignedToUserId = request.AssignedToUserId,
+            ContactName = request.ContactName,
+            ContactPhone = request.ContactPhone,
+            DepartmentName = request.DepartmentName,
+            OfficeName = request.OfficeName,
+            Location = request.Location,
             AssignedDate = DateTime.UtcNow,
             Notes = request.Notes,
             CreatedBy = userId
@@ -212,10 +223,13 @@ public class AssetService(IUnitOfWork unitOfWork) : IAssetService
 
         return new AssetAssignmentDto(
             assignment.Id, assignment.AssetId, asset.Name,
+            assignment.AssignmentType,
             assignment.BranchId,
             assignment.BranchId.HasValue && branches.TryGetValue(assignment.BranchId.Value, out var b) ? b.Name : null,
             assignment.AssignedToUserId,
             assignment.AssignedToUserId != null && users.TryGetValue(assignment.AssignedToUserId, out var u) ? u.FullName : null,
+            assignment.ContactName, assignment.ContactPhone,
+            assignment.DepartmentName, assignment.OfficeName, assignment.Location,
             assignment.AssignedDate, assignment.ReturnedDate, assignment.Notes,
             assignment.CreatedDate, assignment.CreatedBy);
     }
@@ -328,13 +342,14 @@ public class AssetService(IUnitOfWork unitOfWork) : IAssetService
             branches.TryGetValue(a.BranchId, out var br) ? br.Name : "",
             a.AssignedToUserId,
             a.AssignedToUserId != null && users.TryGetValue(a.AssignedToUserId, out var usr) ? usr.FullName : null,
-            a.PurchaseDate, a.PurchaseValue, a.CurrentValue,
+            a.PurchaseDate, a.Currency, a.PurchaseValue, a.CurrentValue,
             a.UsefulLifeMonths, a.DepreciationMethod,
             CalculateBookValue(a.PurchaseValue, a.PurchaseDate, a.UsefulLifeMonths, a.DepreciationMethod),
             a.Condition, a.Status,
             a.DisposalDate, a.DisposalReason, a.DisposalNotes,
             a.PhotoPath, a.DocumentPath, a.Notes,
-            a.CreatedDate, a.CreatedBy);
+            a.CreatedDate, a.CreatedBy,
+            a.CreatedBy != null && users.TryGetValue(a.CreatedBy, out var creator) ? creator.FullName : a.CreatedBy);
     }
 
     private static decimal CalculateBookValue(decimal purchaseValue, DateTime? purchaseDate, int usefulLifeMonths, string method)

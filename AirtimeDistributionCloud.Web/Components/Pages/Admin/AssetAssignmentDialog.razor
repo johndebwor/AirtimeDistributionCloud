@@ -8,13 +8,67 @@
 
 <MudDialog>
     <DialogContent>
-        <MudSelect T="int" @bind-Value="_branchId" Label="Branch" Required="true"
-                   RequiredError="Branch is required" Placeholder="-- Select Branch --" Class="mb-3">
-            @foreach (var b in Branches)
-            {
-                <MudSelectItem T="int" Value="@b.Id">@b.Name</MudSelectItem>
-            }
+        <MudSelect T="string" @bind-Value="_assignmentType" Label="Assignment Type" Required="true"
+                   RequiredError="Type is required" Class="mb-3">
+            <MudSelectItem T="string" Value="@("Individual")">Individual</MudSelectItem>
+            <MudSelectItem T="string" Value="@("Branch")">Branch</MudSelectItem>
+            <MudSelectItem T="string" Value="@("Department")">Department</MudSelectItem>
+            <MudSelectItem T="string" Value="@("Office")">Office</MudSelectItem>
         </MudSelect>
+
+        @if (_assignmentType == "Individual")
+        {
+            <MudTextField @bind-Value="_contactName" Label="Full Name" Required="true"
+                          RequiredError="Name is required" Class="mb-3" />
+            <MudTextField @bind-Value="_contactPhone" Label="Phone Number" Required="true"
+                          RequiredError="Phone is required" Class="mb-3" />
+        }
+        else if (_assignmentType == "Branch")
+        {
+            <MudSelect T="int" @bind-Value="_branchId" Label="Branch" Required="true"
+                       RequiredError="Branch is required" Placeholder="-- Select Branch --" Class="mb-3">
+                @foreach (var b in Branches)
+                {
+                    <MudSelectItem T="int" Value="@b.Id">@b.Name</MudSelectItem>
+                }
+            </MudSelect>
+            <MudTextField @bind-Value="_location" Label="Location" Class="mb-3" />
+            <MudTextField @bind-Value="_contactName" Label="Received By (Name)" Required="true"
+                          RequiredError="Received by name is required" Class="mb-3" />
+            <MudTextField @bind-Value="_contactPhone" Label="Received By (Phone)" Class="mb-3" />
+        }
+        else if (_assignmentType == "Department")
+        {
+            <MudTextField @bind-Value="_departmentName" Label="Department Name" Required="true"
+                          RequiredError="Department name is required" Class="mb-3" />
+            <MudSelect T="int" @bind-Value="_branchId" Label="Branch" Required="true"
+                       RequiredError="Branch is required" Placeholder="-- Select Branch --" Class="mb-3">
+                @foreach (var b in Branches)
+                {
+                    <MudSelectItem T="int" Value="@b.Id">@b.Name</MudSelectItem>
+                }
+            </MudSelect>
+            <MudTextField @bind-Value="_contactName" Label="Received By (Name)" Required="true"
+                          RequiredError="Received by name is required" Class="mb-3" />
+            <MudTextField @bind-Value="_contactPhone" Label="Received By (Phone)" Class="mb-3" />
+        }
+        else if (_assignmentType == "Office")
+        {
+            <MudTextField @bind-Value="_officeName" Label="Office Name" Required="true"
+                          RequiredError="Office name is required" Class="mb-3" />
+            <MudSelect T="int" @bind-Value="_branchId" Label="Branch" Required="true"
+                       RequiredError="Branch is required" Placeholder="-- Select Branch --" Class="mb-3">
+                @foreach (var b in Branches)
+                {
+                    <MudSelectItem T="int" Value="@b.Id">@b.Name</MudSelectItem>
+                }
+            </MudSelect>
+            <MudTextField @bind-Value="_departmentName" Label="Department (Optional)" Class="mb-3" />
+            <MudTextField @bind-Value="_contactName" Label="Received By (Name)" Required="true"
+                          RequiredError="Received by name is required" Class="mb-3" />
+            <MudTextField @bind-Value="_contactPhone" Label="Received By (Phone)" Class="mb-3" />
+        }
+
         <MudTextField @bind-Value="_notes" Label="Notes" Lines="3" Class="mb-3" />
     </DialogContent>
     <DialogActions>
@@ -30,22 +84,31 @@
     [Parameter] public List<BranchDto> Branches { get; set; } = new();
 
     private bool _saving;
+    private string _assignmentType = "Branch";
     private int _branchId;
+    private string? _contactName;
+    private string? _contactPhone;
+    private string? _departmentName;
+    private string? _officeName;
+    private string? _location;
     private string? _notes;
 
     private async Task Submit()
     {
-        if (_branchId == 0)
-        {
-            Snackbar.Add("Please select a branch", Severity.Warning);
+        if (!Validate())
             return;
-        }
 
         _saving = true;
         try
         {
             await AssetService.AssignAssetAsync(
-                new CreateAssetAssignmentRequest(AssetId, _branchId, null, _notes),
+                new CreateAssetAssignmentRequest(
+                    AssetId, _assignmentType,
+                    _assignmentType != "Individual" ? _branchId : null,
+                    null,
+                    _contactName, _contactPhone,
+                    _departmentName, _officeName, _location,
+                    _notes),
                 CurrentUser.UserId ?? "");
             Snackbar.Add("Asset assigned successfully", Severity.Success);
             MudDialog.Close(DialogResult.Ok(true));
@@ -58,6 +121,56 @@
         {
             _saving = false;
         }
+    }
+
+    private bool Validate()
+    {
+        if (string.IsNullOrWhiteSpace(_assignmentType))
+        {
+            Snackbar.Add("Please select an assignment type", Severity.Warning);
+            return false;
+        }
+
+        if (_assignmentType == "Individual")
+        {
+            if (string.IsNullOrWhiteSpace(_contactName))
+            {
+                Snackbar.Add("Please enter the individual's name", Severity.Warning);
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(_contactPhone))
+            {
+                Snackbar.Add("Please enter the individual's phone number", Severity.Warning);
+                return false;
+            }
+        }
+        else
+        {
+            if (_branchId == 0)
+            {
+                Snackbar.Add("Please select a branch", Severity.Warning);
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(_contactName))
+            {
+                Snackbar.Add("Please enter the received by name", Severity.Warning);
+                return false;
+            }
+        }
+
+        if (_assignmentType == "Department" && string.IsNullOrWhiteSpace(_departmentName))
+        {
+            Snackbar.Add("Please enter the department name", Severity.Warning);
+            return false;
+        }
+
+        if (_assignmentType == "Office" && string.IsNullOrWhiteSpace(_officeName))
+        {
+            Snackbar.Add("Please enter the office name", Severity.Warning);
+            return false;
+        }
+
+        return true;
     }
 
     private void Cancel() => MudDialog.Cancel();

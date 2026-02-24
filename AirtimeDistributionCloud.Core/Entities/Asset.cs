@@ -17,6 +17,7 @@ public class Asset : BaseEntity
 
     // Purchase info
     public DateTime? PurchaseDate { get; set; }
+    public string Currency { get; set; } = "SSP";
     public decimal PurchaseValue { get; set; }
     public decimal CurrentValue { get; set; }
 

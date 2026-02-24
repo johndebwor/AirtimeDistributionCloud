@@ -70,6 +70,12 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
 
+// Ensure uploads directory exists for IIS deployments
+var webRootPath = app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+Directory.CreateDirectory(Path.Combine(webRootPath, "uploads", "company"));
+Directory.CreateDirectory(Path.Combine(webRootPath, "uploads", "assets"));
+Directory.CreateDirectory(Path.Combine(webRootPath, "uploads", "assets", "docs"));
+
 app.UseStaticFiles(); // Serve runtime-uploaded files (e.g. /uploads/)
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
