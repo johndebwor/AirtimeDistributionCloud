@@ -65,6 +65,16 @@
             </tbody>
         </MudSimpleTable>
 
+        <!-- Dealer Photo (Person only) -->
+        @if (Dealer.Type == DealerType.Person && !string.IsNullOrEmpty(Dealer.PhotoPath))
+        {
+            <MudText Typo="Typo.h6" Class="mt-4 mb-2">@(Lang?.T("DealerDialog_Photo") ?? "Photo")</MudText>
+            <div style="text-align:center; margin-bottom:12px;">
+                <img src="@Dealer.PhotoPath" alt="@(Lang?.T("DealerDialog_Photo") ?? "Photo")"
+                     style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:2px solid var(--mud-palette-divider);" />
+            </div>
+        }
+
         <!-- Attached Document -->
         <MudText Typo="Typo.h6" Class="mt-4 mb-2">
             @(Dealer.Type == DealerType.Company ? (Lang?.T("DealerDetails_CompanyCert") ?? "Company Certificate") : (Lang?.T("DealerDetails_IDDocument") ?? "ID Document"))

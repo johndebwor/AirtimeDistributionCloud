@@ -93,16 +93,45 @@
                               Required="true" RequiredError="@(Lang?.T("DealerDialog_AddressRequired") ?? "Physical address is required")" />
             </MudItem>
 
+            <!-- Photo Upload (Person only) -->
+            @if (_type == DealerType.Person)
+            {
+                <MudItem xs="12" sm="6">
+                    <MudText Typo="Typo.body2" Style="font-weight:600; margin-bottom:6px;">@(Lang?.T("DealerDialog_Photo") ?? "Photo")</MudText>
+                    @if (!string.IsNullOrEmpty(_existingPhotoPath) && _selectedPhoto is null)
+                    {
+                        <div class="mb-2">
+                            <img src="@_existingPhotoPath" alt="Dealer photo"
+                                 style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid var(--mud-palette-divider);" />
+                        </div>
+                    }
+                    <MudFileUpload T="IBrowserFile" Accept=".jpg,.jpeg,.png" MaximumFileCount="1"
+                                   FilesChanged="OnPhotoSelected">
+                        <ActivatorContent>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                                       StartIcon="@Icons.Material.Filled.AddAPhoto" Class="mb-1">
+                                @(Lang?.T("DealerDialog_UploadPhoto") ?? "Upload Photo")
+                            </MudButton>
+                        </ActivatorContent>
+                    </MudFileUpload>
+                    @if (_selectedPhoto is not null)
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Success">@_selectedPhoto.Name (@($"{_selectedPhoto.Size / 1024.0:F0} KB"))</MudText>
+                    }
+                </MudItem>
+            }
+
             <!-- Document Upload -->
-            <MudItem xs="12">
+            <MudItem xs="12" sm="@(_type == DealerType.Person ? 6 : 12)">
                 @if (_type == DealerType.Person && !string.IsNullOrEmpty(_idType))
                 {
+                    <MudText Typo="Typo.body2" Style="font-weight:600; margin-bottom:6px;">@(Lang?.T("DealerDialog_IDDocument") ?? "ID Document")</MudText>
                     <MudFileUpload T="IBrowserFile" Accept=".pdf,.jpg,.jpeg,.png" MaximumFileCount="1"
                                    FilesChanged="OnDocumentSelected">
                         <ActivatorContent>
-                            <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small"
                                        StartIcon="@Icons.Material.Filled.CloudUpload" Class="mb-1">
-                                Upload @_idType Copy
+                                @(Lang?.T("DealerDialog_UploadIDCopy") ?? "Upload") @_idType @(Lang?.T("DealerDialog_Copy") ?? "Copy")
                             </MudButton>
                         </ActivatorContent>
                     </MudFileUpload>
@@ -112,9 +141,9 @@
                     <MudFileUpload T="IBrowserFile" Accept=".pdf,.jpg,.jpeg,.png" MaximumFileCount="1"
                                    FilesChanged="OnDocumentSelected">
                         <ActivatorContent>
-                            <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
                                        StartIcon="@Icons.Material.Filled.CloudUpload" Class="mb-1">
-                                Upload Company Certificate
+                                @(Lang?.T("DealerDialog_UploadCertificate") ?? "Upload Company Certificate")
                             </MudButton>
                         </ActivatorContent>
                     </MudFileUpload>
@@ -125,7 +154,7 @@
                 }
                 else if (!string.IsNullOrEmpty(_existingDocumentPath))
                 {
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Document on file: @System.IO.Path.GetFileName(_existingDocumentPath)</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("DealerDialog_DocumentOnFile") ?? "Document on file"): @System.IO.Path.GetFileName(_existingDocumentPath)</MudText>
                 }
             </MudItem>
         </MudGrid>
@@ -156,6 +185,8 @@
     private string? _physicalAddress;
     private IBrowserFile? _selectedFile;
     private string? _existingDocumentPath;
+    private IBrowserFile? _selectedPhoto;
+    private string? _existingPhotoPath;
     private List<string> _counties = new();
 
     protected override void OnParametersSet()
@@ -175,6 +206,7 @@
             _phoneNumber = EditDealer.PhoneNumber;
             _physicalAddress = EditDealer.PhysicalAddress;
             _existingDocumentPath = EditDealer.DocumentPath;
+            _existingPhotoPath = EditDealer.PhotoPath;
             if (_state is not null && StatesAndCounties.TryGetValue(_state, out var c))
                 _counties = c;
         }
@@ -270,9 +302,21 @@
         if (type != "Others") _idTypeSpecification = null;
     }
 
-    private void OnDocumentSelected(IBrowserFile file)
+    private void OnPhotoSelected(IBrowserFile file) => _selectedPhoto = file;
+
+    private void OnDocumentSelected(IBrowserFile file) => _selectedFile = file;
+
+    private async Task<string?> SaveUploadedPhotoAsync()
     {
-        _selectedFile = file;
+        if (_selectedPhoto is null) return null;
+        var uploadsDir = Path.Combine(Env.WebRootPath, "uploads", "dealers");
+        Directory.CreateDirectory(uploadsDir);
+        var ext = Path.GetExtension(_selectedPhoto.Name);
+        var fileName = $"{Guid.NewGuid()}{ext}";
+        var filePath = Path.Combine(uploadsDir, fileName);
+        await using var stream = new FileStream(filePath, FileMode.Create);
+        await _selectedPhoto.OpenReadStream(3 * 1024 * 1024).CopyToAsync(stream); // 3MB max
+        return $"/uploads/dealers/{fileName}";
     }
 
     private async Task<string?> SaveUploadedFileAsync()
@@ -311,19 +355,20 @@
             var nationality = _type == DealerType.Person ? _nationality : null;
 
             var documentPath = await SaveUploadedFileAsync();
+            var photoPath = _type == DealerType.Person ? await SaveUploadedPhotoAsync() : null;
 
             if (EditDealer is not null)
             {
                 await DealerService.UpdateDealerAsync(new UpdateDealerRequest(
                     EditDealer.Id, _type, _name, gender, idType, idTypeSpec, idNumber,
-                    _companyRegNumber, nationality, _state, _county, _physicalAddress, _phoneNumber, documentPath));
+                    _companyRegNumber, nationality, _state, _county, _physicalAddress, _phoneNumber, documentPath, photoPath));
                 Snackbar.Add(Lang?.T("DealerDialog_Updated") ?? "Dealer updated successfully", Severity.Success);
             }
             else
             {
                 await DealerService.CreateDealerAsync(new CreateDealerRequest(
                     _type, _name, gender, idType, idTypeSpec, idNumber,
-                    _companyRegNumber, nationality, _state, _county, _physicalAddress, _phoneNumber, documentPath));
+                    _companyRegNumber, nationality, _state, _county, _physicalAddress, _phoneNumber, documentPath, photoPath));
                 Snackbar.Add(Lang?.T("DealerDialog_Created") ?? "Dealer registered successfully", Severity.Success);
             }
             MudDialog.Close(DialogResult.Ok(true));

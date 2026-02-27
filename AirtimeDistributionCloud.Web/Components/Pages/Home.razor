@@ -7,16 +7,6 @@
 @using AirtimeDistributionCloud.Core.Interfaces
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Identity
-@inject IProductService ProductService
-@inject IDealerService DealerService
-@inject IAirtimeTransferService TransferService
-@inject ICashDepositService CashDepositService
-@inject IAirtimeDepositService DepositService
-@inject IBranchService BranchService
-@inject IAuditLogService AuditLogService
-@inject IExpenseService ExpenseService
-@inject ICurrentUserService CurrentUser
-@inject UserManager<ApplicationUser> UserManager
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
@@ -26,112 +16,128 @@
 
 <PageTitle>@(Lang?.T("Nav_Dashboard") ?? "Dashboard") - RasidBase</PageTitle>
 
-<div class="page-header">
-    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
-        <MudAvatar Color="Color.Primary" Size="Size.Large">
-            <MudIcon Icon="@Icons.Material.Filled.Person" />
-        </MudAvatar>
-        <div>
-            <h1>@(Lang?.T("Dash_WelcomeBack") ?? "Welcome back,") @_userName!</h1>
-            <p>@_roleSubtitle</p>
+<div class="dashboard-hero">
+    <div class="dashboard-hero-content">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+            <MudAvatar Class="dashboard-hero-avatar" Size="Size.Large">
+                <MudIcon Icon="@Icons.Material.Filled.Person" />
+            </MudAvatar>
+            <div>
+                <h1 class="dashboard-hero-title">@(Lang?.T("Dash_WelcomeBack") ?? "Welcome back,") @_userName!</h1>
+                <p class="dashboard-hero-subtitle">@_roleSubtitle</p>
+            </div>
+        </MudStack>
+        <div class="dashboard-hero-date">
+            <MudIcon Icon="@Icons.Material.Outlined.CalendarToday" Size="Size.Small" />
+            <span>@DateTime.Now.ToString("dddd, dd MMM yyyy")</span>
         </div>
-    </MudStack>
+    </div>
 </div>
 
 @if (_loading)
 {
     <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-4" />
+    <MudGrid Spacing="4">
+        <MudItem xs="12" sm="6" md="3">
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="120px" Style="border-radius:12px;" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="120px" Style="border-radius:12px;" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="120px" Style="border-radius:12px;" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="120px" Style="border-radius:12px;" />
+        </MudItem>
+        <MudItem xs="12">
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="80px" Style="border-radius:12px;" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="300px" Style="border-radius:12px;" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="300px" Style="border-radius:12px;" />
+        </MudItem>
+    </MudGrid>
 }
-
-@if (_isDealer)
+else if (!string.IsNullOrEmpty(_loadError))
+{
+    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-4">
+        @(Lang?.T("Dash_LoadError") ?? "Failed to load dashboard data.") @_loadError
+    </MudAlert>
+}
+else if (_isDealer)
 {
     <!-- ─── DEALER DASHBOARD ─── -->
     <MudGrid Spacing="4">
 
         <!-- Stat Cards -->
         <MudItem xs="12" sm="6" md="3">
-            <MudCard Class="stat-card" Elevation="0" Style="@((Lang?.IsRtl == true ? "border-right" : "border-left") + ": 4px solid #0284C7 !important;")"
-                     @onclick="@(() => Navigation.NavigateTo("/dealer/transfers"))">
-                <MudCardContent>
-                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                        <div>
-                            <MudText Typo="Typo.overline" Color="Color.Secondary">@(Lang?.T("Dash_MyTransfers") ?? "MY TRANSFERS")</MudText>
-                            <MudText Typo="Typo.h4">@_myTransferCount</MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Info">@(Lang?.T("Dash_TotalLabel") ?? "total")</MudText>
-                        </div>
-                        <MudAvatar Color="Color.Info" Variant="Variant.Outlined" Size="Size.Large">
-                            <MudIcon Icon="@Icons.Material.Filled.SwapHoriz" />
-                        </MudAvatar>
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+            <div class="stat-card-v2 stat-card-blue" @onclick="@(() => Navigation.NavigateTo("/dealer/transfers"))">
+                <div class="stat-card-icon-bg">
+                    <MudIcon Icon="@Icons.Material.Filled.SwapHoriz" />
+                </div>
+                <div class="stat-card-body">
+                    <span class="stat-card-label">@(Lang?.T("Dash_MyTransfers") ?? "MY TRANSFERS")</span>
+                    <span class="stat-card-value">@_myTransferCount</span>
+                    <span class="stat-card-sub">@(Lang?.T("Dash_TotalLabel") ?? "total")</span>
+                </div>
+            </div>
         </MudItem>
 
         <MudItem xs="12" sm="6" md="3">
-            <MudCard Class="stat-card" Elevation="0" Style="@((Lang?.IsRtl == true ? "border-right" : "border-left") + ": 4px solid #D97706 !important;")">
-                <MudCardContent>
-                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                        <div>
-                            <MudText Typo="Typo.overline" Color="Color.Secondary">@(Lang?.T("Pending") ?? "PENDING")</MudText>
-                            <MudText Typo="Typo.h4">@_myPendingCount</MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Warning">@(Lang?.T("Dash_AwaitingApproval") ?? "awaiting approval")</MudText>
-                        </div>
-                        <MudAvatar Color="Color.Warning" Variant="Variant.Outlined" Size="Size.Large">
-                            <MudIcon Icon="@Icons.Material.Filled.HourglassEmpty" />
-                        </MudAvatar>
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+            <div class="stat-card-v2 stat-card-amber">
+                <div class="stat-card-icon-bg">
+                    <MudIcon Icon="@Icons.Material.Filled.HourglassEmpty" />
+                </div>
+                <div class="stat-card-body">
+                    <span class="stat-card-label">@(Lang?.T("Pending") ?? "PENDING")</span>
+                    <span class="stat-card-value">@_myPendingCount</span>
+                    <span class="stat-card-sub">@(Lang?.T("Dash_AwaitingApproval") ?? "awaiting approval")</span>
+                </div>
+            </div>
         </MudItem>
 
         <MudItem xs="12" sm="6" md="3">
-            <MudCard Class="stat-card" Elevation="0" Style="@((Lang?.IsRtl == true ? "border-right" : "border-left") + ": 4px solid #16A34A !important;")">
-                <MudCardContent>
-                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                        <div>
-                            <MudText Typo="Typo.overline" Color="Color.Secondary">@(Lang?.T("Dash_ApprovedAirtime") ?? "APPROVED AIRTIME")</MudText>
-                            <MudText Typo="Typo.h5" Style="font-weight:700;">@_myApprovedAmount.ToString("C2")</MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Success">@(Lang?.T("Dash_LoanAirtimeReceived") ?? "loan airtime received")</MudText>
-                        </div>
-                        <MudAvatar Color="Color.Success" Variant="Variant.Outlined" Size="Size.Large">
-                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" />
-                        </MudAvatar>
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+            <div class="stat-card-v2 stat-card-green">
+                <div class="stat-card-icon-bg">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" />
+                </div>
+                <div class="stat-card-body">
+                    <span class="stat-card-label">@(Lang?.T("Dash_ApprovedAirtime") ?? "APPROVED AIRTIME")</span>
+                    <span class="stat-card-value stat-card-value-sm">@_myApprovedAmount.ToString("C2")</span>
+                    <span class="stat-card-sub">@(Lang?.T("Dash_LoanAirtimeReceived") ?? "loan airtime received")</span>
+                </div>
+            </div>
         </MudItem>
 
         <MudItem xs="12" sm="6" md="3">
-            <MudCard Class="stat-card" Elevation="0" Style="@((Lang?.IsRtl == true ? "border-right" : "border-left") + ": 4px solid #A855F7 !important;")"
-                     @onclick="@(() => Navigation.NavigateTo("/dealer/commissions"))">
-                <MudCardContent>
-                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                        <div>
-                            <MudText Typo="Typo.overline" Color="Color.Secondary">@(Lang?.T("Dash_TotalCommission") ?? "TOTAL COMMISSION")</MudText>
-                            <MudText Typo="Typo.h5" Style="font-weight:700;">@_myTotalCommission.ToString("C2")</MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Dash_EarnedToDate") ?? "earned to date")</MudText>
-                        </div>
-                        <MudAvatar Style="color:#A855F7; border-color:#A855F7;" Variant="Variant.Outlined" Size="Size.Large">
-                            <MudIcon Icon="@Icons.Material.Filled.Payments" />
-                        </MudAvatar>
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+            <div class="stat-card-v2 stat-card-violet" @onclick="@(() => Navigation.NavigateTo("/dealer/commissions"))">
+                <div class="stat-card-icon-bg">
+                    <MudIcon Icon="@Icons.Material.Filled.Payments" />
+                </div>
+                <div class="stat-card-body">
+                    <span class="stat-card-label">@(Lang?.T("Dash_TotalCommission") ?? "TOTAL COMMISSION")</span>
+                    <span class="stat-card-value stat-card-value-sm">@_myTotalCommission.ToString("C2")</span>
+                    <span class="stat-card-sub">@(Lang?.T("Dash_EarnedToDate") ?? "earned to date")</span>
+                </div>
+            </div>
         </MudItem>
 
         <!-- Quick Actions -->
         <MudItem xs="12">
-            <MudPaper Elevation="0" Class="data-card pa-4">
-                <MudText Typo="Typo.h6" Class="mb-3">@(Lang?.T("Dash_QuickActions") ?? "Quick Actions")</MudText>
-                <MudStack Row="true" Spacing="3" Wrap="Wrap.Wrap">
-                    <MudButton Variant="Variant.Outlined" Color="Color.Primary"
-                               StartIcon="@Icons.Material.Filled.SwapHoriz"
+            <MudPaper Elevation="0" Class="data-card pa-4 quick-actions-card">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary" Style="font-weight:600; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">@(Lang?.T("Dash_QuickActions") ?? "Quick Actions")</MudText>
+                <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.SwapHoriz" Class="quick-action-btn"
                                OnClick="@(() => Navigation.NavigateTo("/dealer/transfers"))">@(Lang?.T("Dash_NewTransfer") ?? "New Transfer")</MudButton>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
-                               StartIcon="@Icons.Material.Filled.Payments"
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.Payments" Class="quick-action-btn"
                                OnClick="@(() => Navigation.NavigateTo("/dealer/commissions"))">@(Lang?.T("Dash_ViewCommissions") ?? "View Commissions")</MudButton>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Info"
-                               StartIcon="@Icons.Material.Filled.PersonAdd"
+                    <MudButton Variant="Variant.Filled" Color="Color.Info" Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.PersonAdd" Class="quick-action-btn"
                                OnClick="@(() => Navigation.NavigateTo("/dealer/registration"))">@(Lang?.T("Nav_Dealers") ?? "Dealers")</MudButton>
                 </MudStack>
             </MudPaper>
@@ -275,90 +281,70 @@ else if (_isCashier)
 
         <!-- Stat Cards -->
         <MudItem xs="12" sm="6" md="3">
-            <MudCard Class="stat-card" Elevation="0" Style="@((Lang?.IsRtl == true ? "border-right" : "border-left") + ": 4px solid #16A34A !important;")"
-                     @onclick="@(() => Navigation.NavigateTo("/cashier/deposits"))">
-                <MudCardContent>
-                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                        <div>
-                            <MudText Typo="Typo.overline" Color="Color.Secondary">@(Lang?.T("Dash_CashDeposits") ?? "CASH DEPOSITS")</MudText>
-                            <MudText Typo="Typo.h4">@_cashDepositCount</MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Success">@_totalCashDeposits.ToString("C2") @(Lang?.T("Dash_TotalLabel") ?? "total")</MudText>
-                        </div>
-                        <MudAvatar Color="Color.Success" Variant="Variant.Outlined" Size="Size.Large">
-                            <MudIcon Icon="@Icons.Material.Filled.AttachMoney" />
-                        </MudAvatar>
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+            <div class="stat-card-v2 stat-card-green" @onclick="@(() => Navigation.NavigateTo("/cashier/deposits"))">
+                <div class="stat-card-icon-bg">
+                    <MudIcon Icon="@Icons.Material.Filled.AttachMoney" />
+                </div>
+                <div class="stat-card-body">
+                    <span class="stat-card-label">@(Lang?.T("Dash_CashDeposits") ?? "CASH DEPOSITS")</span>
+                    <span class="stat-card-value">@_cashDepositCount</span>
+                    <span class="stat-card-sub">@_totalCashDeposits.ToString("C2") @(Lang?.T("Dash_TotalLabel") ?? "total")</span>
+                </div>
+            </div>
         </MudItem>
 
         <MudItem xs="12" sm="6" md="3">
-            <MudCard Class="stat-card" Elevation="0" Style="@((Lang?.IsRtl == true ? "border-right" : "border-left") + ": 4px solid #0284C7 !important;")"
-                     @onclick="@(() => Navigation.NavigateTo("/cashier/deposits"))">
-                <MudCardContent>
-                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                        <div>
-                            <MudText Typo="Typo.overline" Color="Color.Secondary">@(Lang?.T("Dash_TodaysDeposits") ?? "TODAY'S DEPOSITS")</MudText>
-                            <MudText Typo="Typo.h4">@_todayDepositCount</MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Info">@_todayDepositAmount.ToString("C2") @(Lang?.T("Dash_Today") ?? "today")</MudText>
-                        </div>
-                        <MudAvatar Color="Color.Info" Variant="Variant.Outlined" Size="Size.Large">
-                            <MudIcon Icon="@Icons.Material.Filled.Today" />
-                        </MudAvatar>
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+            <div class="stat-card-v2 stat-card-blue" @onclick="@(() => Navigation.NavigateTo("/cashier/deposits"))">
+                <div class="stat-card-icon-bg">
+                    <MudIcon Icon="@Icons.Material.Filled.Today" />
+                </div>
+                <div class="stat-card-body">
+                    <span class="stat-card-label">@(Lang?.T("Dash_TodaysDeposits") ?? "TODAY'S DEPOSITS")</span>
+                    <span class="stat-card-value">@_todayDepositCount</span>
+                    <span class="stat-card-sub">@_todayDepositAmount.ToString("C2") @(Lang?.T("Dash_Today") ?? "today")</span>
+                </div>
+            </div>
         </MudItem>
 
         <MudItem xs="12" sm="6" md="3">
-            <MudCard Class="stat-card" Elevation="0" Style="@((Lang?.IsRtl == true ? "border-right" : "border-left") + ": 4px solid #D97706 !important;")"
-                     @onclick="@(() => Navigation.NavigateTo("/cashier/expenses"))">
-                <MudCardContent>
-                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                        <div>
-                            <MudText Typo="Typo.overline" Color="Color.Secondary">@(Lang?.T("Dash_PendingExpenses") ?? "PENDING EXPENSES")</MudText>
-                            <MudText Typo="Typo.h4">@_pendingExpensesCount</MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Warning">@(Lang?.T("Dash_AwaitingApproval") ?? "awaiting approval")</MudText>
-                        </div>
-                        <MudAvatar Color="Color.Warning" Variant="Variant.Outlined" Size="Size.Large">
-                            <MudIcon Icon="@Icons.Material.Filled.Receipt" />
-                        </MudAvatar>
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+            <div class="stat-card-v2 stat-card-amber" @onclick="@(() => Navigation.NavigateTo("/cashier/expenses"))">
+                <div class="stat-card-icon-bg">
+                    <MudIcon Icon="@Icons.Material.Filled.Receipt" />
+                </div>
+                <div class="stat-card-body">
+                    <span class="stat-card-label">@(Lang?.T("Dash_PendingExpenses") ?? "PENDING EXPENSES")</span>
+                    <span class="stat-card-value">@_pendingExpensesCount</span>
+                    <span class="stat-card-sub">@(Lang?.T("Dash_AwaitingApproval") ?? "awaiting approval")</span>
+                </div>
+            </div>
         </MudItem>
 
         <MudItem xs="12" sm="6" md="3">
-            <MudCard Class="stat-card" Elevation="0" Style="@((Lang?.IsRtl == true ? "border-right" : "border-left") + ": 4px solid #3B82F6 !important;")"
-                     @onclick="@(() => Navigation.NavigateTo("/cashier/balances"))">
-                <MudCardContent>
-                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                        <div>
-                            <MudText Typo="Typo.overline" Color="Color.Secondary">@(Lang?.T("Dash_ApprovedExpenses") ?? "APPROVED EXPENSES")</MudText>
-                            <MudText Typo="Typo.h5" Style="font-weight:700;">@_approvedExpensesAmount.ToString("C2")</MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Dash_TotalApproved") ?? "total approved")</MudText>
-                        </div>
-                        <MudAvatar Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Large">
-                            <MudIcon Icon="@Icons.Material.Filled.AccountBalance" />
-                        </MudAvatar>
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+            <div class="stat-card-v2 stat-card-indigo" @onclick="@(() => Navigation.NavigateTo("/cashier/balances"))">
+                <div class="stat-card-icon-bg">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountBalance" />
+                </div>
+                <div class="stat-card-body">
+                    <span class="stat-card-label">@(Lang?.T("Dash_ApprovedExpenses") ?? "APPROVED EXPENSES")</span>
+                    <span class="stat-card-value stat-card-value-sm">@_approvedExpensesAmount.ToString("C2")</span>
+                    <span class="stat-card-sub">@(Lang?.T("Dash_TotalApproved") ?? "total approved")</span>
+                </div>
+            </div>
         </MudItem>
 
         <!-- Quick Actions -->
         <MudItem xs="12">
-            <MudPaper Elevation="0" Class="data-card pa-4">
-                <MudText Typo="Typo.h6" Class="mb-3">@(Lang?.T("Dash_QuickActions") ?? "Quick Actions")</MudText>
-                <MudStack Row="true" Spacing="3" Wrap="Wrap.Wrap">
-                    <MudButton Variant="Variant.Outlined" Color="Color.Success"
-                               StartIcon="@Icons.Material.Filled.AttachMoney"
+            <MudPaper Elevation="0" Class="data-card pa-4 quick-actions-card">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary" Style="font-weight:600; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">@(Lang?.T("Dash_QuickActions") ?? "Quick Actions")</MudText>
+                <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.AttachMoney" Class="quick-action-btn"
                                OnClick="@(() => Navigation.NavigateTo("/cashier/deposits"))">@(Lang?.T("Dash_NewCashDeposit") ?? "New Cash Deposit")</MudButton>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Warning"
-                               StartIcon="@Icons.Material.Filled.Receipt"
+                    <MudButton Variant="Variant.Filled" Color="Color.Warning" Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.Receipt" Class="quick-action-btn"
                                OnClick="@(() => Navigation.NavigateTo("/cashier/expenses"))">@(Lang?.T("Dash_NewExpense") ?? "New Expense")</MudButton>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Info"
-                               StartIcon="@Icons.Material.Filled.AccountBalance"
+                    <MudButton Variant="Variant.Filled" Color="Color.Info" Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.AccountBalance" Class="quick-action-btn"
                                OnClick="@(() => Navigation.NavigateTo("/cashier/balances"))">@(Lang?.T("Dash_DealerBalances") ?? "Dealer Balances")</MudButton>
                 </MudStack>
             </MudPaper>
@@ -488,136 +474,106 @@ else
 
         <!-- Summary Cards -->
         <MudItem xs="12" sm="6" md="3">
-            <MudCard Class="stat-card" Elevation="0" Style="@((Lang?.IsRtl == true ? "border-right" : "border-left") + ": 4px solid #F59E0B !important;")"
-                     @onclick="@(() => Navigation.NavigateTo("/dealer/registration"))">
-                <MudCardContent>
-                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                        <div>
-                            <MudText Typo="Typo.overline" Color="Color.Secondary">@(Lang?.T("Dash_Dealers") ?? "DEALERS")</MudText>
-                            <MudText Typo="Typo.h4">@_dealerCount</MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Info">@(Lang?.T("Dash_Registered") ?? "registered")</MudText>
-                        </div>
-                        <MudAvatar Color="Color.Secondary" Variant="Variant.Outlined" Size="Size.Large">
-                            <MudIcon Icon="@Icons.Material.Filled.People" />
-                        </MudAvatar>
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+            <div class="stat-card-v2 stat-card-amber" @onclick="@(() => Navigation.NavigateTo("/dealer/registration"))">
+                <div class="stat-card-icon-bg">
+                    <MudIcon Icon="@Icons.Material.Filled.People" />
+                </div>
+                <div class="stat-card-body">
+                    <span class="stat-card-label">@(Lang?.T("Dash_Dealers") ?? "DEALERS")</span>
+                    <span class="stat-card-value">@_dealerCount</span>
+                    <span class="stat-card-sub">@(Lang?.T("Dash_Registered") ?? "registered")</span>
+                </div>
+            </div>
         </MudItem>
 
         <MudItem xs="12" sm="6" md="3">
-            <MudCard Class="stat-card" Elevation="0" Style="@((Lang?.IsRtl == true ? "border-right" : "border-left") + ": 4px solid #0284C7 !important;")"
-                     @onclick="@(() => Navigation.NavigateTo("/dealer/transfers"))">
-                <MudCardContent>
-                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                        <div>
-                            <MudText Typo="Typo.overline" Color="Color.Secondary">@(Lang?.T("Dash_Transfers") ?? "TRANSFERS")</MudText>
-                            <MudText Typo="Typo.h4">@_transferCount</MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Info">@_totalTransferAmount.ToString("C6")</MudText>
-                        </div>
-                        <MudAvatar Color="Color.Info" Variant="Variant.Outlined" Size="Size.Large">
-                            <MudIcon Icon="@Icons.Material.Filled.SwapHoriz" />
-                        </MudAvatar>
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+            <div class="stat-card-v2 stat-card-blue" @onclick="@(() => Navigation.NavigateTo("/dealer/transfers"))">
+                <div class="stat-card-icon-bg">
+                    <MudIcon Icon="@Icons.Material.Filled.SwapHoriz" />
+                </div>
+                <div class="stat-card-body">
+                    <span class="stat-card-label">@(Lang?.T("Dash_Transfers") ?? "TRANSFERS")</span>
+                    <span class="stat-card-value">@_transferCount</span>
+                    <span class="stat-card-sub">@_totalTransferAmount.ToString("C2")</span>
+                </div>
+            </div>
         </MudItem>
 
         <MudItem xs="12" sm="6" md="3">
-            <MudCard Class="stat-card" Elevation="0" Style="@((Lang?.IsRtl == true ? "border-right" : "border-left") + ": 4px solid #16A34A !important;")"
-                     @onclick="@(() => Navigation.NavigateTo("/cashier/deposits"))">
-                <MudCardContent>
-                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                        <div>
-                            <MudText Typo="Typo.overline" Color="Color.Secondary">@(Lang?.T("Dash_CashDeposits") ?? "CASH DEPOSITS")</MudText>
-                            <MudText Typo="Typo.h4">@_cashDepositCount</MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Success">@_totalCashDeposits.ToString("C6")</MudText>
-                        </div>
-                        <MudAvatar Color="Color.Success" Variant="Variant.Outlined" Size="Size.Large">
-                            <MudIcon Icon="@Icons.Material.Filled.AttachMoney" />
-                        </MudAvatar>
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+            <div class="stat-card-v2 stat-card-green" @onclick="@(() => Navigation.NavigateTo("/cashier/deposits"))">
+                <div class="stat-card-icon-bg">
+                    <MudIcon Icon="@Icons.Material.Filled.AttachMoney" />
+                </div>
+                <div class="stat-card-body">
+                    <span class="stat-card-label">@(Lang?.T("Dash_CashDeposits") ?? "CASH DEPOSITS")</span>
+                    <span class="stat-card-value">@_cashDepositCount</span>
+                    <span class="stat-card-sub">@_totalCashDeposits.ToString("C2")</span>
+                </div>
+            </div>
         </MudItem>
 
         <MudItem xs="12" sm="6" md="3">
-            <MudCard Class="stat-card" Elevation="0" Style="@((Lang?.IsRtl == true ? "border-right" : "border-left") + ": 4px solid #3B82F6 !important;")"
-                     @onclick="@(() => Navigation.NavigateTo("/cashier/balances"))">
-                <MudCardContent>
-                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                        <div>
-                            <MudText Typo="Typo.overline" Color="Color.Secondary">@(Lang?.T("Dash_TotalBalance") ?? "TOTAL BALANCE")</MudText>
-                            <MudText Typo="Typo.h5" Style="@($"font-weight:700;{(_totalBalance < 0 ? "color:#EF4444;" : "")}")">
-                                @(_totalBalance < 0 ? $"-{Math.Abs(_totalBalance).ToString("C2")}" : _totalBalance.ToString("C2"))
-                            </MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Dash_DepositsMinusTransfers") ?? "Deposits − Transfers")</MudText>
-                        </div>
-                        <MudAvatar Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Large">
-                            <MudIcon Icon="@Icons.Material.Filled.AccountBalance" />
-                        </MudAvatar>
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+            <div class="stat-card-v2 stat-card-indigo" @onclick="@(() => Navigation.NavigateTo("/cashier/balances"))">
+                <div class="stat-card-icon-bg">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountBalance" />
+                </div>
+                <div class="stat-card-body">
+                    <span class="stat-card-label">@(Lang?.T("Dash_TotalBalance") ?? "TOTAL BALANCE")</span>
+                    <span class="stat-card-value @(_totalBalance < 0 ? "stat-card-negative" : "")">
+                        @(_totalBalance < 0 ? $"-{Math.Abs(_totalBalance).ToString("C2")}" : _totalBalance.ToString("C2"))
+                    </span>
+                    <span class="stat-card-sub">@(Lang?.T("Dash_DepositsMinusTransfers") ?? "Deposits − Transfers")</span>
+                </div>
+            </div>
         </MudItem>
 
         <!-- Analytics Quick-Glance Cards -->
         <MudItem xs="12" sm="6" md="3">
-            <MudCard Class="stat-card" Elevation="0" Style="@((Lang?.IsRtl == true ? "border-right" : "border-left") + ": 4px solid #0D9488 !important;")"
-                     @onclick="@(() => Navigation.NavigateTo("/admin/analytics"))">
-                <MudCardContent>
-                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                        <div>
-                            <MudText Typo="Typo.overline" Color="Color.Secondary">@(Lang?.T("Dash_StockValue") ?? "STOCK VALUE")</MudText>
-                            <MudText Typo="Typo.h5" Style="font-weight:700;">@_currentStockValue.ToString("C2")</MudText>
-                            <MudText Typo="Typo.caption" Style="color:#0D9488;">@_stockUtilization.ToString("N1")% @(Lang?.T("Dash_Utilized") ?? "utilized")</MudText>
-                        </div>
-                        <MudAvatar Style="color:#0D9488; border-color:#0D9488;" Variant="Variant.Outlined" Size="Size.Large">
-                            <MudIcon Icon="@Icons.Material.Filled.Inventory2" />
-                        </MudAvatar>
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+            <div class="stat-card-v2 stat-card-teal" @onclick="@(() => Navigation.NavigateTo("/admin/analytics"))">
+                <div class="stat-card-icon-bg">
+                    <MudIcon Icon="@Icons.Material.Filled.Inventory2" />
+                </div>
+                <div class="stat-card-body">
+                    <span class="stat-card-label">@(Lang?.T("Dash_StockValue") ?? "STOCK VALUE")</span>
+                    <span class="stat-card-value stat-card-value-sm">@_currentStockValue.ToString("C2")</span>
+                    <span class="stat-card-sub">@_stockUtilization.ToString("N1")% @(Lang?.T("Dash_Utilized") ?? "utilized")</span>
+                </div>
+            </div>
         </MudItem>
 
         <MudItem xs="12" sm="6" md="3">
-            <MudCard Class="stat-card" Elevation="0" Style="@((Lang?.IsRtl == true ? "border-right" : "border-left") + ": 4px solid #7C3AED !important;")"
-                     @onclick="@(() => Navigation.NavigateTo("/admin/analytics"))">
-                <MudCardContent>
-                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                        <div>
-                            <MudText Typo="Typo.overline" Color="Color.Secondary">@(Lang?.T("Dash_NetCapital") ?? "NET CAPITAL")</MudText>
-                            <MudText Typo="Typo.h5" Style="@($"font-weight:700;{(_netCapital < 0 ? "color:#EF4444;" : "")}")">
-                                @(_netCapital < 0 ? $"-{Math.Abs(_netCapital).ToString("C2")}" : _netCapital.ToString("C2"))
-                            </MudText>
-                            <MudText Typo="Typo.caption" Style="@(_grossProfit >= 0 ? "color:#16A34A;" : "color:#EF4444;")">
-                                @(Lang?.T("Dash_Profit") ?? "Profit:") @_grossProfit.ToString("C2")
-                            </MudText>
-                        </div>
-                        <MudAvatar Style="color:#7C3AED; border-color:#7C3AED;" Variant="Variant.Outlined" Size="Size.Large">
-                            <MudIcon Icon="@Icons.Material.Filled.TrendingUp" />
-                        </MudAvatar>
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+            <div class="stat-card-v2 stat-card-violet" @onclick="@(() => Navigation.NavigateTo("/admin/analytics"))">
+                <div class="stat-card-icon-bg">
+                    <MudIcon Icon="@Icons.Material.Filled.TrendingUp" />
+                </div>
+                <div class="stat-card-body">
+                    <span class="stat-card-label">@(Lang?.T("Dash_NetCapital") ?? "NET CAPITAL")</span>
+                    <span class="stat-card-value stat-card-value-sm @(_netCapital < 0 ? "stat-card-negative" : "")">
+                        @(_netCapital < 0 ? $"-{Math.Abs(_netCapital).ToString("C2")}" : _netCapital.ToString("C2"))
+                    </span>
+                    <span class="stat-card-sub" style="@(_grossProfit >= 0 ? "color:#16A34A;" : "color:#EF4444;")">
+                        @(Lang?.T("Dash_Profit") ?? "Profit:") @_grossProfit.ToString("C2")
+                    </span>
+                </div>
+            </div>
         </MudItem>
 
         <!-- Quick Actions -->
-        <MudItem xs="12">
-            <MudPaper Elevation="0" Class="data-card pa-4">
-                <MudText Typo="Typo.h6" Class="mb-3">@(Lang?.T("Dash_QuickActions") ?? "Quick Actions")</MudText>
-                <MudStack Row="true" Spacing="3" Wrap="Wrap.Wrap">
-                    <MudButton Variant="Variant.Outlined" Color="Color.Primary"
-                               StartIcon="@Icons.Material.Filled.SwapHoriz"
+        <MudItem xs="12" sm="6">
+            <MudPaper Elevation="0" Class="data-card pa-4 quick-actions-card">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary" Style="font-weight:600; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">@(Lang?.T("Dash_QuickActions") ?? "Quick Actions")</MudText>
+                <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.SwapHoriz" Class="quick-action-btn"
                                OnClick="@(() => Navigation.NavigateTo("/dealer/transfers"))">@(Lang?.T("Dash_NewTransfer") ?? "New Transfer")</MudButton>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Success"
-                               StartIcon="@Icons.Material.Filled.AttachMoney"
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.AttachMoney" Class="quick-action-btn"
                                OnClick="@(() => Navigation.NavigateTo("/cashier/deposits"))">@(Lang?.T("Dash_CashDeposit") ?? "Cash Deposit")</MudButton>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Warning"
-                               StartIcon="@Icons.Material.Filled.AccountBalanceWallet"
+                    <MudButton Variant="Variant.Filled" Color="Color.Warning" Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.AccountBalanceWallet" Class="quick-action-btn"
                                OnClick="@(() => Navigation.NavigateTo("/admin/deposits"))">@(Lang?.T("Dash_AirtimeDeposit") ?? "Airtime Deposit")</MudButton>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Info"
-                               StartIcon="@Icons.Material.Filled.PersonAdd"
+                    <MudButton Variant="Variant.Filled" Color="Color.Info" Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.PersonAdd" Class="quick-action-btn"
                                OnClick="@(() => Navigation.NavigateTo("/dealer/registration"))">@(Lang?.T("Dash_RegisterDealer") ?? "Register Dealer")</MudButton>
                 </MudStack>
             </MudPaper>
@@ -820,6 +776,87 @@ else
             </MudPaper>
         </MudItem>
 
+        <!-- Top 5 Lists -->
+        <MudItem xs="12" sm="6">
+            <MudPaper Elevation="0" Class="data-card pa-4" Style="height:100%;">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-3" Spacing="1">
+                    <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Color="Color.Warning" Size="Size.Small" />
+                    <MudText Typo="Typo.h6">Top 5 Products by Profit</MudText>
+                </MudStack>
+                @if (_top5Products.Count > 0)
+                {
+                    <div style="display:flex;flex-direction:column;gap:6px;">
+                        @for (int i = 0; i < _top5Products.Count; i++)
+                        {
+                            var rank = i + 1;
+                            var item = _top5Products[i];
+                            var maxCommission = _top5Products[0].Commission;
+                            var barPct = maxCommission > 0 ? (double)(item.Commission / maxCommission * 100) : 0;
+                            <div style="display:flex;align-items:center;gap:8px;padding:4px 0;">
+                                <MudText Typo="Typo.body2" Style="width:20px;text-align:right;font-weight:600;color:var(--mud-palette-text-secondary);">@rank</MudText>
+                                <div style="flex:1;min-width:0;">
+                                    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;">
+                                        <MudText Typo="Typo.body2" Style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;">@item.Name</MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Success" Style="margin-left:8px;white-space:nowrap;font-weight:600;">@item.Commission.ToString("C0")</MudText>
+                                    </div>
+                                    <div style="height:4px;border-radius:2px;background:var(--mud-palette-action-disabled-background);overflow:hidden;">
+                                        <div style="height:100%;width:@(barPct.ToString("F0"))%;background:linear-gradient(90deg,#16A34A,#4ADE80);border-radius:2px;transition:width 0.6s ease;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div style="text-align:center;padding:32px 0;">
+                        <MudIcon Icon="@Icons.Material.Outlined.BarChart" Size="Size.Large" Color="Color.Secondary" />
+                        <MudText Color="Color.Secondary" Class="mt-2" Typo="Typo.body2">No approved transfers yet</MudText>
+                    </div>
+                }
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" sm="6">
+            <MudPaper Elevation="0" Class="data-card pa-4" Style="height:100%;">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-3" Spacing="1">
+                    <MudIcon Icon="@Icons.Material.Filled.Star" Color="Color.Warning" Size="Size.Small" />
+                    <MudText Typo="Typo.h6">Top 5 Dealers by Profit</MudText>
+                </MudStack>
+                @if (_top5Dealers.Count > 0)
+                {
+                    <div style="display:flex;flex-direction:column;gap:6px;">
+                        @for (int i = 0; i < _top5Dealers.Count; i++)
+                        {
+                            var rank = i + 1;
+                            var item = _top5Dealers[i];
+                            var maxCommission = _top5Dealers[0].Commission;
+                            var barPct = maxCommission > 0 ? (double)(item.Commission / maxCommission * 100) : 0;
+                            <div style="display:flex;align-items:center;gap:8px;padding:4px 0;">
+                                <MudText Typo="Typo.body2" Style="width:20px;text-align:right;font-weight:600;color:var(--mud-palette-text-secondary);">@rank</MudText>
+                                <div style="flex:1;min-width:0;">
+                                    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;">
+                                        <MudText Typo="Typo.body2" Style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;">@item.Name</MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Primary" Style="margin-left:8px;white-space:nowrap;font-weight:600;">@item.Commission.ToString("C0")</MudText>
+                                    </div>
+                                    <div style="height:4px;border-radius:2px;background:var(--mud-palette-action-disabled-background);overflow:hidden;">
+                                        <div style="height:100%;width:@(barPct.ToString("F0"))%;background:linear-gradient(90deg,#2563EB,#60A5FA);border-radius:2px;transition:width 0.6s ease;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div style="text-align:center;padding:32px 0;">
+                        <MudIcon Icon="@Icons.Material.Outlined.People" Size="Size.Large" Color="Color.Secondary" />
+                        <MudText Color="Color.Secondary" Class="mt-2" Typo="Typo.body2">No approved transfers yet</MudText>
+                    </div>
+                }
+            </MudPaper>
+        </MudItem>
+
         <!-- Monthly Transfers Chart -->
         <MudItem xs="12">
             <MudPaper Elevation="0" Class="data-card pa-4">
@@ -883,6 +920,7 @@ else
 
     // ── Role flags ──
     private bool _loading = true;
+    private string? _loadError;
     private bool _isDealer;
     private bool _isCashier;
     private string _userName = "User";
@@ -914,6 +952,10 @@ else
     private List<CommissionRow> _commissionRows = new();
     private record CommissionRow(string ProductName, decimal Rate, int TransferCount, decimal CommissionEarned);
 
+    // ── Top 5 Lists ──
+    private List<(string Name, decimal Commission)> _top5Products = new();
+    private List<(string Name, decimal Commission)> _top5Dealers = new();
+
     // ── Cashier ──
     private List<CashDepositDto> _recentCashDeposits = new();
     private int _todayDepositCount, _pendingExpensesCount, _approvedExpensesCount, _rejectedExpensesCount;
@@ -937,19 +979,37 @@ else
 
         try
         {
-            var user = await UserManager.FindByIdAsync(CurrentUser.UserId ?? "");
-            _userName = user?.FullName ?? CurrentUser.UserName ?? "User";
+            // Get auth state first (no DB hit — reads from the SignalR/cookie context)
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var principal = authState.User;
+            var userId = principal.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            // Create a single isolated scope for ALL DB operations so we never touch
+            // the circuit-scoped DbContext, which may be in use by NavMenu concurrently.
+            using var scope = ScopeFactory.CreateScope();
+            var sp = scope.ServiceProvider;
+
+            if (!string.IsNullOrEmpty(userId))
+            {
+                var userMgr = sp.GetRequiredService<UserManager<ApplicationUser>>();
+                var user = await userMgr.FindByIdAsync(userId);
+                _userName = user?.FullName ?? principal.Identity?.Name ?? "User";
+            }
+            else
+            {
+                _userName = principal.Identity?.Name ?? "User";
+            }
 
             if (_isDealer)
-                await LoadDealerData();
+                await LoadDealerData(sp);
             else if (_isCashier)
-                await LoadCashierData();
+                await LoadCashierData(sp);
             else
-                await LoadAdminData();
+                await LoadAdminData(sp);
         }
-        catch
+        catch (Exception ex)
         {
-            // Dashboard should not crash on data errors
+            _loadError = ex.Message;
         }
         finally
         {
@@ -1008,48 +1068,34 @@ else
         }
     }
 
-    private async Task<T> RunInScope<T>(Func<IServiceProvider, Task<T>> work)
+    private async Task LoadAdminData(IServiceProvider sp)
     {
-        using var scope = ScopeFactory.CreateScope();
-        return await work(scope.ServiceProvider);
-    }
+        _products = (await sp.GetRequiredService<IProductService>().GetAllProductsAsync()).ToList();
+        var dealers = await sp.GetRequiredService<IDealerService>().GetAllDealersAsync();
+        _dealerCount = dealers.Count;
 
-    private async Task LoadAdminData()
-    {
-        var productsTask = RunInScope(sp => sp.GetRequiredService<IProductService>().GetAllProductsAsync());
-        var dealersTask = RunInScope(sp => sp.GetRequiredService<IDealerService>().GetAllDealersAsync());
-        var transfersTask = RunInScope(sp => sp.GetRequiredService<IAirtimeTransferService>().GetAllTransfersAsync());
-        var cashDepositsTask = RunInScope(sp => sp.GetRequiredService<ICashDepositService>().GetAllDepositsAsync());
-        var airtimeDepositsTask = RunInScope(sp => sp.GetRequiredService<IAirtimeDepositService>().GetAllDepositsAsync());
-        var branchesTask = RunInScope(sp => sp.GetRequiredService<IBranchService>().GetAllBranchesAsync());
-        var auditTask = RunInScope(sp => sp.GetRequiredService<IAuditLogService>().GetRecentLogsAsync(8));
-        var expensesTask = RunInScope(sp => sp.GetRequiredService<IExpenseService>().GetAllExpensesAsync());
-
-        await Task.WhenAll(productsTask, dealersTask, transfersTask, cashDepositsTask, airtimeDepositsTask, branchesTask, auditTask, expensesTask);
-
-        _products = productsTask.Result.ToList();
-        _dealerCount = dealersTask.Result.Count;
-
-        var transfers = transfersTask.Result;
+        var transfers = await sp.GetRequiredService<IAirtimeTransferService>().GetAllTransfersAsync();
         _transferCount = transfers.Count;
         _totalTransferAmount = transfers.Where(t => t.Status == DepositStatus.Approved).Sum(t => t.LoanAmount);
         _recentTransfers = transfers.OrderByDescending(t => t.CreatedDate).Take(5).ToList();
         _pendingTransfersCount = transfers.Count(t => t.Status == DepositStatus.Pending);
 
-        var cashDeposits = cashDepositsTask.Result;
+        var cashDeposits = await sp.GetRequiredService<ICashDepositService>().GetAllDepositsAsync();
         _cashDepositCount = cashDeposits.Count;
         _totalCashDeposits = cashDeposits.Sum(d => d.Amount);
         _totalBalance = _totalCashDeposits - _totalTransferAmount;
 
-        var airtimeDeposits = airtimeDepositsTask.Result;
+        var airtimeDeposits = await sp.GetRequiredService<IAirtimeDepositService>().GetAllDepositsAsync();
         _pendingDepositsCount = airtimeDeposits.Count(d => d.Status == DepositStatus.Pending);
         _approvedDepositsCount = airtimeDeposits.Count(d => d.Status == DepositStatus.Approved);
         _rejectedDepositsCount = airtimeDeposits.Count(d => d.Status == DepositStatus.Rejected);
         _cancelledDepositsCount = airtimeDeposits.Count(d => d.Status == DepositStatus.Cancelled);
         _totalApprovedValue = airtimeDeposits.Where(d => d.Status == DepositStatus.Approved).Sum(d => d.TotalAmount);
 
-        _branches = branchesTask.Result.ToList();
-        _recentAuditLogs = auditTask.Result.ToList();
+        _branches = (await sp.GetRequiredService<IBranchService>().GetAllBranchesAsync()).ToList();
+        _recentAuditLogs = (await sp.GetRequiredService<IAuditLogService>().GetRecentLogsAsync(8)).ToList();
+
+        var expenses = await sp.GetRequiredService<IExpenseService>().GetAllExpensesAsync();
 
         // Monthly chart data (last 6 months)
         var now = DateTime.UtcNow;
@@ -1068,20 +1114,24 @@ else
         var totalDistributed = transfers.Where(t => t.Status == DepositStatus.Approved).Sum(t => t.LoanAmount);
         _stockUtilization = totalPurchased > 0 ? totalDistributed / totalPurchased * 100 : 0;
         var totalInvestment = airtimeDeposits.Where(d => d.Status == DepositStatus.Approved).Sum(d => d.Amount);
-        var totalExpenses = expensesTask.Result.Where(e => e.Status == DepositStatus.Approved).Sum(e => e.Amount);
+        var totalExpenses = expenses.Where(e => e.Status == DepositStatus.Approved).Sum(e => e.Amount);
         _netCapital = _totalCashDeposits + _currentStockValue - totalExpenses;
         _grossProfit = _totalCashDeposits - totalInvestment - totalExpenses;
+
+        var approvedTransfers = transfers.Where(t => t.Status == DepositStatus.Approved).ToList();
+        _top5Products = approvedTransfers
+            .GroupBy(t => t.ProductName)
+            .Select(g => (Name: g.Key, Commission: g.Sum(t => t.CommissionAmount)))
+            .OrderByDescending(x => x.Commission).Take(5).ToList();
+        _top5Dealers = approvedTransfers
+            .GroupBy(t => t.DealerName)
+            .Select(g => (Name: g.Key, Commission: g.Sum(t => t.CommissionAmount)))
+            .OrderByDescending(x => x.Commission).Take(5).ToList();
     }
 
-    private async Task LoadDealerData()
+    private async Task LoadDealerData(IServiceProvider sp)
     {
-        var transfersTask = RunInScope(sp => sp.GetRequiredService<IAirtimeTransferService>().GetAllTransfersAsync());
-        var ratesTask = RunInScope(sp => sp.GetRequiredService<IDealerService>().GetAllDealerProductRatesAsync());
-        var productsTask = RunInScope(sp => sp.GetRequiredService<IProductService>().GetAllProductsAsync());
-
-        await Task.WhenAll(transfersTask, ratesTask, productsTask);
-
-        var transfers = transfersTask.Result;
+        var transfers = await sp.GetRequiredService<IAirtimeTransferService>().GetAllTransfersAsync();
         _myTransferCount = transfers.Count;
         _myPendingCount = transfers.Count(t => t.Status == DepositStatus.Pending);
         _myApprovedCount = transfers.Count(t => t.Status == DepositStatus.Approved);
@@ -1091,8 +1141,8 @@ else
         _myTotalCommission = transfers.Where(t => t.Status == DepositStatus.Approved).Sum(t => t.CommissionAmount);
         _recentTransfers = transfers.OrderByDescending(t => t.CreatedDate).Take(6).ToList();
 
-        _dealerProductRates = ratesTask.Result.ToList();
-        var productMap = productsTask.Result.ToDictionary(p => p.Id, p => p.Name);
+        _dealerProductRates = (await sp.GetRequiredService<IDealerService>().GetAllDealerProductRatesAsync()).ToList();
+        var productMap = (await sp.GetRequiredService<IProductService>().GetAllProductsAsync()).ToDictionary(p => p.Id, p => p.Name);
 
         _commissionRows = _dealerProductRates
             .GroupBy(r => r.ProductId)
@@ -1109,22 +1159,17 @@ else
             .ToList();
     }
 
-    private async Task LoadCashierData()
+    private async Task LoadCashierData(IServiceProvider sp)
     {
-        var cashDepositsTask = RunInScope(sp => sp.GetRequiredService<ICashDepositService>().GetAllDepositsAsync());
-        var expensesTask = RunInScope(sp => sp.GetRequiredService<IExpenseService>().GetAllExpensesAsync());
-
-        await Task.WhenAll(cashDepositsTask, expensesTask);
-
         var today = DateTime.UtcNow.Date;
-        var cashDeposits = cashDepositsTask.Result;
+        var cashDeposits = await sp.GetRequiredService<ICashDepositService>().GetAllDepositsAsync();
         _cashDepositCount = cashDeposits.Count;
         _totalCashDeposits = cashDeposits.Sum(d => d.Amount);
         _todayDepositCount = cashDeposits.Count(d => d.DepositDate.Date == today);
         _todayDepositAmount = cashDeposits.Where(d => d.DepositDate.Date == today).Sum(d => d.Amount);
         _recentCashDeposits = cashDeposits.OrderByDescending(d => d.DepositDate).Take(6).ToList();
 
-        var expenses = expensesTask.Result;
+        var expenses = await sp.GetRequiredService<IExpenseService>().GetAllExpensesAsync();
         _pendingExpensesCount = expenses.Count(e => e.Status == DepositStatus.Pending);
         _approvedExpensesCount = expenses.Count(e => e.Status == DepositStatus.Approved);
         _rejectedExpensesCount = expenses.Count(e => e.Status == DepositStatus.Rejected);

@@ -2,8 +2,9 @@
 @implements IDisposable
 @using AirtimeDistributionCloud.Application.Services
 @using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.Extensions.DependencyInjection
 @inject AuthenticationStateProvider AuthStateProvider
-@inject IPermissionService PermissionService
+@inject IServiceScopeFactory ScopeFactory
 
 <MudNavMenu Rounded="true" Margin="Margin.Dense" Color="Color.Primary">
 
@@ -41,18 +42,6 @@
         {
             <MudNavLink Href="/admin/expense-approvals" Icon="@Icons.Material.Outlined.RuleFolder">@(Lang?.T("Nav_ExpenseApprovals") ?? "Expense Approvals")</MudNavLink>
         }
-        @if (_allowed.Contains("admin.reports"))
-        {
-            <MudNavLink Href="/admin/reports" Icon="@Icons.Material.Outlined.Assessment">@(Lang?.T("Nav_Reports") ?? "Reports")</MudNavLink>
-        }
-        @if (_allowed.Contains("admin.analytics"))
-        {
-            <MudNavLink Href="/admin/analytics" Icon="@Icons.Material.Outlined.TrendingUp">@(Lang?.T("Nav_SalesCapital") ?? "Sales & Capital")</MudNavLink>
-        }
-        @if (_allowed.Contains("admin.assets"))
-        {
-            <MudNavLink Href="/admin/assets" Icon="@Icons.Material.Outlined.Inventory">@(Lang?.T("Nav_AssetRegistry") ?? "Asset Registry")</MudNavLink>
-        }
         @if (_settingsVisible)
         {
             <MudNavGroup Title="@(Lang?.T("Nav_SystemSettings") ?? "System Settings")" Icon="@Icons.Material.Outlined.Settings" Expanded="false">
@@ -65,11 +54,39 @@
                 {
                     <MudNavLink Href="/admin/expense-categories" Icon="@Icons.Material.Outlined.Category">@(Lang?.T("Nav_ExpenseCategories") ?? "Expense Categories")</MudNavLink>
                 }
-                @if (_allowed.Contains("admin.asset-categories"))
-                {
-                    <MudNavLink Href="/admin/asset-categories" Icon="@Icons.Material.Outlined.Class">@(Lang?.T("Nav_AssetCategories") ?? "Asset Categories")</MudNavLink>
-                }
             </MudNavGroup>
+        }
+    }
+
+    @if (_reportsVisible)
+    {
+        <div class="nav-label">
+            <span class="dot" style="background:#8B5CF6;"></span>
+            @(Lang?.T("Nav_ReportsAnalytics") ?? "Reports & Analytics")
+        </div>
+        @if (_allowed.Contains("reports.reports"))
+        {
+            <MudNavLink Href="/admin/reports" Icon="@Icons.Material.Outlined.Assessment">@(Lang?.T("Nav_Reports") ?? "Reports")</MudNavLink>
+        }
+        @if (_allowed.Contains("reports.analytics"))
+        {
+            <MudNavLink Href="/admin/analytics" Icon="@Icons.Material.Outlined.TrendingUp">@(Lang?.T("Nav_SalesCapital") ?? "Sales & Capital")</MudNavLink>
+        }
+    }
+
+    @if (_assetsVisible)
+    {
+        <div class="nav-label">
+            <span class="dot" style="background:#06B6D4;"></span>
+            @(Lang?.T("Nav_AssetRegistry") ?? "Asset Registry")
+        </div>
+        @if (_allowed.Contains("assets.registry"))
+        {
+            <MudNavLink Href="/admin/assets" Icon="@Icons.Material.Outlined.Inventory">@(Lang?.T("Nav_Assets") ?? "Assets")</MudNavLink>
+        }
+        @if (_allowed.Contains("assets.categories"))
+        {
+            <MudNavLink Href="/admin/asset-categories" Icon="@Icons.Material.Outlined.Class">@(Lang?.T("Nav_AssetCategories") ?? "Asset Categories")</MudNavLink>
         }
     }
 
@@ -144,6 +161,8 @@
     private bool _isSystemAdmin;
     private bool _adminVisible;
     private bool _settingsVisible;
+    private bool _reportsVisible;
+    private bool _assetsVisible;
     private bool _dealersVisible;
     private bool _cashierVisible;
     private bool _systemVisible;
@@ -166,19 +185,26 @@
         }
         else
         {
+            // Load all permissions in an isolated scope to avoid circuit-level DbContext conflicts
+            using var scope = ScopeFactory.CreateScope();
+            var permissionService = scope.ServiceProvider.GetRequiredService<IPermissionService>();
+            var allPerms = await permissionService.GetAllPermissionsAsync();
             foreach (var role in IPermissionService.ManagedRoles)
             {
                 if (!user.IsInRole(role)) continue;
-                foreach (var key in IPermissionService.AllKeys)
+                if (!allPerms.TryGetValue(role, out var rolePerms)) continue;
+                foreach (var (key, isAllowed) in rolePerms)
                 {
-                    if (await PermissionService.IsAllowedAsync(role, key))
+                    if (isAllowed)
                         _allowed.Add(key);
                 }
             }
         }
 
         _adminVisible = IPermissionService.AdminKeys.Any(k => _allowed.Contains(k));
-        _settingsVisible = _allowed.Contains("admin.settings") || _allowed.Contains("admin.expense-categories") || _allowed.Contains("admin.asset-categories");
+        _settingsVisible = _allowed.Contains("admin.settings") || _allowed.Contains("admin.expense-categories");
+        _reportsVisible = IPermissionService.ReportsKeys.Any(k => _allowed.Contains(k));
+        _assetsVisible = IPermissionService.AssetKeys.Any(k => _allowed.Contains(k));
         _dealersVisible = IPermissionService.DealerKeys.Any(k => _allowed.Contains(k));
         _cashierVisible = IPermissionService.CashierKeys.Any(k => _allowed.Contains(k));
         _systemVisible = _isSystemAdmin || IPermissionService.SystemKeys.Any(k => _allowed.Contains(k));

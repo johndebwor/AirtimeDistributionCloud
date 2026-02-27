@@ -3,18 +3,31 @@
 
 @inject SignInManager<ApplicationUser> SignInManager
 
-<MudPaper Elevation="0" Class="data-card pa-2">
-    <MudNavMenu>
-        <MudNavLink Href="Account/Manage" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Person">Profile</MudNavLink>
-        <MudNavLink Href="Account/Manage/Email" Icon="@Icons.Material.Filled.Email">Email</MudNavLink>
-        <MudNavLink Href="Account/Manage/ChangePassword" Icon="@Icons.Material.Filled.Lock">Password</MudNavLink>
+<MudPaper Elevation="0" Class="data-card pa-3">
+    <MudText Typo="Typo.overline" Class="px-2 mb-1" Color="Color.Secondary" Style="font-size:0.65rem; letter-spacing:0.1em;">Account</MudText>
+    <MudNavMenu Rounded="true" Margin="Margin.Dense" Color="Color.Primary">
+        <MudNavLink Href="Account/Manage" Match="NavLinkMatch.All" Icon="@Icons.Material.Outlined.Person">Profile</MudNavLink>
+        <MudNavLink Href="Account/Manage/Email" Icon="@Icons.Material.Outlined.Email">Email</MudNavLink>
+    </MudNavMenu>
+
+    <MudDivider Class="my-3" />
+
+    <MudText Typo="Typo.overline" Class="px-2 mb-1" Color="Color.Secondary" Style="font-size:0.65rem; letter-spacing:0.1em;">Security</MudText>
+    <MudNavMenu Rounded="true" Margin="Margin.Dense" Color="Color.Primary">
+        <MudNavLink Href="Account/Manage/ChangePassword" Icon="@Icons.Material.Outlined.Lock">Password</MudNavLink>
         @if (hasExternalLogins)
         {
-            <MudNavLink Href="Account/Manage/ExternalLogins" Icon="@Icons.Material.Filled.Link">External Logins</MudNavLink>
+            <MudNavLink Href="Account/Manage/ExternalLogins" Icon="@Icons.Material.Outlined.Link">External Logins</MudNavLink>
         }
-        <MudNavLink Href="Account/Manage/TwoFactorAuthentication" Icon="@Icons.Material.Filled.Security">Two-Factor Auth</MudNavLink>
-        <MudNavLink Href="Account/Manage/Passkeys" Icon="@Icons.Material.Filled.Key">Passkeys</MudNavLink>
-        <MudNavLink Href="Account/Manage/PersonalData" Icon="@Icons.Material.Filled.DataUsage">Personal Data</MudNavLink>
+        <MudNavLink Href="Account/Manage/TwoFactorAuthentication" Icon="@Icons.Material.Outlined.Security">Two-Factor Auth</MudNavLink>
+        <MudNavLink Href="Account/Manage/Passkeys" Icon="@Icons.Material.Outlined.Key">Passkeys</MudNavLink>
+    </MudNavMenu>
+
+    <MudDivider Class="my-3" />
+
+    <MudText Typo="Typo.overline" Class="px-2 mb-1" Color="Color.Secondary" Style="font-size:0.65rem; letter-spacing:0.1em;">Data</MudText>
+    <MudNavMenu Rounded="true" Margin="Margin.Dense" Color="Color.Primary">
+        <MudNavLink Href="Account/Manage/PersonalData" Icon="@Icons.Material.Outlined.DataUsage">Personal Data</MudNavLink>
     </MudNavMenu>
 </MudPaper>
 

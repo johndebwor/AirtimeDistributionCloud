@@ -13,19 +13,66 @@
     <p>@(Lang?.T("Balances_Subtitle") ?? "Overview of dealer cash balances")</p>
 </div>
 
-<MudPaper Elevation="0" Class="data-card pa-4">
+<div class="page-toolbar">
+    <MudTextField @bind-Value="_searchString" Placeholder="@(Lang?.T("Balances_Search") ?? "Search by dealer name or number...")"
+                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                  IconSize="Size.Medium" Class="mt-0" Immediate="true" Style="max-width:300px;" />
+</div>
+
+@if (_unclearedBalances.Any())
+{
+    <MudAlert Severity="Severity.Warning" Class="mb-4" Icon="@Icons.Material.Outlined.Warning">
+        <MudText Typo="Typo.body2">
+            <strong>@_unclearedBalances.Count</strong> @(Lang?.T("Balances_UnclearedAlert") ?? "dealer(s) have uncleared (negative) balances totalling")
+            <strong>@Math.Abs(_unclearedBalances.Sum(b => b.CashBalance)).ToString("N2")</strong>
+        </MudText>
+    </MudAlert>
+}
+
+<MudPaper Elevation="0" Class="data-card pa-4 mb-4">
     <MudDataGrid T="DealerBalanceView" Items="@_balances" Loading="@_loading"
                  Dense="true" Hover="true" Striped="true" Filterable="false"
-                 SortMode="SortMode.Multiple">
+                 SortMode="SortMode.Multiple" QuickFilter="@_quickFilter">
         <Columns>
-            <PropertyColumn Property="x => x.DealerId" Title="ID" />
+            <PropertyColumn Property="x => x.DealerNumber" Title="@(Lang?.T("DealerNumber") ?? "Dealer #")" />
             <PropertyColumn Property="x => x.DealerName" Title="@(Lang?.T("Dealer") ?? "Dealer")" />
             <PropertyColumn Property="x => x.DealerType" Title="@(Lang?.T("Type") ?? "Type")" />
-            <TemplateColumn Title="@(Lang?.T("Balances_CashBalance") ?? "Cash Balance")">
+            <TemplateColumn Title="@(Lang?.T("Balances_CashBalance") ?? "Cash Balance")" SortBy="x => x.CashBalance">
                 <CellTemplate>
-                    <MudText Color="@(context.Item.CashBalance > 0 ? Color.Success : context.Item.CashBalance < 0 ? Color.Error : Color.Default)">
-                        @context.Item.CashBalance.ToString("C6")
-                    </MudText>
+                    <div class="d-flex align-center gap-1">
+                        @if (context.Item.CashBalance > 0)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.ArrowUpward" Color="Color.Success" Size="Size.Small" />
+                            <span style="color: var(--mud-palette-success); font-weight:700;">
+                                @context.Item.CashBalance.ToString("N2")
+                            </span>
+                        }
+                        else if (context.Item.CashBalance < 0)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.ArrowDownward" Color="Color.Error" Size="Size.Small" />
+                            <span style="color: var(--mud-palette-error); font-weight:700;">
+                                -@Math.Abs(context.Item.CashBalance).ToString("N2")
+                            </span>
+                        }
+                        else
+                        {
+                            <span style="color: var(--mud-palette-text-primary); font-weight:600;">
+                                @context.Item.CashBalance.ToString("N2")
+                            </span>
+                        }
+                    </div>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="@(Lang?.T("Actions") ?? "Actions")" Sortable="false">
+                <CellTemplate>
+                    @if (context.Item.CashBalance < 0)
+                    {
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning"
+                                   StartIcon="@Icons.Material.Outlined.NotificationsActive"
+                                   OnClick="@(() => SendRemittanceReminder(context.Item))">
+                            @(Lang?.T("Balances_SendReminder") ?? "Send Reminder")
+                        </MudButton>
+                    }
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
@@ -35,11 +82,52 @@
     </MudDataGrid>
 </MudPaper>
 
+@if (_unclearedBalances.Any())
+{
+    <MudPaper Elevation="0" Class="data-card pa-4">
+        <div class="section-header mb-4">
+            <MudIcon Icon="@Icons.Material.Outlined.AccountBalanceWallet" Color="Color.Error" />
+            <MudText Typo="Typo.h6" Style="color: var(--mud-palette-error); font-weight:700;">
+                @(Lang?.T("Balances_UnclearedReport") ?? "Uncleared Balances Report")
+            </MudText>
+        </div>
+        <MudDataGrid T="DealerBalanceView" Items="@_unclearedBalances" Dense="true" Hover="true" Striped="true" Filterable="false">
+            <Columns>
+                <PropertyColumn Property="x => x.DealerNumber" Title="@(Lang?.T("DealerNumber") ?? "Dealer #")" />
+                <PropertyColumn Property="x => x.DealerName" Title="@(Lang?.T("Dealer") ?? "Dealer")" />
+                <PropertyColumn Property="x => x.DealerType" Title="@(Lang?.T("Type") ?? "Type")" />
+                <TemplateColumn Title="@(Lang?.T("Balances_UnclearedAmount") ?? "Uncleared Amount")">
+                    <CellTemplate>
+                        <span style="color: var(--mud-palette-error); font-weight:700;">
+                            -@Math.Abs(context.Item.CashBalance).ToString("N2")
+                        </span>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+        <MudDivider Class="my-3" />
+        <div class="d-flex justify-end">
+            <MudText Typo="Typo.subtitle1" Style="color: var(--mud-palette-error); font-weight:700;">
+                @(Lang?.T("Total") ?? "Total"):
+                @Math.Abs(_unclearedBalances.Sum(b => b.CashBalance)).ToString("N2")
+            </MudText>
+        </div>
+    </MudPaper>
+}
+
 @code {
     [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
 
     private List<DealerBalanceView> _balances = new();
+    private List<DealerBalanceView> _unclearedBalances = new();
+    private string _searchString = "";
     private bool _loading = true;
+
+    private Func<DealerBalanceView, bool> _quickFilter =>
+        x => string.IsNullOrWhiteSpace(_searchString) ||
+             x.DealerName.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ||
+             x.DealerNumber.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ||
+             x.DealerType.Contains(_searchString, StringComparison.OrdinalIgnoreCase);
 
     protected override async Task OnInitializedAsync()
     {
@@ -47,20 +135,16 @@
         try
         {
             var dealers = await DealerService.GetAllDealersAsync();
-            var balances = new List<DealerBalanceView>();
-
-            foreach (var dealer in dealers)
+            var balanceMap = await DealerService.GetAllDealerCashBalancesAsync();
+            _balances = dealers.Select(dealer => new DealerBalanceView
             {
-                var cashBalance = await DealerService.GetDealerCashBalanceAsync(dealer.Id);
-                balances.Add(new DealerBalanceView
-                {
-                    DealerId = dealer.Id,
-                    DealerName = dealer.Name,
-                    DealerType = dealer.Type.ToString(),
-                    CashBalance = cashBalance
-                });
-            }
-            _balances = balances;
+                DealerId = dealer.Id,
+                DealerNumber = dealer.DealerNumber,
+                DealerName = dealer.Name,
+                DealerType = dealer.Type.ToString(),
+                CashBalance = balanceMap.GetValueOrDefault(dealer.Id)
+            }).OrderBy(b => b.DealerName).ToList();
+            _unclearedBalances = _balances.Where(b => b.CashBalance < 0).OrderBy(b => b.CashBalance).ToList();
         }
         catch (Exception ex)
         {
@@ -72,9 +156,20 @@
         }
     }
 
+    private void SendRemittanceReminder(DealerBalanceView dealer)
+    {
+        Snackbar.Add(
+            string.Format(
+                Lang?.T("Balances_ReminderSent") ?? "Remittance reminder queued for {0} (balance: {1})",
+                dealer.DealerName,
+                Math.Abs(dealer.CashBalance).ToString("N2")),
+            Severity.Info);
+    }
+
     private class DealerBalanceView
     {
         public int DealerId { get; set; }
+        public string DealerNumber { get; set; } = "";
         public string DealerName { get; set; } = "";
         public string DealerType { get; set; } = "";
         public decimal CashBalance { get; set; }

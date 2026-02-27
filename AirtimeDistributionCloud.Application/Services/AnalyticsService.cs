@@ -96,14 +96,14 @@ public class AnalyticsService : IAnalyticsService
         }).ToList();
     }
 
-    public async Task<IReadOnlyList<StockMovementDto>> GetStockMovementAsync(AnalyticsPeriod period, CancellationToken ct = default)
+    public async Task<IReadOnlyList<StockMovementDto>> GetStockMovementAsync(AnalyticsPeriod period, DateTime? fromDate = null, DateTime? toDate = null, CancellationToken ct = default)
     {
         var deposits = (await _depositRepo.GetAllAsync(ct))
             .Where(d => d.Status == DepositStatus.Approved).ToList();
         var transfers = (await _transferRepo.GetAllAsync(ct))
             .Where(t => t.Status == DepositStatus.Approved).ToList();
 
-        var buckets = GetPeriodBuckets(period);
+        var buckets = GetPeriodBuckets(period, fromDate, toDate);
 
         return buckets.Select(b =>
         {
@@ -157,7 +157,7 @@ public class AnalyticsService : IAnalyticsService
             totalExpenses, outstandingDebt, currentStock, netCapital, grossProfit);
     }
 
-    public async Task<IReadOnlyList<CapitalGrowthPointDto>> GetCapitalGrowthTrendAsync(AnalyticsPeriod period, CancellationToken ct = default)
+    public async Task<IReadOnlyList<CapitalGrowthPointDto>> GetCapitalGrowthTrendAsync(AnalyticsPeriod period, DateTime? fromDate = null, DateTime? toDate = null, CancellationToken ct = default)
     {
         var deposits = (await _depositRepo.GetAllAsync(ct))
             .Where(d => d.Status == DepositStatus.Approved).ToList();
@@ -167,7 +167,7 @@ public class AnalyticsService : IAnalyticsService
         var products = await _productRepo.GetAllAsync(ct);
         var currentStock = products.Sum(p => p.AirtimeAccountBalance);
 
-        var buckets = GetPeriodBuckets(period);
+        var buckets = GetPeriodBuckets(period, fromDate, toDate);
 
         decimal cumCash = 0, cumInvestment = 0, cumExpenses = 0;
         var result = new List<CapitalGrowthPointDto>();
@@ -188,7 +188,7 @@ public class AnalyticsService : IAnalyticsService
         return result;
     }
 
-    public async Task<IReadOnlyList<ProfitBreakdownDto>> GetProfitBreakdownAsync(AnalyticsPeriod period, CancellationToken ct = default)
+    public async Task<IReadOnlyList<ProfitBreakdownDto>> GetProfitBreakdownAsync(AnalyticsPeriod period, DateTime? fromDate = null, DateTime? toDate = null, CancellationToken ct = default)
     {
         var deposits = (await _depositRepo.GetAllAsync(ct))
             .Where(d => d.Status == DepositStatus.Approved).ToList();
@@ -196,7 +196,7 @@ public class AnalyticsService : IAnalyticsService
         var expenses = (await _expenseRepo.GetAllAsync(ct))
             .Where(e => e.Status == DepositStatus.Approved).ToList();
 
-        var buckets = GetPeriodBuckets(period);
+        var buckets = GetPeriodBuckets(period, fromDate, toDate);
 
         return buckets.Select(b =>
         {
@@ -210,49 +210,61 @@ public class AnalyticsService : IAnalyticsService
         }).ToList();
     }
 
-    private static List<(string Label, DateTime Start, DateTime End)> GetPeriodBuckets(AnalyticsPeriod period)
+    private static List<(string Label, DateTime Start, DateTime End)> GetPeriodBuckets(
+        AnalyticsPeriod period, DateTime? fromDate = null, DateTime? toDate = null)
     {
         var now = DateTime.UtcNow.Date;
         var buckets = new List<(string Label, DateTime Start, DateTime End)>();
 
+        // Resolve the effective range
+        DateTime rangeEnd = toDate.HasValue ? (toDate.Value.Date > now ? now : toDate.Value.Date) : now;
+        DateTime rangeStart = fromDate.HasValue
+            ? fromDate.Value.Date
+            : period switch
+            {
+                AnalyticsPeriod.Daily   => now.AddDays(-29),
+                AnalyticsPeriod.Weekly  => now.AddDays(-7 * 11),
+                AnalyticsPeriod.Yearly  => new DateTime(now.Year - 4, 1, 1),
+                _                       => new DateTime(now.AddMonths(-11).Year, now.AddMonths(-11).Month, 1)
+            };
+
+        if (rangeStart > rangeEnd) rangeStart = rangeEnd;
+
         switch (period)
         {
             case AnalyticsPeriod.Daily:
-                for (int i = 29; i >= 0; i--)
-                {
-                    var day = now.AddDays(-i);
+                for (var day = rangeStart; day <= rangeEnd; day = day.AddDays(1))
                     buckets.Add((day.ToString("dd MMM"), day, day));
-                }
                 break;
 
             case AnalyticsPeriod.Weekly:
-                for (int i = 11; i >= 0; i--)
+                var ws = rangeStart;
+                while (ws <= rangeEnd)
                 {
-                    var weekEnd = now.AddDays(-i * 7);
-                    var weekStart = weekEnd.AddDays(-6);
-                    buckets.Add(($"{weekStart:dd MMM}", weekStart, weekEnd));
+                    var we = ws.AddDays(6);
+                    if (we > rangeEnd) we = rangeEnd;
+                    buckets.Add(($"{ws:dd MMM}", ws, we));
+                    ws = ws.AddDays(7);
                 }
                 break;
 
             case AnalyticsPeriod.Monthly:
-                for (int i = 11; i >= 0; i--)
+                var ms = new DateTime(rangeStart.Year, rangeStart.Month, 1);
+                while (ms <= rangeEnd)
                 {
-                    var month = now.AddMonths(-i);
-                    var start = new DateTime(month.Year, month.Month, 1);
-                    var end = start.AddMonths(1).AddDays(-1);
-                    if (end > now) end = now;
-                    buckets.Add((start.ToString("MMM yyyy"), start, end));
+                    var me = ms.AddMonths(1).AddDays(-1);
+                    if (me > rangeEnd) me = rangeEnd;
+                    buckets.Add((ms.ToString("MMM yyyy"), ms, me));
+                    ms = ms.AddMonths(1);
                 }
                 break;
 
             case AnalyticsPeriod.Yearly:
-                for (int i = 4; i >= 0; i--)
+                for (var y = rangeStart.Year; y <= rangeEnd.Year; y++)
                 {
-                    var year = now.Year - i;
-                    var start = new DateTime(year, 1, 1);
-                    var end = new DateTime(year, 12, 31);
-                    if (end > now) end = now;
-                    buckets.Add((year.ToString(), start, end));
+                    var ys = y == rangeStart.Year ? rangeStart : new DateTime(y, 1, 1);
+                    var ye = y == rangeEnd.Year ? rangeEnd : new DateTime(y, 12, 31);
+                    buckets.Add((y.ToString(), ys, ye));
                 }
                 break;
         }

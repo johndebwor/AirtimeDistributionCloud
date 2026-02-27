@@ -38,6 +38,21 @@ else
                     </div>
                 </MudPaper>
             </MudItem>
+            <!-- Passkey Login Toggle -->
+            <MudItem xs="12">
+                <MudPaper Elevation="1" Class="pa-4" Style="border-radius:8px;">
+                    <div class="d-flex align-center justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.subtitle2">@(Lang?.T("Settings_ShowPasskeyLogin") ?? "Show Passkey Sign-In on Login Page")</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                @(Lang?.T("Settings_ShowPasskeyLoginDesc") ?? "Show the 'Sign in with a passkey' option on the login page")
+                            </MudText>
+                        </div>
+                        <MudSwitch T="bool" Value="_showPasskeyLogin" ValueChanged="OnPasskeyLoginChanged"
+                                   Color="Color.Primary" Disabled="@_saving" />
+                    </div>
+                </MudPaper>
+            </MudItem>
             @foreach (var setting in GetGeneralSettings())
             {
                 <MudItem xs="12" sm="6">
@@ -302,17 +317,149 @@ else
             @(Lang?.T("Settings_CurrencyDesc") ?? "Configure the default currency and available currencies for the asset registry.")
         </MudText>
 
+        <MudTable Items="_currencies" Dense="true" Hover="true" Striped="true" Elevation="1"
+                  Style="border-radius: 8px;">
+            <HeaderContent>
+                <MudTh>@(Lang?.T("Settings_CurrencyCode") ?? "Code")</MudTh>
+                <MudTh>@(Lang?.T("Settings_CurrencyName") ?? "Name")</MudTh>
+                <MudTh>@(Lang?.T("Settings_CurrencySymbol") ?? "Symbol")</MudTh>
+                <MudTh Style="text-align:center;">@(Lang?.T("Settings_Default") ?? "Default")</MudTh>
+                <MudTh Style="text-align:center;">@(Lang?.T("Actions") ?? "Actions")</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Code"><MudText Typo="Typo.body2" Style="font-weight:600;">@context.Code</MudText></MudTd>
+                <MudTd DataLabel="Name">@context.Name</MudTd>
+                <MudTd DataLabel="Symbol">@context.Symbol</MudTd>
+                <MudTd DataLabel="Default" Style="text-align:center;">
+                    @if (context.Code == _defaultCurrency)
+                    {
+                        <MudChip T="string" Color="Color.Primary" Size="Size.Small" Variant="Variant.Filled">@(Lang?.T("Settings_Default") ?? "Default")</MudChip>
+                    }
+                    else
+                    {
+                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
+                                   OnClick="@(() => SetDefaultCurrency(context.Code))" Disabled="@_saving">
+                            @(Lang?.T("Settings_SetDefault") ?? "Set Default")
+                        </MudButton>
+                    }
+                </MudTd>
+                <MudTd DataLabel="Actions" Style="text-align:center;">
+                    @if (_currencies.Count > 1)
+                    {
+                        <MudTooltip Text="@(Lang?.T("Delete") ?? "Delete")">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                                           OnClick="@(() => RemoveCurrency(context.Code))" Disabled="@(_saving || context.Code == _defaultCurrency)" />
+                        </MudTooltip>
+                    }
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+
+        @if (_showAddCurrency)
+        {
+            <MudPaper Elevation="1" Class="pa-4 mt-3" Style="border-radius:8px; border-left: 4px solid var(--mud-palette-primary);">
+                <MudText Typo="Typo.subtitle2" Class="mb-2">@(Lang?.T("Settings_AddCurrency") ?? "Add Currency")</MudText>
+                <MudGrid>
+                    <MudItem xs="12" sm="3">
+                        <MudTextField @bind-Value="_newCurrencyCode" Label="@(Lang?.T("Settings_CurrencyCode") ?? "Code")" Variant="Variant.Outlined"
+                                      Margin="Margin.Dense" Placeholder="e.g. EUR" MaxLength="3"
+                                      Style="text-transform:uppercase;" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudTextField @bind-Value="_newCurrencyName" Label="@(Lang?.T("Settings_CurrencyName") ?? "Name")" Variant="Variant.Outlined"
+                                      Margin="Margin.Dense" Placeholder="e.g. Euro" />
+                    </MudItem>
+                    <MudItem xs="12" sm="3">
+                        <MudTextField @bind-Value="_newCurrencySymbol" Label="@(Lang?.T("Settings_CurrencySymbol") ?? "Symbol")" Variant="Variant.Outlined"
+                                      Margin="Margin.Dense" Placeholder="e.g. €" />
+                    </MudItem>
+                    <MudItem xs="12" sm="2" Class="d-flex align-end gap-2">
+                        <MudIconButton Icon="@Icons.Material.Filled.Check" Color="Color.Success" OnClick="AddCurrency" Disabled="@_saving" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Close" Color="Color.Default" OnClick="@(() => _showAddCurrency = false)" />
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        }
+        else
+        {
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" Class="mt-3"
+                       StartIcon="@Icons.Material.Filled.Add" OnClick="@(() => _showAddCurrency = true)">
+                @(Lang?.T("Settings_AddCurrency") ?? "Add Currency")
+            </MudButton>
+        }
+    </MudPaper>
+
+    <!-- AI Assistant Configuration -->
+    <MudPaper Elevation="0" Class="data-card pa-4 mb-4">
+        <div class="d-flex align-center gap-2 mb-3">
+            <MudIcon Icon="@Icons.Material.Outlined.SmartToy" />
+            <MudText Typo="Typo.h6">@(Lang?.T("Settings_AIAssistant") ?? "AI Assistant")</MudText>
+        </div>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+            @(Lang?.T("Settings_AIAssistantDesc") ?? "Configure the AI Assistant chat widget that helps users navigate the system.")
+        </MudText>
+
         <MudGrid>
-            <MudItem xs="12" sm="6">
-                <MudSelect T="string" Value="_defaultCurrency" ValueChanged="OnDefaultCurrencyChanged"
-                           Label="@(Lang?.T("Settings_DefaultCurrency") ?? "Default Currency")" Variant="Variant.Outlined" Disabled="@_saving">
-                    <MudSelectItem T="string" Value="@("SSP")">@(Lang?.T("Settings_SSP") ?? "SSP - South Sudan Pound")</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("USD")">@(Lang?.T("Settings_USD") ?? "USD - United States Dollar")</MudSelectItem>
-                </MudSelect>
+            <MudItem xs="12">
+                <MudPaper Elevation="1" Class="pa-4" Style="border-radius:8px;">
+                    <div class="d-flex align-center justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.subtitle2">@(Lang?.T("Settings_AIEnabled") ?? "Enable AI Assistant")</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                @(Lang?.T("Settings_AIEnabledDesc") ?? "Show or hide the AI Assistant chat widget for all users")
+                            </MudText>
+                        </div>
+                        <MudSwitch T="bool" Value="_aiAssistantEnabled" ValueChanged="OnAIAssistantEnabledChanged"
+                                   Color="Color.Primary" Disabled="@_saving" />
+                    </div>
+                </MudPaper>
             </MudItem>
             <MudItem xs="12" sm="6">
-                <MudTextField Value="@_availableCurrencies" Label="@(Lang?.T("Settings_AvailableCurrencies") ?? "Available Currencies")" Variant="Variant.Outlined"
-                              ReadOnly="true" HelperText="SSP, USD" />
+                <MudTextField @bind-Value="_aiAssistantName" Label="@(Lang?.T("Settings_AIName") ?? "Assistant Name")" Variant="Variant.Outlined"
+                              Margin="Margin.Dense" Placeholder="RasidBase Assistant" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="_aiAssistantWelcomeMessage" Label="@(Lang?.T("Settings_AIWelcome") ?? "Welcome Message")" Variant="Variant.Outlined"
+                              Lines="3" Placeholder="Hello! I'm your assistant..." />
+            </MudItem>
+        </MudGrid>
+
+        <!-- API Configuration -->
+        <MudDivider Class="my-4" />
+        <div class="d-flex align-center gap-2 mb-2">
+            <MudIcon Icon="@Icons.Material.Outlined.Api" Size="Size.Small" />
+            <MudText Typo="Typo.subtitle1" Style="font-weight:600;">@(Lang?.T("Settings_AIApiConfig") ?? "API Configuration")</MudText>
+        </div>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-3">
+            @(Lang?.T("Settings_AIApiConfigDesc") ?? "Connect to an AI provider (OpenAI, Anthropic, etc.) to enable intelligent responses. Leave blank to use built-in FAQ responses.")
+        </MudText>
+
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_aiApiEndpoint" Label="@(Lang?.T("Settings_AIApiEndpoint") ?? "API Endpoint")" Variant="Variant.Outlined"
+                              Margin="Margin.Dense" Placeholder="https://api.openai.com/v1/chat/completions"
+                              HelperText="@(Lang?.T("Settings_AIApiEndpointHelp") ?? "Full URL of the chat completions API endpoint")" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="_aiModel" Label="@(Lang?.T("Settings_AIModel") ?? "Model")" Variant="Variant.Outlined"
+                              Margin="Margin.Dense" Placeholder="gpt-4o-mini"
+                              HelperText="@(Lang?.T("Settings_AIModelHelp") ?? "Model name (e.g. gpt-4o-mini, claude-sonnet-4-6)")" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="_aiApiKey" Label="@(Lang?.T("Settings_AIApiKey") ?? "API Key")" Variant="Variant.Outlined"
+                              Margin="Margin.Dense" Placeholder="sk-..."
+                              InputType="@(_showApiKey ? InputType.Text : InputType.Password)"
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@(_showApiKey ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                              OnAdornmentClick="@(() => _showApiKey = !_showApiKey)"
+                              HelperText="@(Lang?.T("Settings_AIApiKeyHelp") ?? "Your API key from the AI provider. Stored securely in the database.")" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                           OnClick="SaveAIAssistantSettings" Disabled="@_savingAI"
+                           StartIcon="@Icons.Material.Filled.Save">
+                    @(_savingAI ? (Lang?.T("Saving") ?? "Saving...") : (Lang?.T("Settings_SaveAI") ?? "Save AI Assistant Settings"))
+                </MudButton>
             </MudItem>
         </MudGrid>
     </MudPaper>
@@ -381,6 +528,7 @@ else
 
     // General state
     private bool _autoApproveDeposit;
+    private bool _showPasskeyLogin = true;
 
     // Notification state
     private bool _notificationEnabled;
@@ -413,6 +561,37 @@ else
     // Currency configuration state
     private string _defaultCurrency = "SSP";
     private string _availableCurrencies = "SSP, USD";
+    private List<CurrencyItem> _currencies = new();
+    private bool _showAddCurrency;
+    private string _newCurrencyCode = "";
+    private string _newCurrencyName = "";
+    private string _newCurrencySymbol = "";
+
+    // AI Assistant configuration state
+    private bool _aiAssistantEnabled = true;
+    private string _aiAssistantName = "RasidBase Assistant";
+    private string _aiAssistantWelcomeMessage = "";
+    private string _aiApiKey = "";
+    private string _aiApiEndpoint = "";
+    private string _aiModel = "";
+    private bool _showApiKey;
+    private bool _savingAI;
+
+    private record CurrencyItem(string Code, string Name, string Symbol);
+
+    private static readonly Dictionary<string, (string Name, string Symbol)> KnownCurrencies = new()
+    {
+        ["SSP"] = ("South Sudan Pound", "SSP"),
+        ["USD"] = ("US Dollar", "$"),
+        ["EUR"] = ("Euro", "€"),
+        ["GBP"] = ("British Pound", "£"),
+        ["AED"] = ("UAE Dirham", "د.إ"),
+        ["SAR"] = ("Saudi Riyal", "﷼"),
+        ["KES"] = ("Kenyan Shilling", "KSh"),
+        ["UGX"] = ("Ugandan Shilling", "USh"),
+        ["ETB"] = ("Ethiopian Birr", "Br"),
+        ["SDG"] = ("Sudanese Pound", "ج.س"),
+    };
 
     // General settings display order (AirtimeDepositAutoApprove handled as toggle above)
     private static readonly string[] GeneralSettingsOrder =
@@ -435,9 +614,14 @@ else
     private static readonly HashSet<string> CurrencyKeys =
         ["DefaultCurrency", "AvailableCurrencies"];
 
+    private static readonly HashSet<string> AIAssistantKeys =
+        ["AIAssistantEnabled", "AIAssistantName", "AIAssistantWelcomeMessage",
+         "AIApiKey", "AIApiEndpoint", "AIModel"];
+
     private static readonly HashSet<string> CompanyKeys =
         ["CompanyName", "CompanyAbbreviation", "CompanyAddress", "CompanyTel1", "CompanyTel2", "CompanyTel3",
-         "CompanyLogoPath", "CompanyStampPath"];
+         "CompanyLogoPath", "CompanyStampPath",
+         "CompanyNameAr", "CompanyAbbreviationAr", "CompanyAddressAr"];
 
     protected override async Task OnInitializedAsync()
     {
@@ -468,6 +652,9 @@ else
 
         _autoApproveDeposit = dict.TryGetValue("AirtimeDepositAutoApprove", out var aa) &&
                               string.Equals(aa, "Yes", StringComparison.OrdinalIgnoreCase);
+
+        _showPasskeyLogin = !dict.TryGetValue("ShowPasskeyLogin", out var pk) ||
+                            !string.Equals(pk, "No", StringComparison.OrdinalIgnoreCase);
 
         _notificationEnabled = dict.TryGetValue("TransferNotificationEnabled", out var en) &&
                                string.Equals(en, "Yes", StringComparison.OrdinalIgnoreCase);
@@ -500,6 +687,30 @@ else
         // Currency configuration
         _defaultCurrency = dict.GetValueOrDefault("DefaultCurrency", "SSP");
         _availableCurrencies = dict.GetValueOrDefault("AvailableCurrencies", "SSP, USD");
+        ParseCurrencies();
+
+        // AI Assistant configuration
+        _aiAssistantEnabled = !dict.TryGetValue("AIAssistantEnabled", out var aiEn) ||
+                              string.Equals(aiEn, "Yes", StringComparison.OrdinalIgnoreCase);
+        _aiAssistantName = dict.GetValueOrDefault("AIAssistantName", "RasidBase Assistant");
+        _aiAssistantWelcomeMessage = dict.GetValueOrDefault("AIAssistantWelcomeMessage", "");
+        _aiApiKey = dict.GetValueOrDefault("AIApiKey", "");
+        _aiApiEndpoint = dict.GetValueOrDefault("AIApiEndpoint", "");
+        _aiModel = dict.GetValueOrDefault("AIModel", "");
+    }
+
+    private void ParseCurrencies()
+    {
+        _currencies.Clear();
+        var codes = _availableCurrencies.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        foreach (var code in codes)
+        {
+            var upper = code.Trim().ToUpperInvariant();
+            if (string.IsNullOrEmpty(upper)) continue;
+            var name = KnownCurrencies.TryGetValue(upper, out var known) ? known.Name : upper;
+            var symbol = KnownCurrencies.TryGetValue(upper, out var k2) ? k2.Symbol : upper;
+            _currencies.Add(new CurrencyItem(upper, name, symbol));
+        }
     }
 
     private IEnumerable<SystemSetting> GetGeneralSettings()
@@ -518,7 +729,8 @@ else
                                                !CompanyKeys.Contains(s.Key) &&
                                                !EmailKeys.Contains(s.Key) &&
                                                !WhatsAppApiKeys.Contains(s.Key) &&
-                                               !CurrencyKeys.Contains(s.Key)))
+                                               !CurrencyKeys.Contains(s.Key) &&
+                                               !AIAssistantKeys.Contains(s.Key)))
             yield return s;
     }
 
@@ -587,6 +799,12 @@ else
     {
         _autoApproveDeposit = value;
         await SaveNotificationSetting("AirtimeDepositAutoApprove", value ? "Yes" : "No");
+    }
+
+    private async Task OnPasskeyLoginChanged(bool value)
+    {
+        _showPasskeyLogin = value;
+        await SaveNotificationSetting("ShowPasskeyLogin", value ? "Yes" : "No");
     }
 
     private async Task OnNotificationEnabledChanged(bool value)
@@ -661,7 +879,7 @@ else
     private static readonly Dictionary<string, string> DefaultFormulas = new()
     {
         ["AirtimeDepositFormula"] = "TotalAmount = Amount + (Amount × BonusPercentage ÷ 100)",
-        ["AirtimeTransferFormula"] = "AirtimeAmount = Amount ÷ (1 + CommissionRate ÷ 100); CommissionAmount = Amount − AirtimeAmount"
+        ["AirtimeTransferFormula"] = "AirtimeAmount = Amount ÷ (1 + CommissionRate ÷ 100); CommissionAmount = Amount − AirtimeAmount; DeductedFromProduct = Amount (AirtimeAmount + CommissionAmount)"
     };
 
     private async Task ResetFormulasToDefault()
@@ -769,10 +987,126 @@ else
 
     // --- Currency configuration ---
 
-    private async Task OnDefaultCurrencyChanged(string value)
+    private async Task AddCurrency()
     {
-        _defaultCurrency = value;
-        await SaveNotificationSetting("DefaultCurrency", value);
+        var code = _newCurrencyCode.Trim().ToUpperInvariant();
+        if (string.IsNullOrEmpty(code) || code.Length > 3)
+        {
+            Snackbar.Add(Lang?.T("Settings_InvalidCode") ?? "Currency code must be 1-3 characters", Severity.Warning);
+            return;
+        }
+        if (_currencies.Any(c => c.Code == code))
+        {
+            Snackbar.Add(Lang?.T("Settings_CurrencyExists") ?? "Currency already exists", Severity.Warning);
+            return;
+        }
+
+        var name = string.IsNullOrWhiteSpace(_newCurrencyName)
+            ? (KnownCurrencies.TryGetValue(code, out var kn) ? kn.Name : code)
+            : _newCurrencyName.Trim();
+        var symbol = string.IsNullOrWhiteSpace(_newCurrencySymbol)
+            ? (KnownCurrencies.TryGetValue(code, out var ks) ? ks.Symbol : code)
+            : _newCurrencySymbol.Trim();
+
+        _currencies.Add(new CurrencyItem(code, name, symbol));
+        _newCurrencyCode = "";
+        _newCurrencyName = "";
+        _newCurrencySymbol = "";
+        _showAddCurrency = false;
+        await SaveCurrencySettings();
+    }
+
+    private async Task RemoveCurrency(string code)
+    {
+        _currencies.RemoveAll(c => c.Code == code);
+        if (_defaultCurrency == code && _currencies.Count > 0)
+            _defaultCurrency = _currencies[0].Code;
+        await SaveCurrencySettings();
+    }
+
+    private async Task SetDefaultCurrency(string code)
+    {
+        _defaultCurrency = code;
+        await SaveCurrencySettings();
+    }
+
+    private async Task SaveCurrencySettings()
+    {
+        _saving = true;
+        try
+        {
+            _availableCurrencies = string.Join(", ", _currencies.Select(c => c.Code));
+            var currencySettings = new Dictionary<string, string>
+            {
+                ["DefaultCurrency"] = _defaultCurrency,
+                ["AvailableCurrencies"] = _availableCurrencies
+            };
+
+            foreach (var (key, value) in currencySettings)
+            {
+                var setting = _settings.FirstOrDefault(s => s.Key == key);
+                if (setting is not null)
+                {
+                    setting.Value = value;
+                    await UnitOfWork.Repository<SystemSetting>().UpdateAsync(setting);
+                }
+            }
+            await UnitOfWork.SaveChangesAsync();
+            Snackbar.Add(Lang?.T("Settings_CurrencySaved") ?? "Currency settings saved", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    // --- AI Assistant configuration ---
+
+    private async Task OnAIAssistantEnabledChanged(bool value)
+    {
+        _aiAssistantEnabled = value;
+        await SaveNotificationSetting("AIAssistantEnabled", value ? "Yes" : "No");
+    }
+
+    private async Task SaveAIAssistantSettings()
+    {
+        _savingAI = true;
+        try
+        {
+            var aiSettings = new Dictionary<string, string>
+            {
+                ["AIAssistantEnabled"] = _aiAssistantEnabled ? "Yes" : "No",
+                ["AIAssistantName"] = _aiAssistantName,
+                ["AIAssistantWelcomeMessage"] = _aiAssistantWelcomeMessage,
+                ["AIApiKey"] = _aiApiKey,
+                ["AIApiEndpoint"] = _aiApiEndpoint,
+                ["AIModel"] = _aiModel
+            };
+
+            foreach (var (key, value) in aiSettings)
+            {
+                var setting = _settings.FirstOrDefault(s => s.Key == key);
+                if (setting is not null)
+                {
+                    setting.Value = value;
+                    await UnitOfWork.Repository<SystemSetting>().UpdateAsync(setting);
+                }
+            }
+            await UnitOfWork.SaveChangesAsync();
+            Snackbar.Add(Lang?.T("Settings_AISaved") ?? "AI Assistant settings saved", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _savingAI = false;
+        }
     }
 
     private async Task SendTestEmail()
@@ -817,6 +1151,50 @@ else
         }
     }
 
+    private static readonly Dictionary<string, string> FriendlyLabels = new()
+    {
+        ["ExpenseApprovalThreshold"] = "Expense Approval Threshold",
+        ["CommissionMinPercentage"] = "Minimum Commission (%)",
+        ["CommissionMaxPercentage"] = "Maximum Commission (%)",
+        ["AirtimeDepositAutoApprove"] = "Airtime Deposit Auto-Approve",
+        ["AirtimeDepositFormula"] = "Airtime Deposit Formula",
+        ["AirtimeTransferFormula"] = "Airtime Transfer Formula",
+        ["TransferNotificationEnabled"] = "Transfer Notification Enabled",
+        ["TransferNotificationMethod"] = "Notification Method",
+        ["TransferNotificationWhatsAppGroupUrl"] = "WhatsApp Group URL",
+        ["TransferNotificationTemplate"] = "Notification Template",
+        ["SmtpHost"] = "SMTP Server Host",
+        ["SmtpPort"] = "SMTP Port",
+        ["SmtpUsername"] = "SMTP Username",
+        ["SmtpPassword"] = "SMTP Password",
+        ["SmtpSenderEmail"] = "Sender Email Address",
+        ["SmtpSenderName"] = "Sender Display Name",
+        ["SmtpUseSsl"] = "Use SSL/TLS",
+        ["WhatsAppApiAccessToken"] = "WhatsApp API Access Token",
+        ["WhatsAppApiPhoneNumberId"] = "WhatsApp Phone Number ID",
+        ["DefaultCurrency"] = "Default Currency",
+        ["AvailableCurrencies"] = "Available Currencies",
+        ["CompanyName"] = "Company Name",
+        ["CompanyNameAr"] = "Company Name (Arabic)",
+        ["CompanyAbbreviation"] = "Company Abbreviation",
+        ["CompanyAbbreviationAr"] = "Company Abbreviation (Arabic)",
+        ["CompanyAddress"] = "Company Address",
+        ["CompanyAddressAr"] = "Company Address (Arabic)",
+        ["CompanyTel1"] = "Phone Number 1",
+        ["CompanyTel2"] = "Phone Number 2",
+        ["CompanyTel3"] = "Phone Number 3",
+        ["CompanyLogoPath"] = "Company Logo",
+        ["CompanyStampPath"] = "Company Stamp",
+        ["AIAssistantEnabled"] = "AI Assistant Enabled",
+        ["AIAssistantName"] = "Assistant Name",
+        ["AIAssistantWelcomeMessage"] = "Welcome Message",
+        ["AIApiKey"] = "AI API Key",
+        ["AIApiEndpoint"] = "AI API Endpoint",
+        ["AIModel"] = "AI Model",
+    };
+
     private static string FormatKey(string key) =>
-        System.Text.RegularExpressions.Regex.Replace(key, "([A-Z])", " $1").Trim();
+        FriendlyLabels.TryGetValue(key, out var label)
+            ? label
+            : System.Text.RegularExpressions.Regex.Replace(key, "([A-Z])", " $1").Trim();
 }

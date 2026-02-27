@@ -24,7 +24,7 @@ public class CashDepositService : ICashDepositService
         var branches = (await _unitOfWork.Repository<Branch>().GetAllAsync(cancellationToken)).ToDictionary(b => b.Id);
 
         return deposits.Select(d => new CashDepositDto(
-            d.Id, d.BranchId, branches.GetValueOrDefault(d.BranchId)?.Name ?? "",
+            d.Id, d.TransactionNumber, d.BranchId, branches.GetValueOrDefault(d.BranchId)?.Name ?? "",
             d.DealerId, dealers.GetValueOrDefault(d.DealerId)?.Name ?? "",
             d.Amount, d.DepositDate)).ToList();
     }
@@ -34,7 +34,7 @@ public class CashDepositService : ICashDepositService
         var deposits = await _cashDepositRepository.GetByDealerAsync(dealerId, cancellationToken);
         var dealer = await _dealerRepository.GetByIdAsync(dealerId, cancellationToken);
         return deposits.Select(d => new CashDepositDto(
-            d.Id, d.BranchId, d.Branch?.Name ?? "", d.DealerId,
+            d.Id, d.TransactionNumber, d.BranchId, d.Branch?.Name ?? "", d.DealerId,
             dealer?.Name ?? "", d.Amount, d.DepositDate)).ToList();
     }
 
@@ -45,16 +45,21 @@ public class CashDepositService : ICashDepositService
         var branch = await _unitOfWork.Repository<Branch>().GetByIdAsync(request.BranchId, cancellationToken)
             ?? throw new KeyNotFoundException("Branch not found");
 
+        var transactionNumber = $"DEP-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..6].ToUpper()}";
+
         var deposit = new CashDeposit
         {
-            BranchId = request.BranchId, DealerId = request.DealerId,
-            Amount = request.Amount, DepositDate = DateTime.UtcNow
+            TransactionNumber = transactionNumber,
+            BranchId = request.BranchId,
+            DealerId = request.DealerId,
+            Amount = request.Amount,
+            DepositDate = DateTime.UtcNow
         };
 
         await _cashDepositRepository.AddAsync(deposit, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new CashDepositDto(deposit.Id, deposit.BranchId, branch.Name,
+        return new CashDepositDto(deposit.Id, deposit.TransactionNumber, deposit.BranchId, branch.Name,
             deposit.DealerId, dealer.Name, deposit.Amount, deposit.DepositDate);
     }
 }

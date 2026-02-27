@@ -14,63 +14,75 @@
 
 <PageTitle>Manage Email</PageTitle>
 
-<div class="page-header">
-    <h1>Manage Email</h1>
-    <p>Update your email address</p>
-</div>
+<MudPaper Elevation="0" Class="data-card pa-6">
+    <div class="section-header mb-5">
+        <MudIcon Icon="@Icons.Material.Outlined.Email" Color="Color.Primary" />
+        <MudText Typo="Typo.h6">Manage Email</MudText>
+    </div>
 
-<MudGrid Justify="Justify.Center">
-    <MudItem xs="12" sm="8" md="5">
-        <MudPaper Elevation="0" Class="data-card pa-6">
-            @if (!string.IsNullOrEmpty(message))
-            {
-                <MudAlert Severity="@(message.StartsWith("Error") ? Severity.Error : Severity.Success)"
-                          Class="mb-4" ShowCloseIcon="true">@message</MudAlert>
-            }
-            <form @onsubmit="OnSendEmailVerificationAsync" @formname="send-verification" id="send-verification-form" method="post">
-                <AntiforgeryToken />
-            </form>
-            <EditForm Model="Input" FormName="change-email" OnValidSubmit="OnValidSubmitAsync" method="post">
-                <DataAnnotationsValidator />
-                <ValidationSummary class="text-danger" role="alert" />
-                @if (isEmailConfirmed)
-                {
-                    <div class="mb-4">
-                        <label class="mud-input-label">Current Email</label>
-                        <div class="d-flex align-center gap-2">
-                            <input type="text" value="@email" id="email" class="form-control mud-input-root"
-                                   placeholder="Enter your email" disabled />
-                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" />
-                        </div>
+    @if (!string.IsNullOrEmpty(message))
+    {
+        <MudAlert Severity="@(message.StartsWith("Error") ? Severity.Error : Severity.Success)"
+                  Class="mb-4" ShowCloseIcon="true">@message</MudAlert>
+    }
+
+    <form @onsubmit="OnSendEmailVerificationAsync" @formname="send-verification" id="send-verification-form" method="post">
+        <AntiforgeryToken />
+    </form>
+
+    <EditForm Model="Input" FormName="change-email" OnValidSubmit="OnValidSubmitAsync" method="post">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="manage-validation-error" role="alert" />
+
+        <MudGrid Spacing="3">
+            <MudItem xs="12">
+                <div class="manage-field">
+                    <label class="manage-field-label">
+                        <MudIcon Icon="@Icons.Material.Outlined.Email" Size="Size.Small" />
+                        Current Email
+                    </label>
+                    <div class="d-flex align-center gap-2">
+                        <input type="text" value="@email" class="manage-input" disabled />
+                        @if (isEmailConfirmed)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Title="Verified" />
+                        }
+                        else
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Title="Unverified" />
+                        }
                     </div>
-                }
-                else
-                {
-                    <div class="mb-4">
-                        <label class="mud-input-label">Current Email</label>
-                        <input type="text" value="@email" id="email" class="form-control mud-input-root"
-                               placeholder="Enter your email" disabled />
-                        <button type="submit" class="mud-button-root mud-button mud-button-text mud-button-text-primary mud-button-text-size-small mt-1"
-                                form="send-verification-form" style="font-size:0.8rem; padding:2px 8px;">
-                            Send verification email
+                    @if (!isEmailConfirmed)
+                    {
+                        <button type="submit" class="manage-text-btn" form="send-verification-form">
+                            Resend verification email
                         </button>
-                    </div>
-                }
-                <div class="mb-4">
-                    <label class="mud-input-label">New Email</label>
-                    <InputText @bind-Value="Input.NewEmail" id="Input.NewEmail"
-                               class="form-control mud-input-root"
-                               autocomplete="email" aria-required="true" placeholder="Enter a new email" />
-                    <ValidationMessage For="() => Input.NewEmail" class="text-danger mud-input-helper-text" />
+                    }
                 </div>
-                <button type="submit" class="mud-button-root mud-button mud-button-filled mud-button-filled-primary mud-button-filled-size-medium mud-ripple w-100 mt-2"
-                        style="height:42px; font-size:0.9rem; letter-spacing:0.05em;">
+            </MudItem>
+
+            <MudItem xs="12">
+                <div class="manage-field">
+                    <label class="manage-field-label">
+                        <MudIcon Icon="@Icons.Material.Outlined.AlternateEmail" Size="Size.Small" />
+                        New Email Address
+                    </label>
+                    <InputText @bind-Value="Input.NewEmail" id="Input.NewEmail"
+                               class="manage-input"
+                               autocomplete="email" aria-required="true"
+                               placeholder="Enter a new email address" />
+                    <ValidationMessage For="() => Input.NewEmail" class="manage-validation-error" />
+                </div>
+            </MudItem>
+
+            <MudItem xs="12">
+                <button type="submit" class="manage-submit-btn">
                     Change Email
                 </button>
-            </EditForm>
-        </MudPaper>
-    </MudItem>
-</MudGrid>
+            </MudItem>
+        </MudGrid>
+    </EditForm>
+</MudPaper>
 
 @code {
     private string? message;
@@ -129,12 +141,7 @@
 
     private async Task OnSendEmailVerificationAsync()
     {
-        if (email is null)
-        {
-            return;
-        }
-
-        if (user is null)
+        if (email is null || user is null)
         {
             RedirectManager.RedirectToInvalidUser(UserManager, HttpContext);
             return;

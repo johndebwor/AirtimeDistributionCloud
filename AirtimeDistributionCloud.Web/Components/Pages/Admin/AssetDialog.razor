@@ -159,7 +159,14 @@
 
     protected override void OnInitialized()
     {
-        if (Asset is not null)
+        if (Asset is null)
+        {
+            // Auto-select default branch for new assets
+            var defaultBranch = Branches.FirstOrDefault(b => b.IsDefault) ?? Branches.FirstOrDefault();
+            if (defaultBranch is not null)
+                _branchId = defaultBranch.Id;
+        }
+        else
         {
             _name = Asset.Name;
             _categoryId = Asset.AssetCategoryId;

@@ -94,10 +94,14 @@
             </TemplateColumn>
             <TemplateColumn Title="Actions" Sortable="false">
                 <CellTemplate>
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary"
-                                   OnClick="@(() => OpenEditDialog(context.Item))" Title="@(Lang?.T("Edit") ?? "Edit")" />
-                    <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Color="Color.Info"
-                                   OnClick="@(() => ViewAsset(context.Item.Id))" Title="@(Lang?.T("ViewDetails") ?? "View Details")" />
+                    <MudTooltip Text="@(Lang?.T("Edit") ?? "Edit")">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary"
+                                       OnClick="@(() => OpenEditDialog(context.Item))" />
+                    </MudTooltip>
+                    <MudTooltip Text="@(Lang?.T("ViewDetails") ?? "View Details")">
+                        <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Color="Color.Info"
+                                       OnClick="@(() => ViewAsset(context.Item.Id))" />
+                    </MudTooltip>
                 </CellTemplate>
             </TemplateColumn>
         </Columns>

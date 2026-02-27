@@ -27,12 +27,13 @@
 </div>
 
 <MudPaper Elevation="0" Class="data-card pa-4">
-    <MudDataGrid T="AirtimeTransferDto" Items="@_transfers" Filterable="false" SortMode="SortMode.Multiple"
+    <MudDataGrid @ref="_grid" T="AirtimeTransferDto" Items="@_transfers" Filterable="false" SortMode="SortMode.Multiple"
                  Loading="@_loading" Dense="true" Hover="true" Striped="true"
-                 QuickFilter="@(new Func<AirtimeTransferDto, bool>(FilterFunc))">
+                 QuickFilter="@(new Func<AirtimeTransferDto, bool>(FilterFunc))"
+                 Groupable="true">
         <Columns>
-            <PropertyColumn Property="x => x.Id" Title="ID" />
-            <PropertyColumn Property="x => x.BranchName" Title="@(Lang?.T("Branch") ?? "Branch")" />
+            <PropertyColumn Property="x => x.BranchName" Title="@(Lang?.T("Branch") ?? "Branch")" Grouping="true" />
+            <PropertyColumn Property="x => x.TransferNumber" Title="@(Lang?.T("TransferNumber") ?? "Transfer #")" />
             <PropertyColumn Property="x => x.ProductName" Title="@(Lang?.T("Product") ?? "Product")" />
             <PropertyColumn Property="x => x.DealerName" Title="@(Lang?.T("Dealer") ?? "Dealer")" />
             <PropertyColumn Property="x => x.Amount" Title="@(Lang?.T("Transfers_AirtimeComm") ?? "Airtime + Comm")" Format="C6" />
@@ -69,9 +70,20 @@
 @code {
     [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
 
+    private MudDataGrid<AirtimeTransferDto>? _grid;
     private List<AirtimeTransferDto> _transfers = new();
     private string _searchString = "";
     private bool _loading = true;
+    private bool _needsExpand;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_needsExpand && _grid is not null)
+        {
+            _needsExpand = false;
+            await _grid.ExpandAllGroupsAsync();
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -83,7 +95,8 @@
         _loading = true;
         try
         {
-            _transfers = (await TransferService.GetAllTransfersAsync()).ToList();
+            _transfers = (await TransferService.GetAllTransfersAsync()).OrderBy(t => t.BranchName).ToList();
+            _needsExpand = true;
         }
         catch (Exception ex)
         {
@@ -103,6 +116,7 @@
 
     private bool FilterFunc(AirtimeTransferDto t) =>
         string.IsNullOrWhiteSpace(_searchString) ||
+        t.TransferNumber.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ||
         t.DealerName.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ||
         t.ProductName.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ||
         t.BranchName.Contains(_searchString, StringComparison.OrdinalIgnoreCase);

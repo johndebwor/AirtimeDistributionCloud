@@ -13,6 +13,8 @@ public class AirtimeTransfer : BaseEntity
     public int DealerId { get; set; }
     public Dealer Dealer { get; set; } = null!;
 
+    public string TransferNumber { get; set; } = "";
+
     public decimal Amount { get; set; }
     public decimal LoanAmount { get; set; }
     public decimal CommissionAmount { get; set; }

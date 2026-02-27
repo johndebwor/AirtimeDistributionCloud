@@ -11,13 +11,6 @@
                       RequiredError="@(Lang?.T("NameRequired") ?? "Full name is required")" Class="mb-3" />
         <MudTextField @bind-Value="Model.Email" Label="@(Lang?.T("Email") ?? "Email")" Required="true"
                       RequiredError="@(Lang?.T("EmailRequired") ?? "Email is required")" InputType="InputType.Email" Class="mb-3" />
-        <MudTextField @bind-Value="Model.Password" Label="@(IsEdit ? (Lang?.T("Users_NewPassword") ?? "New Password (leave blank to keep)") : (Lang?.T("Password") ?? "Password"))"
-                      Required="@(!IsEdit)" RequiredError="@(Lang?.T("Users_PasswordRequiredField") ?? "Password is required")"
-                      InputType="@(_showPassword ? InputType.Text : InputType.Password)"
-                      Adornment="Adornment.End"
-                      AdornmentIcon="@(_showPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
-                      OnAdornmentClick="@(() => _showPassword = !_showPassword)"
-                      Class="mb-3" />
         <MudSelect T="int?" @bind-Value="Model.BranchId" Label="@(Lang?.T("Branch") ?? "Branch")" Clearable="true" Class="mb-3">
             @foreach (var b in Branches)
             {
@@ -30,6 +23,17 @@
                 <MudSelectItem T="string" Value="@role">@role</MudSelectItem>
             }
         </MudSelect>
+        @if (!IsEdit)
+        {
+            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true" Class="mt-2">
+                <MudText Typo="Typo.body2">
+                    @(Lang?.T("Users_DefaultPasswordInfo") ?? "Default password:") <strong>@DefaultPassword</strong>
+                </MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    @(Lang?.T("Users_DefaultPasswordHint") ?? "The user should change this password after first login.")
+                </MudText>
+            </MudAlert>
+        }
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">@(Lang?.T("Cancel") ?? "Cancel")</MudButton>
@@ -47,7 +51,7 @@
     [Parameter] public List<BranchDto> Branches { get; set; } = new();
 
     private bool _saving;
-    private bool _showPassword;
+    public const string DefaultPassword = "Pass@1234";
 
     protected override void OnInitialized()
     {
@@ -70,12 +74,6 @@
         if (string.IsNullOrWhiteSpace(Model.FullName) || string.IsNullOrWhiteSpace(Model.Email))
         {
             Snackbar.Add(Lang?.T("Users_FullNameRequired") ?? "Full name and email are required", Severity.Warning);
-            return;
-        }
-
-        if (!IsEdit && string.IsNullOrWhiteSpace(Model.Password))
-        {
-            Snackbar.Add(Lang?.T("Users_PasswordRequired") ?? "Password is required for new users", Severity.Warning);
             return;
         }
 
@@ -102,12 +100,6 @@
                 if (Model.SelectedRoles.Any())
                     await UserManager.AddToRolesAsync(user, Model.SelectedRoles);
 
-                if (!string.IsNullOrEmpty(Model.Password))
-                {
-                    var token = await UserManager.GeneratePasswordResetTokenAsync(user);
-                    await UserManager.ResetPasswordAsync(user, token, Model.Password);
-                }
-
                 Snackbar.Add(Lang?.T("Users_Updated") ?? "User updated", Severity.Success);
                 MudDialog.Close(DialogResult.Ok(true));
             }
@@ -122,7 +114,7 @@
                     EmailConfirmed = true
                 };
 
-                var result = await UserManager.CreateAsync(user, Model.Password);
+                var result = await UserManager.CreateAsync(user, DefaultPassword);
                 if (result.Succeeded)
                 {
                     if (Model.SelectedRoles.Any())
@@ -154,7 +146,6 @@
         public string Id { get; set; } = "";
         public string FullName { get; set; } = "";
         public string Email { get; set; } = "";
-        public string Password { get; set; } = "";
         public int? BranchId { get; set; }
         public List<string> SelectedRoles { get; set; } = new();
     }

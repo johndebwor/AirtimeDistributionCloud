@@ -17,12 +17,9 @@
 </div>
 
 <div class="page-toolbar">
-    <MudChipSet T="string" SelectedValue="_currentFilter" SelectedValueChanged="OnFilterChanged" SelectionMode="SelectionMode.SingleSelection">
-        <MudChip T="string" Value="@("Pending")" Color="Color.Warning" Variant="Variant.Outlined">@(Lang?.T("Pending") ?? "Pending")</MudChip>
-        <MudChip T="string" Value="@("Approved")" Color="Color.Success" Variant="Variant.Outlined">@(Lang?.T("Approved") ?? "Approved")</MudChip>
-        <MudChip T="string" Value="@("Rejected")" Color="Color.Error" Variant="Variant.Outlined">@(Lang?.T("Rejected") ?? "Rejected")</MudChip>
-        <MudChip T="string" Value="@("All")" Variant="Variant.Outlined">@(Lang?.T("All") ?? "All")</MudChip>
-    </MudChipSet>
+    <MudTextField @bind-Value="_searchString" Placeholder="@(Lang?.T("ExpenseApprovals_Search") ?? "Search by description, branch, receipt...")"
+                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                  IconSize="Size.Medium" Class="mt-0" Immediate="true" Style="max-width:300px;" />
     @if (_pendingCount > 0 && _currentFilter == "Pending")
     {
         <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Small"
@@ -33,16 +30,26 @@
     }
 </div>
 
+<!-- Status Filter Tabs -->
+<div class="approval-filter-tabs mb-4">
+    @foreach (var (label, value, color, count) in _filterOptions)
+    {
+        <button class="approval-tab @(_currentFilter == value ? "approval-tab-active" : "")"
+                style="@(_currentFilter == value ? $"border-color: var(--mud-palette-{color}); color: var(--mud-palette-{color});" : "")"
+                @onclick="@(() => OnFilterChanged(value))">
+            @label
+            @if (count > 0)
+            {
+                <span class="approval-tab-badge" style="background: var(--mud-palette-@color);">@count</span>
+            }
+        </button>
+    }
+</div>
+
 <MudPaper Elevation="0" Class="data-card pa-4">
     <MudDataGrid T="ExpenseDto" Items="@_filteredExpenses" Filterable="false" SortMode="SortMode.Multiple"
                  Loading="@_loading" Dense="true" Hover="true" Striped="true"
                  QuickFilter="@_quickFilter">
-        <ToolBarContent>
-            <MudSpacer />
-            <MudTextField @bind-Value="_searchString" Placeholder="@(Lang?.T("ExpenseApprovals_Search") ?? "Search by description, branch, receipt...")"
-                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                          IconSize="Size.Medium" Class="mt-0" Immediate="true" />
-        </ToolBarContent>
         <Columns>
             <PropertyColumn Property="x => x.Id" Title="ID" />
             <PropertyColumn Property="x => x.BranchName" Title="@(Lang?.T("Branch") ?? "Branch")" />
@@ -74,14 +81,18 @@
                 <CellTemplate>
                     @if (context.Item.Status == DepositStatus.Pending)
                     {
-                        <MudStack Row="true" Spacing="1">
-                            <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Success"
-                                       StartIcon="@Icons.Material.Filled.Check"
-                                       OnClick="@(() => ApproveExpense(context.Item))">@(Lang?.T("Approve") ?? "Approve")</MudButton>
-                            <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Error"
-                                       StartIcon="@Icons.Material.Filled.Close"
-                                       OnClick="@(() => RejectExpense(context.Item))">@(Lang?.T("Reject") ?? "Reject")</MudButton>
-                        </MudStack>
+                        <div class="d-flex gap-1">
+                            <MudTooltip Text="@(Lang?.T("Approve") ?? "Approve")">
+                                <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success"
+                                               Size="Size.Small"
+                                               OnClick="@(() => ApproveExpense(context.Item))" />
+                            </MudTooltip>
+                            <MudTooltip Text="@(Lang?.T("Reject") ?? "Reject")">
+                                <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Error"
+                                               Size="Size.Small"
+                                               OnClick="@(() => RejectExpense(context.Item))" />
+                            </MudTooltip>
+                        </div>
                     }
                 </CellTemplate>
             </TemplateColumn>
@@ -102,6 +113,14 @@
     private bool _loading = true;
     private bool _approvingAll;
     private int _pendingCount => _allExpenses.Count(e => e.Status == DepositStatus.Pending);
+
+    private IEnumerable<(string Label, string Value, string Color, int Count)> _filterOptions =>
+    [
+        (Lang?.T("Pending") ?? "Pending",   "Pending",  "warning", _allExpenses.Count(e => e.Status == DepositStatus.Pending)),
+        (Lang?.T("Approved") ?? "Approved", "Approved", "success", _allExpenses.Count(e => e.Status == DepositStatus.Approved)),
+        (Lang?.T("Rejected") ?? "Rejected", "Rejected", "error",   _allExpenses.Count(e => e.Status == DepositStatus.Rejected)),
+        (Lang?.T("All") ?? "All",           "All",      "primary", _allExpenses.Count),
+    ];
 
     private Func<ExpenseDto, bool> _quickFilter => x =>
     {

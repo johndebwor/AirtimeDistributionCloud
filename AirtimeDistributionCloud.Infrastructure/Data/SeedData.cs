@@ -8,7 +8,7 @@ namespace AirtimeDistributionCloud.Infrastructure.Data;
 
 public static class SeedData
 {
-    public static readonly string[] Roles = ["SystemAdmin", "SuperAdministrator", "Dealer", "Cashier"];
+    public static readonly string[] Roles = ["SystemAdmin", "SuperAdministrator", "AssetManager", "Dealer", "Cashier"];
 
     public static async Task InitializeAsync(IServiceProvider serviceProvider)
     {
@@ -61,6 +61,7 @@ public static class SeedData
             var defaultSettings = new Dictionary<string, (string Value, string Description)>
             {
                 ["AirtimeDepositAutoApprove"] = ("No", "Automatically approve new airtime deposits without admin review (Yes/No)"),
+                ["ShowPasskeyLogin"] = ("Yes", "Show 'Sign in with a passkey' option on the login page (Yes/No)"),
                 ["ExpenseApprovalThreshold"] = ("50000", "Expenses at or above this amount (SSP) require admin approval"),
                 ["CommissionMinPercentage"] = ("0", "Minimum allowed commission rate (%)"),
                 ["CommissionMaxPercentage"] = ("200", "Maximum allowed commission rate (%)"),
@@ -69,8 +70,8 @@ public static class SeedData
                     "Formula used when recording a new airtime deposit. BonusAmount = Amount × BonusPercentage ÷ 100; TotalAmount = Amount + BonusAmount."
                 ),
                 ["AirtimeTransferFormula"] = (
-                    "AirtimeAmount = Amount ÷ (1 + CommissionRate ÷ 100); CommissionAmount = Amount − AirtimeAmount",
-                    "Formula used when creating a new airtime transfer. The total entered amount is split into airtime and dealer commission."
+                    "AirtimeAmount = Amount ÷ (1 + CommissionRate ÷ 100); CommissionAmount = Amount − AirtimeAmount; DeductedFromProduct = Amount (AirtimeAmount + CommissionAmount)",
+                    "Formula used when creating a new airtime transfer. The total entered amount is split into airtime and dealer commission. The full amount (airtime + commission) is deducted from the product balance."
                 ),
                 // Company Profile
                 ["CompanyName"] = ("", "Company name displayed on reports and documents"),
@@ -95,6 +96,13 @@ public static class SeedData
                 // Currency Configuration
                 ["DefaultCurrency"] = ("SSP", "Default currency for the application (SSP or USD)"),
                 ["AvailableCurrencies"] = ("SSP, USD", "Comma-separated list of available currencies"),
+                // AI Assistant Configuration
+                ["AIAssistantEnabled"] = ("Yes", "Enable the AI Assistant chat widget for all users (Yes/No)"),
+                ["AIAssistantName"] = ("RasidBase Assistant", "Display name shown in the AI Assistant header"),
+                ["AIAssistantWelcomeMessage"] = ("Hello! I'm your RasidBase Assistant. I can help you navigate the system, understand features, and answer questions about airtime distribution, dealers, reports, and more. How can I help you today?", "Welcome message shown when the AI Assistant is opened"),
+                ["AIApiKey"] = ("", "API key for the AI provider (e.g. OpenAI, Anthropic)"),
+                ["AIApiEndpoint"] = ("", "Chat completions API endpoint URL (e.g. https://api.openai.com/v1/chat/completions)"),
+                ["AIModel"] = ("", "AI model name to use (e.g. gpt-4o-mini, claude-sonnet-4-6)"),
                 // Notifications
                 ["TransferNotificationEnabled"] = ("No", "Enable dealer notifications on transfer approval (Yes/No)"),
                 ["TransferNotificationMethod"] = ("Email", "Notification method: Email, DealerWhatsApp, or WhatsAppGroup"),
@@ -204,14 +212,18 @@ public static class SeedData
                 ("SuperAdministrator", "admin.expense-approvals"),
                 ("SuperAdministrator", "admin.expense-categories"),
                 ("SuperAdministrator", "admin.settings"),
-                ("SuperAdministrator", "admin.analytics"),
-                ("SuperAdministrator", "admin.assets"),
-                ("SuperAdministrator", "admin.asset-categories"),
+                ("SuperAdministrator", "reports.reports"),
+                ("SuperAdministrator", "reports.analytics"),
+                ("SuperAdministrator", "assets.registry"),
+                ("SuperAdministrator", "assets.categories"),
                 ("SuperAdministrator", "dealer.registration"),
                 ("SuperAdministrator", "dealer.transfers"),
                 ("SuperAdministrator", "dealer.commissions"),
                 ("SuperAdministrator", "system.users"),
                 ("SuperAdministrator", "system.audit"),
+                // AssetManager
+                ("AssetManager", "assets.registry"),
+                ("AssetManager", "assets.categories"),
                 // Dealer
                 ("Dealer", "dealer.registration"),
                 ("Dealer", "dealer.transfers"),

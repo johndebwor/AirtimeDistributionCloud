@@ -10,38 +10,50 @@
 
 <PageTitle>Profile</PageTitle>
 
-<div class="page-header">
-    <h1>Profile</h1>
-    <p>Manage your profile information</p>
-</div>
+<MudPaper Elevation="0" Class="data-card pa-6">
+    <div class="section-header mb-5">
+        <MudIcon Icon="@Icons.Material.Outlined.Person" Color="Color.Primary" />
+        <MudText Typo="Typo.h6">Profile Information</MudText>
+    </div>
 
-<MudGrid Justify="Justify.Center">
-    <MudItem xs="12" sm="8" md="5">
-        <MudPaper Elevation="0" Class="data-card pa-6">
-            <StatusMessage />
-            <EditForm Model="Input" FormName="profile" OnValidSubmit="OnValidSubmitAsync" method="post">
-                <DataAnnotationsValidator />
-                <ValidationSummary class="text-danger" role="alert" />
-                <div class="mb-4">
-                    <label class="mud-input-label">Username</label>
-                    <input type="text" value="@username" id="username" class="form-control mud-input-root"
-                           placeholder="Choose your username." disabled />
+    <StatusMessage />
+
+    <EditForm Model="Input" FormName="profile" OnValidSubmit="OnValidSubmitAsync" method="post">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="manage-validation-error" role="alert" />
+
+        <MudGrid Spacing="3">
+            <MudItem xs="12">
+                <div class="manage-field">
+                    <label class="manage-field-label">
+                        <MudIcon Icon="@Icons.Material.Outlined.AccountCircle" Size="Size.Small" />
+                        Username
+                    </label>
+                    <input type="text" value="@username" class="manage-input" disabled />
                 </div>
-                <div class="mb-4">
-                    <label class="mud-input-label">Phone Number</label>
+            </MudItem>
+
+            <MudItem xs="12">
+                <div class="manage-field">
+                    <label class="manage-field-label">
+                        <MudIcon Icon="@Icons.Material.Outlined.Phone" Size="Size.Small" />
+                        Phone Number
+                    </label>
                     <InputText @bind-Value="Input.PhoneNumber" id="Input.PhoneNumber"
-                               class="form-control mud-input-root"
+                               class="manage-input"
                                placeholder="Enter your phone number" />
-                    <ValidationMessage For="() => Input.PhoneNumber" class="text-danger mud-input-helper-text" />
+                    <ValidationMessage For="() => Input.PhoneNumber" class="manage-validation-error" />
                 </div>
-                <button type="submit" class="mud-button-root mud-button mud-button-filled mud-button-filled-primary mud-button-filled-size-medium mud-ripple w-100 mt-2"
-                        style="height:42px; font-size:0.9rem; letter-spacing:0.05em;">
-                    Save
+            </MudItem>
+
+            <MudItem xs="12">
+                <button type="submit" class="manage-submit-btn">
+                    Save Changes
                 </button>
-            </EditForm>
-        </MudPaper>
-    </MudItem>
-</MudGrid>
+            </MudItem>
+        </MudGrid>
+    </EditForm>
+</MudPaper>
 
 @code {
     private ApplicationUser? user;

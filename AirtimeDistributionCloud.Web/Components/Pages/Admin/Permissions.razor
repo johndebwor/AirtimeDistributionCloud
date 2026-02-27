@@ -34,7 +34,7 @@
             <RowTemplate>
                 @if (context.IsSection)
                 {
-                    <MudTd colspan="5">
+                    <MudTd colspan="6">
                         <div style="display:flex; align-items:center; gap:8px; padding: 8px 0 4px 0;">
                             <span style="width:10px; height:10px; border-radius:50%; display:inline-block; background:@context.SectionColor;"></span>
                             <MudText Typo="Typo.subtitle2" Style="font-weight:700; text-transform:uppercase; letter-spacing:0.05em;">
@@ -101,6 +101,14 @@
 
         _rows.Add(new("Admin", null, true, "#3B82F6"));
         foreach (var key in IPermissionService.AdminKeys)
+            _rows.Add(new(IPermissionService.PageDisplayNames[key], key, false));
+
+        _rows.Add(new("Reports & Analytics", null, true, "#8B5CF6"));
+        foreach (var key in IPermissionService.ReportsKeys)
+            _rows.Add(new(IPermissionService.PageDisplayNames[key], key, false));
+
+        _rows.Add(new("Asset Registry", null, true, "#06B6D4"));
+        foreach (var key in IPermissionService.AssetKeys)
             _rows.Add(new(IPermissionService.PageDisplayNames[key], key, false));
 
         _rows.Add(new("Dealers", null, true, "#F59E0B"));

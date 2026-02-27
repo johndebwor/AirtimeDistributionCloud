@@ -51,6 +51,10 @@
                 <CellTemplate>
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary"
                                    OnClick="@(() => OpenEditDialog(context.Item))" />
+                    <MudTooltip Text="@(Lang?.T("Users_ResetPassword") ?? "Reset Password")" Placement="Placement.Top">
+                        <MudIconButton Icon="@Icons.Material.Filled.LockReset" Size="Size.Small" Color="Color.Warning"
+                                       OnClick="@(() => ResetPassword(context.Item))" />
+                    </MudTooltip>
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
@@ -155,6 +159,43 @@
         var result = await dialog.Result;
         if (result is { Canceled: false })
             await LoadUsers();
+    }
+
+    private async Task ResetPassword(UserView userView)
+    {
+        var confirm = await DialogService.ShowMessageBox(
+            Lang?.T("Users_ResetPassword") ?? "Reset Password",
+            (MarkupString)$"{Lang?.T("Users_ResetPasswordConfirm") ?? "Are you sure you want to reset the password for"} <strong>{userView.FullName}</strong>?",
+            yesText: Lang?.T("Reset") ?? "Reset",
+            cancelText: Lang?.T("Cancel") ?? "Cancel");
+
+        if (confirm != true) return;
+
+        try
+        {
+            var user = await UserManager.FindByIdAsync(userView.Id);
+            if (user == null)
+            {
+                Snackbar.Add(Lang?.T("Users_NotFoundUser") ?? "User not found", Severity.Error);
+                return;
+            }
+
+            var token = await UserManager.GeneratePasswordResetTokenAsync(user);
+            var result = await UserManager.ResetPasswordAsync(user, token, UserDialog.DefaultPassword);
+
+            if (result.Succeeded)
+            {
+                Snackbar.Add($"{Lang?.T("Users_PasswordReset") ?? "Password reset to"}: {UserDialog.DefaultPassword}", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add(string.Join(", ", result.Errors.Select(e => e.Description)), Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"{Lang?.T("Error") ?? "Error"}: {ex.Message}", Severity.Error);
+        }
     }
 
     public class UserView

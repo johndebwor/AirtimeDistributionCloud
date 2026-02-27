@@ -65,14 +65,17 @@
 
             <button type="submit" class="btn btn-lg btn-primary">Sign In</button>
 
-            <div class="auth-divider">
-                <span>or</span>
-            </div>
+            @if (_showPasskeyLogin)
+            {
+                <div class="auth-divider">
+                    <span>or</span>
+                </div>
 
-            <div style="text-align: center;">
-                <PasskeySubmit Operation="PasskeyOperation.Request" Name="Input.Passkey" EmailName="Input.Email"
-                               class="btn-link">Sign in with a passkey</PasskeySubmit>
-            </div>
+                <div style="text-align: center;">
+                    <PasskeySubmit Operation="PasskeyOperation.Request" Name="Input.Passkey" EmailName="Input.Email"
+                                   class="btn-link">Sign in with a passkey</PasskeySubmit>
+                </div>
+            }
         </EditForm>
 
         <div class="auth-links">
@@ -86,6 +89,7 @@
     private EditContext editContext = default!;
     private string _logoPath = "";
     private string _companyName = "";
+    private bool _showPasskeyLogin = true;
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -106,6 +110,8 @@
         _logoPath = logoSetting?.Value ?? "";
         var nameSetting = await SettingsRepo.GetByKeyAsync("CompanyName");
         _companyName = nameSetting?.Value ?? "";
+        var passkeySetting = await SettingsRepo.GetByKeyAsync("ShowPasskeyLogin");
+        _showPasskeyLogin = !string.Equals(passkeySetting?.Value, "No", StringComparison.OrdinalIgnoreCase);
 
         if (HttpMethods.IsGet(HttpContext.Request.Method))
         {

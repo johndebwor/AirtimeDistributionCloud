@@ -6,8 +6,17 @@ public interface IPermissionService
     [
         "admin.products", "admin.branches", "admin.deposits",
         "admin.approvals", "admin.transfer-approvals", "admin.expense-approvals",
-        "admin.expense-categories", "admin.assets", "admin.asset-categories",
-        "admin.settings", "admin.reports", "admin.analytics"
+        "admin.expense-categories", "admin.settings"
+    ];
+
+    static readonly string[] ReportsKeys =
+    [
+        "reports.reports", "reports.analytics"
+    ];
+
+    static readonly string[] AssetKeys =
+    [
+        "assets.registry", "assets.categories"
     ];
 
     static readonly string[] DealerKeys =
@@ -25,10 +34,10 @@ public interface IPermissionService
         "system.users", "system.audit"
     ];
 
-    static string[] AllKeys => [.. AdminKeys, .. DealerKeys, .. CashierKeys, .. SystemKeys];
+    static string[] AllKeys => [.. AdminKeys, .. ReportsKeys, .. AssetKeys, .. DealerKeys, .. CashierKeys, .. SystemKeys];
 
     // Roles whose permissions are managed; SystemAdmin always has full access in code
-    static readonly string[] ManagedRoles = ["SuperAdministrator", "Dealer", "Cashier"];
+    static readonly string[] ManagedRoles = ["SuperAdministrator", "AssetManager", "Dealer", "Cashier"];
 
     static readonly Dictionary<string, string> PageDisplayNames = new()
     {
@@ -40,10 +49,10 @@ public interface IPermissionService
         ["admin.expense-approvals"] = "Expense Approvals",
         ["admin.expense-categories"] = "Expense Categories",
         ["admin.settings"] = "System Settings",
-        ["admin.reports"] = "Reports",
-        ["admin.analytics"] = "Sales & Capital",
-        ["admin.assets"] = "Asset Registry",
-        ["admin.asset-categories"] = "Asset Categories",
+        ["reports.reports"] = "Reports",
+        ["reports.analytics"] = "Sales & Capital",
+        ["assets.registry"] = "Asset Registry",
+        ["assets.categories"] = "Asset Categories",
         ["dealer.registration"] = "Dealer Registration",
         ["dealer.transfers"] = "Airtime Transfers",
         ["dealer.commissions"] = "Commissions",

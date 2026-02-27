@@ -1,12 +1,17 @@
 @inherits LayoutComponentBase
 @layout AirtimeDistributionCloud.Web.Components.Layout.MainLayout
 
-<div class="page-header">
-    <h1>Account Settings</h1>
-    <p>Manage your account preferences</p>
+<div class="account-manage-header">
+    <div class="account-manage-header-icon">
+        <MudIcon Icon="@Icons.Material.Outlined.ManageAccounts" Style="color:white; font-size:1.4rem;" />
+    </div>
+    <div>
+        <h1 class="account-manage-title">Account Settings</h1>
+        <p class="account-manage-subtitle">Manage your account preferences and security</p>
+    </div>
 </div>
 
-<MudGrid>
+<MudGrid Spacing="4" Class="mt-4">
     <MudItem xs="12" md="3">
         <ManageNavMenu />
     </MudItem>

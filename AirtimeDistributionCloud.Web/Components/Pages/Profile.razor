@@ -2,19 +2,14 @@
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Identity
+@using Microsoft.Extensions.DependencyInjection
 @using AirtimeDistributionCloud.Application.Services
 @using AirtimeDistributionCloud.Application.DTOs
-@inject UserManager<ApplicationUser> UserManager
-@inject AuthenticationStateProvider AuthenticationStateProvider
-@inject IBranchService BranchService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IServiceScopeFactory ScopeFactory
 @inject ISnackbar Snackbar
 
 <PageTitle>@(Lang?.T("Profile_Title") ?? "My Profile") - RasidBase</PageTitle>
-
-<div class="page-header">
-    <h1>@(Lang?.T("Profile_Title") ?? "My Profile")</h1>
-    <p>@(Lang?.T("Profile_Subtitle") ?? "Manage your account settings")</p>
-</div>
 
 @if (_loading)
 {
@@ -22,48 +17,92 @@
 }
 else if (_user is null)
 {
-    <MudAlert Severity="Severity.Error">@(Lang?.T("Profile_UnableToLoad") ?? "Unable to load user profile.")</MudAlert>
+    <MudAlert Severity="Severity.Error" Class="my-4">@(Lang?.T("Profile_UnableToLoad") ?? "Unable to load user profile.")</MudAlert>
 }
 else
 {
-    <MudGrid Spacing="4">
-        <!-- Left Column: Account Information -->
-        <MudItem xs="12" md="6">
-            <MudPaper Elevation="0" Class="data-card pa-6">
-                <MudText Typo="Typo.h6" Class="mb-4">@(Lang?.T("Profile_AccountInfo") ?? "Account Information")</MudText>
+    <!-- Profile Hero -->
+    <div class="profile-hero">
+        <div class="profile-hero-content">
+            <div class="profile-avatar-wrapper">
+                <div class="profile-avatar @GetAvatarColorClass()">
+                    <span>@GetInitials()</span>
+                </div>
+                <div class="profile-avatar-badge @(_user.EmailConfirmed ? "badge-verified" : "badge-pending")">
+                    <MudIcon Icon="@(_user.EmailConfirmed ? Icons.Material.Filled.Check : Icons.Material.Filled.Schedule)" Size="Size.Small" />
+                </div>
+            </div>
+            <div>
+                <h2 class="profile-hero-name">@_fullName</h2>
+                <p class="profile-hero-email">@_email</p>
+                <div class="profile-hero-roles">
+                    @foreach (var role in _roles)
+                    {
+                        <span class="profile-role-chip">@role</span>
+                    }
+                    @if (!_roles.Any())
+                    {
+                        <span class="profile-role-chip">@(Lang?.T("Profile_NoRoles") ?? "No roles")</span>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="profile-hero-meta">
+            <div class="profile-meta-item">
+                <MudIcon Icon="@Icons.Material.Outlined.CalendarToday" Size="Size.Small" />
+                <span>@(Lang?.T("Profile_MemberSince") ?? "Member since") @_user.CreatedDate.ToString("MMM yyyy")</span>
+            </div>
+            @if (!string.IsNullOrEmpty(_branchName))
+            {
+                <div class="profile-meta-item">
+                    <MudIcon Icon="@Icons.Material.Outlined.Store" Size="Size.Small" />
+                    <span>@_branchName</span>
+                </div>
+            }
+        </div>
+    </div>
 
-                <MudStack AlignItems="AlignItems.Center" Class="mb-4">
-                    <MudAvatar Size="Size.Large" Color="Color.Primary">
-                        @(_fullName?.Length > 0 ? _fullName[0].ToString().ToUpper() : "?")
-                    </MudAvatar>
-                </MudStack>
+    <MudGrid Spacing="4" Class="mt-4">
+        <!-- Left: Edit Profile -->
+        <MudItem xs="12" md="7">
+            <MudPaper Elevation="0" Class="data-card pa-6">
+                <div class="section-header mb-5">
+                    <MudIcon Icon="@Icons.Material.Outlined.EditNote" Color="Color.Primary" />
+                    <MudText Typo="Typo.h6">@(Lang?.T("Profile_AccountInfo") ?? "Account Information")</MudText>
+                </div>
 
                 <MudStack Spacing="3">
                     <MudTextField @bind-Value="_fullName"
                                   Label="@(Lang?.T("FullName") ?? "Full Name")"
                                   Variant="Variant.Outlined"
                                   Adornment="Adornment.Start"
-                                  AdornmentIcon="@Icons.Material.Outlined.Person" />
+                                  AdornmentIcon="@Icons.Material.Outlined.Person"
+                                  HelperText="@(Lang?.T("Profile_FullNameHint") ?? "Your display name visible across the system")" />
 
                     <MudTextField @bind-Value="_phoneNumber"
                                   Label="@(Lang?.T("PhoneNumber") ?? "Phone Number")"
                                   Variant="Variant.Outlined"
                                   Adornment="Adornment.Start"
-                                  AdornmentIcon="@Icons.Material.Outlined.Phone" />
+                                  AdornmentIcon="@Icons.Material.Outlined.Phone"
+                                  HelperText="@(Lang?.T("Profile_PhoneHint") ?? "Used for contact and notifications")" />
 
                     <MudTextField Value="@_email"
                                   Label="@(Lang?.T("Email") ?? "Email")"
                                   Variant="Variant.Outlined"
                                   Disabled="true"
                                   Adornment="Adornment.Start"
-                                  AdornmentIcon="@Icons.Material.Outlined.Email" />
+                                  AdornmentIcon="@Icons.Material.Outlined.Email"
+                                  HelperText="@(Lang?.T("Profile_EmailReadOnly") ?? "Contact an administrator to change your email")" />
 
-                    <MudTextField Value="@(_branchName ?? "-")"
-                                  Label="@(Lang?.T("Branch") ?? "Branch")"
-                                  Variant="Variant.Outlined"
-                                  Disabled="true"
-                                  Adornment="Adornment.Start"
-                                  AdornmentIcon="@Icons.Material.Outlined.Business" />
+                    @if (!string.IsNullOrEmpty(_branchName))
+                    {
+                        <MudTextField Value="@_branchName"
+                                      Label="@(Lang?.T("Branch") ?? "Branch")"
+                                      Variant="Variant.Outlined"
+                                      Disabled="true"
+                                      Adornment="Adornment.Start"
+                                      AdornmentIcon="@Icons.Material.Outlined.Store" />
+                    }
 
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Primary"
@@ -71,7 +110,8 @@ else
                                OnClick="SaveProfile"
                                Disabled="_saving"
                                FullWidth="true"
-                               Class="mt-2">
+                               Class="mt-2"
+                               Size="Size.Large">
                         @if (_saving)
                         {
                             <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
@@ -86,75 +126,95 @@ else
             </MudPaper>
         </MudItem>
 
-        <!-- Right Column: Account Details -->
-        <MudItem xs="12" md="6">
-            <MudPaper Elevation="0" Class="data-card pa-6">
-                <MudText Typo="Typo.h6" Class="mb-4">@(Lang?.T("Profile_AccountDetails") ?? "Account Details")</MudText>
+        <!-- Right: Account Details + Security -->
+        <MudItem xs="12" md="5">
+            <!-- Account Status Card -->
+            <MudPaper Elevation="0" Class="data-card pa-6 mb-4">
+                <div class="section-header mb-4">
+                    <MudIcon Icon="@Icons.Material.Outlined.Badge" Color="Color.Primary" />
+                    <MudText Typo="Typo.h6">@(Lang?.T("Profile_AccountDetails") ?? "Account Details")</MudText>
+                </div>
 
-                <MudStack Spacing="3">
-                    <div>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Roles") ?? "Roles")</MudText>
-                        <MudStack Row="true" Spacing="1" Class="mt-1">
-                            @if (_roles.Any())
-                            {
-                                @foreach (var role in _roles)
-                                {
-                                    <MudChip T="string" Color="Color.Primary" Size="Size.Small">@role</MudChip>
-                                }
-                            }
-                            else
-                            {
-                                <MudChip T="string" Color="Color.Default" Size="Size.Small">@(Lang?.T("Profile_NoRoles") ?? "No roles assigned")</MudChip>
-                            }
-                        </MudStack>
+                <div class="profile-detail-list">
+                    <div class="profile-detail-row">
+                        <span class="detail-label">@(Lang?.T("Profile_AccountCreated") ?? "Member Since")</span>
+                        <span class="detail-value">@_user.CreatedDate.ToString("MMM dd, yyyy")</span>
                     </div>
-
-                    <MudDivider />
-
-                    <div>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Profile_AccountCreated") ?? "Account Created")</MudText>
-                        <MudText Typo="Typo.body1">@_user.CreatedDate.ToString("MMMM dd, yyyy")</MudText>
-                    </div>
-
-                    <MudDivider />
-
-                    <div>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Profile_EmailConfirmed") ?? "Email Confirmed")</MudText>
+                    <div class="profile-detail-row">
+                        <span class="detail-label">@(Lang?.T("Profile_EmailStatus") ?? "Email Status")</span>
                         <MudChip T="string"
                                  Color="@(_user.EmailConfirmed ? Color.Success : Color.Warning)"
                                  Size="Size.Small"
-                                 Class="mt-1">
-                            @(_user.EmailConfirmed ? (Lang?.T("Confirmed") ?? "Confirmed") : (Lang?.T("NotConfirmed") ?? "Not Confirmed"))
+                                 Style="margin:0">
+                            @(_user.EmailConfirmed ? (Lang?.T("Confirmed") ?? "Verified") : (Lang?.T("NotConfirmed") ?? "Unverified"))
                         </MudChip>
                     </div>
-
-                    <MudDivider />
-
-                    <div>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Profile_LastModified") ?? "Last Modified")</MudText>
-                        <MudText Typo="Typo.body1">
-                            @(_user.ModifiedDate.HasValue ? _user.ModifiedDate.Value.ToString("MMMM dd, yyyy") : (Lang?.T("Never") ?? "Never"))
-                        </MudText>
+                    @if (_user.ModifiedDate.HasValue)
+                    {
+                        <div class="profile-detail-row">
+                            <span class="detail-label">@(Lang?.T("Profile_LastModified") ?? "Last Updated")</span>
+                            <span class="detail-value">@_user.ModifiedDate.Value.ToString("MMM dd, yyyy")</span>
+                        </div>
+                    }
+                    <div class="profile-detail-row">
+                        <span class="detail-label">@(Lang?.T("Roles") ?? "Roles")</span>
+                        <div class="d-flex flex-wrap gap-1 justify-end">
+                            @foreach (var role in _roles)
+                            {
+                                <MudChip T="string" Color="Color.Primary" Size="Size.Small" Style="margin:2px">@role</MudChip>
+                            }
+                        </div>
                     </div>
+                </div>
+            </MudPaper>
 
-                    <MudDivider />
+            <!-- Security Card -->
+            <MudPaper Elevation="0" Class="data-card pa-6">
+                <div class="section-header mb-4">
+                    <MudIcon Icon="@Icons.Material.Outlined.Shield" Color="Color.Primary" />
+                    <MudText Typo="Typo.h6">@(Lang?.T("Profile_Security") ?? "Security")</MudText>
+                </div>
 
+                <div class="profile-security-item">
+                    <div class="security-item-icon">
+                        <MudIcon Icon="@Icons.Material.Outlined.Key" Size="Size.Small" />
+                    </div>
+                    <div class="security-item-body">
+                        <span class="security-item-title">@(Lang?.T("Profile_ChangePassword") ?? "Password")</span>
+                        <span class="security-item-sub">@(Lang?.T("Profile_PasswordHint") ?? "Update your account password")</span>
+                    </div>
                     <MudButton Variant="Variant.Outlined"
                                Color="Color.Primary"
-                               StartIcon="@Icons.Material.Outlined.Lock"
-                               Href="/Account/Manage/ChangePassword"
-                               FullWidth="true"
-                               Class="mt-2">
-                        @(Lang?.T("Profile_ChangePassword") ?? "Change Password")
+                               Size="Size.Small"
+                               Href="/Account/Manage/ChangePassword">
+                        @(Lang?.T("Change") ?? "Change")
                     </MudButton>
-                </MudStack>
+                </div>
+
+                <MudDivider Class="my-3" />
+
+                <div class="profile-security-item">
+                    <div class="security-item-icon">
+                        <MudIcon Icon="@Icons.Material.Outlined.Security" Size="Size.Small" />
+                    </div>
+                    <div class="security-item-body">
+                        <span class="security-item-title">@(Lang?.T("Profile_TwoFactor") ?? "Two-Factor Auth")</span>
+                        <span class="security-item-sub">@(Lang?.T("Profile_TwoFactorHint") ?? "Add an extra layer of security")</span>
+                    </div>
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Default"
+                               Size="Size.Small"
+                               Href="/Account/Manage/TwoFactorAuthentication">
+                        @(Lang?.T("Manage") ?? "Manage")
+                    </MudButton>
+                </div>
             </MudPaper>
         </MudItem>
     </MudGrid>
 }
 
 @code {
-    [CascadingParameter] public AirtimeDistributionCloud.Application.Services.ILanguageService? Lang { get; set; }
+    [CascadingParameter] public ILanguageService? Lang { get; set; }
 
     private ApplicationUser? _user;
     private string _fullName = string.Empty;
@@ -165,23 +225,32 @@ else
     private bool _loading = true;
     private bool _saving;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (!firstRender) return;
+
         try
         {
-            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-            _user = await UserManager.GetUserAsync(authState.User);
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var principal = authState.User;
+
+            using var scope = ScopeFactory.CreateScope();
+            var sp = scope.ServiceProvider;
+
+            var userMgr = sp.GetRequiredService<UserManager<ApplicationUser>>();
+            _user = await userMgr.GetUserAsync(principal);
 
             if (_user is not null)
             {
                 _fullName = _user.FullName;
                 _phoneNumber = _user.PhoneNumber;
                 _email = _user.Email ?? string.Empty;
-                _roles = await UserManager.GetRolesAsync(_user);
+                _roles = await userMgr.GetRolesAsync(_user);
 
                 if (_user.BranchId.HasValue)
                 {
-                    var branch = await BranchService.GetBranchByIdAsync(_user.BranchId.Value);
+                    var branchSvc = sp.GetRequiredService<IBranchService>();
+                    var branch = await branchSvc.GetBranchByIdAsync(_user.BranchId.Value);
                     _branchName = branch?.Name;
                 }
             }
@@ -193,6 +262,7 @@ else
         finally
         {
             _loading = false;
+            StateHasChanged();
         }
     }
 
@@ -203,20 +273,26 @@ else
         _saving = true;
         try
         {
-            _user.FullName = _fullName;
-            _user.PhoneNumber = _phoneNumber;
-            var result = await UserManager.UpdateAsync(_user);
+            using var scope = ScopeFactory.CreateScope();
+            var userMgr = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+            var user = await userMgr.FindByIdAsync(_user.Id);
+            if (user is null) return;
+
+            user.FullName = _fullName;
+            user.PhoneNumber = _phoneNumber;
+            var result = await userMgr.UpdateAsync(user);
 
             if (result.Succeeded)
             {
-                Snackbar.Add(Lang?.T("ProfileUpdated") ?? "Profile updated", Severity.Success);
+                _user.FullName = _fullName;
+                _user.PhoneNumber = _phoneNumber;
+                Snackbar.Add(Lang?.T("ProfileUpdated") ?? "Profile updated successfully", Severity.Success);
             }
             else
             {
                 foreach (var error in result.Errors)
-                {
                     Snackbar.Add(error.Description, Severity.Error);
-                }
             }
         }
         catch (Exception ex)
@@ -227,5 +303,21 @@ else
         {
             _saving = false;
         }
+    }
+
+    private string GetInitials()
+    {
+        if (string.IsNullOrWhiteSpace(_fullName)) return "?";
+        var parts = _fullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length >= 2
+            ? $"{parts[0][0]}{parts[^1][0]}".ToUpper()
+            : _fullName[0].ToString().ToUpper();
+    }
+
+    private string GetAvatarColorClass()
+    {
+        var colors = new[] { "avatar-blue", "avatar-green", "avatar-amber", "avatar-violet", "avatar-teal", "avatar-rose" };
+        var hash = _fullName?.GetHashCode() ?? 0;
+        return colors[Math.Abs(hash) % colors.Length];
     }
 }

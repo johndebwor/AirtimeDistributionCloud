@@ -19,13 +19,9 @@
 </div>
 
 <div class="page-toolbar">
-    <MudChipSet T="string" SelectedValue="_currentFilter" SelectedValueChanged="OnFilterChanged" SelectionMode="SelectionMode.SingleSelection">
-        <MudChip T="string" Value="@("Pending")" Color="Color.Warning" Variant="Variant.Outlined">@(Lang?.T("Pending") ?? "Pending")</MudChip>
-        <MudChip T="string" Value="@("Approved")" Color="Color.Success" Variant="Variant.Outlined">@(Lang?.T("Approved") ?? "Approved")</MudChip>
-        <MudChip T="string" Value="@("Rejected")" Color="Color.Error" Variant="Variant.Outlined">@(Lang?.T("Rejected") ?? "Rejected")</MudChip>
-        <MudChip T="string" Value="@("Cancelled")" Color="Color.Dark" Variant="Variant.Outlined">@(Lang?.T("Cancelled") ?? "Cancelled")</MudChip>
-        <MudChip T="string" Value="@("All")" Variant="Variant.Outlined">@(Lang?.T("All") ?? "All")</MudChip>
-    </MudChipSet>
+    <MudTextField @bind-Value="_searchString" Placeholder="@(Lang?.T("TransferApprovals_Search") ?? "Search by dealer, product, branch...")"
+                  Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                  IconSize="Size.Medium" Class="mt-0" Immediate="true" Style="max-width:300px;" />
     @if (_pendingCount > 0 && _currentFilter == "Pending")
     {
         <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Small"
@@ -36,18 +32,28 @@
     }
 </div>
 
+<!-- Status Filter Tabs -->
+<div class="approval-filter-tabs mb-4">
+    @foreach (var (label, value, color, count) in _filterOptions)
+    {
+        <button class="approval-tab @(_currentFilter == value ? "approval-tab-active" : "")"
+                style="@(_currentFilter == value ? $"border-color: var(--mud-palette-{color}); color: var(--mud-palette-{color});" : "")"
+                @onclick="@(() => OnFilterChanged(value))">
+            @label
+            @if (count > 0)
+            {
+                <span class="approval-tab-badge" style="background: var(--mud-palette-@color);">@count</span>
+            }
+        </button>
+    }
+</div>
+
 <MudPaper Elevation="0" Class="data-card pa-4">
     <MudDataGrid T="AirtimeTransferDto" Items="@_filteredTransfers" Filterable="false" SortMode="SortMode.Multiple"
                  Loading="@_loading" Dense="true" Hover="true" Striped="true"
                  QuickFilter="@_quickFilter">
-        <ToolBarContent>
-            <MudSpacer />
-            <MudTextField @bind-Value="_searchString" Placeholder="@(Lang?.T("TransferApprovals_Search") ?? "Search by dealer, product, branch...")"
-                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                          IconSize="Size.Medium" Class="mt-0" Immediate="true" />
-        </ToolBarContent>
         <Columns>
-            <PropertyColumn Property="x => x.Id" Title="ID" />
+            <PropertyColumn Property="x => x.TransferNumber" Title="@(Lang?.T("TransferNumber") ?? "Transfer #")" />
             <PropertyColumn Property="x => x.BranchName" Title="@(Lang?.T("Branch") ?? "Branch")" />
             <PropertyColumn Property="x => x.ProductName" Title="@(Lang?.T("Product") ?? "Product")" />
             <PropertyColumn Property="x => x.DealerName" Title="@(Lang?.T("Dealer") ?? "Dealer")" />
@@ -83,23 +89,29 @@
             <PropertyColumn Property="x => x.CreatedDate" Title="@(Lang?.T("Date") ?? "Date")" Format="dd MMM yyyy HH:mm" />
             <TemplateColumn Title="@(Lang?.T("Actions") ?? "Actions")" Sortable="false">
                 <CellTemplate>
-                    <MudStack Row="true" Spacing="1">
+                    <div class="d-flex gap-1">
                         @if (context.Item.Status == DepositStatus.Pending)
                         {
-                            <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Success"
-                                       StartIcon="@Icons.Material.Filled.Check"
-                                       OnClick="@(() => ApproveTransfer(context.Item))">@(Lang?.T("Approve") ?? "Approve")</MudButton>
-                            <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Error"
-                                       StartIcon="@Icons.Material.Filled.Close"
-                                       OnClick="@(() => RejectTransfer(context.Item))">@(Lang?.T("Reject") ?? "Reject")</MudButton>
+                            <MudTooltip Text="@(Lang?.T("Approve") ?? "Approve")">
+                                <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success"
+                                              Size="Size.Small"
+                                              OnClick="@(() => ApproveTransfer(context.Item))" />
+                            </MudTooltip>
+                            <MudTooltip Text="@(Lang?.T("Reject") ?? "Reject")">
+                                <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Error"
+                                              Size="Size.Small"
+                                              OnClick="@(() => RejectTransfer(context.Item))" />
+                            </MudTooltip>
                         }
-                        @if (context.Item.Status == DepositStatus.Pending || context.Item.Status == DepositStatus.Approved)
+                        @if (context.Item.Status == DepositStatus.Approved)
                         {
-                            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Dark"
-                                       StartIcon="@Icons.Material.Filled.Cancel"
-                                       OnClick="@(() => CancelTransfer(context.Item))">@(Lang?.T("Cancel") ?? "Cancel")</MudButton>
+                            <MudTooltip Text="@(Lang?.T("Cancel") ?? "Cancel")">
+                                <MudIconButton Icon="@Icons.Material.Filled.Block" Color="Color.Dark"
+                                              Size="Size.Small"
+                                              OnClick="@(() => CancelTransfer(context.Item))" />
+                            </MudTooltip>
                         }
-                    </MudStack>
+                    </div>
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
@@ -119,6 +131,15 @@
     private bool _loading = true;
     private bool _approvingAll;
     private int _pendingCount => _allTransfers.Count(t => t.Status == DepositStatus.Pending);
+
+    private IEnumerable<(string Label, string Value, string Color, int Count)> _filterOptions =>
+    [
+        (Lang?.T("Pending") ?? "Pending",   "Pending",   "warning", _allTransfers.Count(t => t.Status == DepositStatus.Pending)),
+        (Lang?.T("Approved") ?? "Approved", "Approved",  "success", _allTransfers.Count(t => t.Status == DepositStatus.Approved)),
+        (Lang?.T("Rejected") ?? "Rejected", "Rejected",  "error",   _allTransfers.Count(t => t.Status == DepositStatus.Rejected)),
+        (Lang?.T("Cancelled") ?? "Cancelled","Cancelled","dark",    _allTransfers.Count(t => t.Status == DepositStatus.Cancelled)),
+        (Lang?.T("All") ?? "All",           "All",       "primary", _allTransfers.Count),
+    ];
 
     private Func<AirtimeTransferDto, bool> _quickFilter => x =>
     {

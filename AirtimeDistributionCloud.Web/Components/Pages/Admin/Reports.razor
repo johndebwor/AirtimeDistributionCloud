@@ -40,6 +40,13 @@
                         <MudSelectItem T="string" Value="@("expenses")">@(Lang?.T("Reports_Expenses") ?? "Expenses")</MudSelectItem>
                         <MudSelectItem T="string" Value="@("dealers")">@(Lang?.T("Reports_Dealers") ?? "Dealers")</MudSelectItem>
                     </MudSelect>
+                    @if (!string.IsNullOrEmpty(_selectedReport) && ReportDescriptions.TryGetValue(_selectedReport, out var descKey))
+                    {
+                        <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true" Class="mt-2" NoIcon="false"
+                                  Style="font-size:0.8rem; padding:6px 12px;">
+                            @(Lang?.T(descKey) ?? GetDefaultDescription(_selectedReport))
+                        </MudAlert>
+                    }
                 </MudItem>
                 <MudItem xs="12" sm="3">
                     <MudDatePicker @bind-Date="_dateFrom" Label="@(Lang?.T("Reports_FromDate") ?? "From Date")" Variant="Variant.Outlined" Clearable="true" />
@@ -47,13 +54,18 @@
                 <MudItem xs="12" sm="3">
                     <MudDatePicker @bind-Date="_dateTo" Label="@(Lang?.T("Reports_ToDate") ?? "To Date")" Variant="Variant.Outlined" Clearable="true" />
                 </MudItem>
-                <MudItem xs="12" sm="2" Class="d-flex align-end gap-2">
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                <MudItem xs="12" sm="2" Class="d-flex align-end gap-2 flex-wrap">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.Visibility"
+                               OnClick="PreviewReport" Disabled="@(_generating || string.IsNullOrEmpty(_selectedReport))">
+                        @(Lang?.T("Reports_View") ?? "View")
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small"
                                StartIcon="@Icons.Material.Filled.PictureAsPdf"
                                OnClick="@(() => GenerateReport("pdf"))" Disabled="@(_generating || string.IsNullOrEmpty(_selectedReport))">
                         @(Lang?.T("Reports_PDF") ?? "PDF")
                     </MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Success"
+                    <MudButton Variant="Variant.Outlined" Color="Color.Success" Size="Size.Small"
                                StartIcon="@Icons.Material.Filled.TableChart"
                                OnClick="@(() => GenerateReport("excel"))" Disabled="@(_generating || string.IsNullOrEmpty(_selectedReport))">
                         @(Lang?.T("Reports_Excel") ?? "Excel")
@@ -70,91 +82,55 @@
         </MudItem>
     }
 
-    <!-- Report Cards -->
-    <MudItem xs="12" sm="6" md="4">
-        <MudCard Class="stat-card" Elevation="0" Style="border-left: 4px solid #0284C7 !important; cursor:pointer;"
-                 @onclick="@(() => { _selectedReport = "transfers"; })">
-            <MudCardContent>
-                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                    <div>
-                        <MudText Typo="Typo.subtitle1" Style="font-weight:600;">@(Lang?.T("Reports_AirtimeTransfers") ?? "Airtime Transfers")</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Reports_TransfersDesc") ?? "Transfer history with dealer, product, and commission details")</MudText>
+    <!-- Inline Report Preview -->
+    @if (_showPreview)
+    {
+        <MudItem xs="12">
+            <MudPaper Elevation="0" Class="data-card pa-4">
+                <div class="d-flex align-center justify-space-between mb-3">
+                    <div class="d-flex align-center gap-2">
+                        <MudIcon Icon="@Icons.Material.Outlined.TableView" Color="Color.Primary" />
+                        <MudText Typo="Typo.h6" Style="font-weight:600;">@_previewTitle</MudText>
+                        <MudChip T="string" Color="Color.Primary" Size="Size.Small" Variant="Variant.Outlined">
+                            @_previewRows.Count @(Lang?.T("Reports_Records") ?? "records")
+                        </MudChip>
                     </div>
-                    <MudAvatar Color="Color.Info" Variant="Variant.Outlined">
-                        <MudIcon Icon="@Icons.Material.Filled.SwapHoriz" />
-                    </MudAvatar>
-                </MudStack>
-            </MudCardContent>
-        </MudCard>
-    </MudItem>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small"
+                                   OnClick="@(() => _showPreview = false)" />
+                </div>
 
-    <MudItem xs="12" sm="6" md="4">
-        <MudCard Class="stat-card" Elevation="0" Style="border-left: 4px solid #16A34A !important; cursor:pointer;"
-                 @onclick="@(() => { _selectedReport = "cash-deposits"; })">
-            <MudCardContent>
-                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                    <div>
-                        <MudText Typo="Typo.subtitle1" Style="font-weight:600;">@(Lang?.T("Reports_CashDeposits") ?? "Cash Deposits")</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Reports_CashDepositsDesc") ?? "All cash deposits by dealer and branch")</MudText>
-                    </div>
-                    <MudAvatar Color="Color.Success" Variant="Variant.Outlined">
-                        <MudIcon Icon="@Icons.Material.Filled.AttachMoney" />
-                    </MudAvatar>
-                </MudStack>
-            </MudCardContent>
-        </MudCard>
-    </MudItem>
+                @if (_previewRows.Count == 0)
+                {
+                    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mb-3">
+                        @(Lang?.T("Reports_NoData") ?? "No records found for the selected criteria.")
+                    </MudAlert>
+                }
+                else
+                {
+                    <MudTable Items="_previewRows" Dense="true" Hover="true" Striped="true" Elevation="0"
+                              RowsPerPage="10" Style="border-radius: 8px;">
+                        <HeaderContent>
+                            @foreach (var header in _previewHeaders)
+                            {
+                                <MudTh Style="font-weight:600;">@header</MudTh>
+                            }
+                        </HeaderContent>
+                        <RowTemplate>
+                            @foreach (var cell in context)
+                            {
+                                <MudTd>@cell</MudTd>
+                            }
+                        </RowTemplate>
+                        <PagerContent>
+                            <MudTablePager PageSizeOptions="new int[] { 10, 25, 50, 100 }" />
+                        </PagerContent>
+                    </MudTable>
+                }
+            </MudPaper>
+        </MudItem>
+    }
 
-    <MudItem xs="12" sm="6" md="4">
-        <MudCard Class="stat-card" Elevation="0" Style="border-left: 4px solid #D97706 !important; cursor:pointer;"
-                 @onclick="@(() => { _selectedReport = "expenses"; })">
-            <MudCardContent>
-                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                    <div>
-                        <MudText Typo="Typo.subtitle1" Style="font-weight:600;">@(Lang?.T("Reports_Expenses") ?? "Expenses")</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Reports_ExpensesDesc") ?? "Expense records with category and approval status")</MudText>
-                    </div>
-                    <MudAvatar Color="Color.Warning" Variant="Variant.Outlined">
-                        <MudIcon Icon="@Icons.Material.Filled.Receipt" />
-                    </MudAvatar>
-                </MudStack>
-            </MudCardContent>
-        </MudCard>
-    </MudItem>
 
-    <MudItem xs="12" sm="6" md="4">
-        <MudCard Class="stat-card" Elevation="0" Style="border-left: 4px solid #3B82F6 !important; cursor:pointer;"
-                 @onclick="@(() => { _selectedReport = "airtime-deposits"; })">
-            <MudCardContent>
-                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                    <div>
-                        <MudText Typo="Typo.subtitle1" Style="font-weight:600;">@(Lang?.T("Reports_AirtimeDeposits") ?? "Airtime Deposits")</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Reports_DepositsDesc") ?? "Airtime deposit records with bonus and status")</MudText>
-                    </div>
-                    <MudAvatar Color="Color.Primary" Variant="Variant.Outlined">
-                        <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" />
-                    </MudAvatar>
-                </MudStack>
-            </MudCardContent>
-        </MudCard>
-    </MudItem>
-
-    <MudItem xs="12" sm="6" md="4">
-        <MudCard Class="stat-card" Elevation="0" Style="border-left: 4px solid #F59E0B !important; cursor:pointer;"
-                 @onclick="@(() => { _selectedReport = "dealers"; })">
-            <MudCardContent>
-                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                    <div>
-                        <MudText Typo="Typo.subtitle1" Style="font-weight:600;">@(Lang?.T("Reports_Dealers") ?? "Dealers")</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">@(Lang?.T("Reports_DealersDesc") ?? "Complete dealer registration list")</MudText>
-                    </div>
-                    <MudAvatar Color="Color.Secondary" Variant="Variant.Outlined">
-                        <MudIcon Icon="@Icons.Material.Filled.People" />
-                    </MudAvatar>
-                </MudStack>
-            </MudCardContent>
-        </MudCard>
-    </MudItem>
 </MudGrid>
 
 @code {
@@ -165,6 +141,12 @@
     private DateTime? _dateTo;
     private bool _generating;
 
+    // Preview state
+    private bool _showPreview;
+    private string _previewTitle = "";
+    private string[] _previewHeaders = [];
+    private List<string[]> _previewRows = new();
+
     private string _companyName = "";
     private string _companyNameAr = "";
     private string _companyAddress = "";
@@ -174,9 +156,27 @@
 
     private bool IsRtl => Lang?.IsRtl == true;
 
-    // Returns the company name in the current language (falls back to English if Arabic not set)
     private string CompanyName => IsRtl && !string.IsNullOrEmpty(_companyNameAr) ? _companyNameAr : _companyName;
     private string CompanyAddress => IsRtl && !string.IsNullOrEmpty(_companyAddressAr) ? _companyAddressAr : _companyAddress;
+
+    private static readonly Dictionary<string, string> ReportDescriptions = new()
+    {
+        ["transfers"] = "Reports_TransfersDescFull",
+        ["cash-deposits"] = "Reports_CashDepositsDescFull",
+        ["airtime-deposits"] = "Reports_DepositsDescFull",
+        ["expenses"] = "Reports_ExpensesDescFull",
+        ["dealers"] = "Reports_DealersDescFull"
+    };
+
+    private static string GetDefaultDescription(string report) => report switch
+    {
+        "transfers" => "View all airtime transfer records including dealer, product, branch, amount, commission, transfer type, and approval status.",
+        "cash-deposits" => "View cash deposit records from dealers organized by branch with deposit amounts and dates.",
+        "airtime-deposits" => "View airtime deposit records with bonus percentage calculations and approval status.",
+        "expenses" => "View expense records with categories, descriptions, amounts, and approval status.",
+        "dealers" => "View the complete list of registered dealers with contact details, location, and status.",
+        _ => ""
+    };
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -221,6 +221,35 @@
         "Company" => T("DealerType_Company"),
         _ => type
     };
+
+    private async Task PreviewReport()
+    {
+        _generating = true;
+        StateHasChanged();
+        try
+        {
+            _previewHeaders = GetHeaders();
+            _previewRows = await GetRows();
+            _previewTitle = _selectedReport switch
+            {
+                "transfers" => T("Reports_AirtimeTransfers"),
+                "cash-deposits" => T("Reports_CashDeposits"),
+                "airtime-deposits" => T("Reports_AirtimeDeposits"),
+                "expenses" => T("Reports_Expenses"),
+                "dealers" => T("Reports_Dealers"),
+                _ => T("Report_Suffix")
+            };
+            _showPreview = true;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"{T("Error")}: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _generating = false;
+        }
+    }
 
     private async Task GenerateReport(string format)
     {
@@ -368,17 +397,12 @@
         if (IsRtl)
             ws.RightToLeft = true;
 
-        // Column 1 is reserved for logo; text starts at column 2
-        // Logo goes in column 1 for both LTR and RTL (always "first" in reading order)
-        // When sheet is RTL, column 1 visually appears on the RIGHT side
         int logoCol = 1;
         int textCol = 2;
-        int lastCol = headers.Length + 1; // +1 because col 1 is logo
+        int lastCol = headers.Length + 1;
 
-        // Reserve logo column width
         ws.Column(logoCol).Width = 9;
 
-        // Place logo in column 1, rows 1-3 area
         if (!string.IsNullOrEmpty(_logoPath))
         {
             var physicalPath = Path.Combine(WebHostEnv.WebRootPath, _logoPath.TrimStart('/'));
@@ -389,7 +413,6 @@
             }
         }
 
-        // Row 1: Company name
         ws.Row(1).Height = 22;
         ws.Cell(1, textCol).Value = string.IsNullOrEmpty(CompanyName) ? "RasidBase" : CompanyName;
         ws.Cell(1, textCol).Style.Font.Bold = true;
@@ -398,7 +421,6 @@
         ws.Cell(1, textCol).Style.Alignment.Vertical = ClosedXML.Excel.XLAlignmentVerticalValues.Center;
         ws.Range(1, textCol, 1, lastCol).Merge();
 
-        // Row 2: Address
         if (!string.IsNullOrEmpty(CompanyAddress))
         {
             ws.Cell(2, textCol).Value = CompanyAddress;
@@ -407,7 +429,6 @@
             ws.Range(2, textCol, 2, lastCol).Merge();
         }
 
-        // Row 3: Tel
         if (!string.IsNullOrEmpty(_companyTel))
         {
             ws.Cell(3, textCol).Value = $"{T("Report_Tel")}: {_companyTel}";
@@ -416,26 +437,21 @@
             ws.Range(3, textCol, 3, lastCol).Merge();
         }
 
-        // Row 4: Thin separator
         ws.Row(4).Height = 5;
 
-        // Row 5: Report title
         ws.Cell(5, textCol).Value = title;
         ws.Cell(5, textCol).Style.Font.Bold = true;
         ws.Cell(5, textCol).Style.Font.FontSize = 12;
         ws.Cell(5, textCol).Style.Font.FontColor = ClosedXML.Excel.XLColor.FromHtml("#1E3A5F");
         ws.Range(5, textCol, 5, lastCol).Merge();
 
-        // Row 6: Date range
         ws.Cell(6, textCol).Value = GetDateRangeText();
         ws.Cell(6, textCol).Style.Font.FontSize = 9;
         ws.Cell(6, textCol).Style.Font.FontColor = ClosedXML.Excel.XLColor.FromHtml("#94A3B8");
         ws.Range(6, textCol, 6, lastCol).Merge();
 
-        // Row 7: Separator
         ws.Row(7).Height = 5;
 
-        // Headers row (data columns start at col 1 to use full width)
         int headerRow = 8;
         for (int c = 0; c < headers.Length; c++)
         {
@@ -451,7 +467,6 @@
         }
         ws.Row(headerRow).Height = 22;
 
-        // Data rows
         for (int r = 0; r < rows.Count; r++)
         {
             for (int c = 0; c < rows[r].Length; c++)
@@ -476,7 +491,6 @@
             }
         }
 
-        // Summary row
         if (rows.Count > 0)
         {
             int summaryRow = headerRow + 1 + rows.Count + 1;
@@ -502,7 +516,6 @@
     {
         QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
-        // Register Arabic font for RTL support
         var fontsPath = Path.Combine(WebHostEnv.WebRootPath, "fonts");
         var arabicRegularPath = Path.Combine(fontsPath, "NotoSansArabic-Regular.ttf");
         var arabicBoldPath = Path.Combine(fontsPath, "NotoSansArabic-Bold.ttf");
@@ -517,7 +530,6 @@
             QuestPDF.Drawing.FontManager.RegisterFont(boldStream);
         }
 
-        // Load company logo
         byte[]? logoBytes = null;
         if (!string.IsNullOrEmpty(_logoPath))
         {
@@ -542,22 +554,16 @@
                     return style;
                 });
 
-                // Header: Logo first → Company info → (spacer) → Report title + date
-                // QuestPDF RTL flips the visual order automatically, so the code
-                // always reads: logo | info | title. In LTR it renders left-to-right;
-                // in RTL it renders right-to-left (logo on the right).
                 page.Header().Column(col =>
                 {
                     col.Item().Row(row =>
                     {
-                        // 1) Logo (first in reading direction)
                         if (logoBytes is { Length: > 0 })
                         {
                             row.ConstantItem(50).Height(50).Image(logoBytes);
-                            row.ConstantItem(10); // spacer between logo and text
+                            row.ConstantItem(10);
                         }
 
-                        // 2) Company info (next to logo)
                         row.RelativeItem().PaddingTop(3).Column(info =>
                         {
                             info.Item().Text(companyDisplayName)
@@ -568,7 +574,6 @@
                                 info.Item().Text($"{T("Report_Tel")}: {_companyTel}").FontSize(8).FontColor(QuestPDF.Helpers.Colors.Grey.Darken2);
                         });
 
-                        // 3) Report title + date (opposite end)
                         row.ConstantItem(180).AlignRight().PaddingTop(3).Column(rt =>
                         {
                             rt.Item().AlignRight().Text(title).Bold().FontSize(13).FontColor(QuestPDF.Helpers.Colors.Blue.Darken4);
@@ -584,7 +589,7 @@
                 {
                     table.ColumnsDefinition(cd =>
                     {
-                        cd.ConstantColumn(25); // # column
+                        cd.ConstantColumn(25);
                         for (int i = 1; i < headers.Length; i++)
                             cd.RelativeColumn();
                     });

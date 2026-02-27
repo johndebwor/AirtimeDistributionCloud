@@ -1,0 +1,398 @@
+@rendermode InteractiveServer
+@using AirtimeDistributionCloud.Application.Services
+@using AirtimeDistributionCloud.Core.Interfaces
+@inject NavigationManager Navigation
+@inject ISystemSettingRepository SettingsRepo
+@inject IJSRuntime JS
+
+@if (_enabled)
+{
+    <div class="ai-assistant-fab @(_isOpen ? "open" : "")">
+        @if (_isOpen)
+        {
+            <div class="ai-assistant-panel">
+                <div class="ai-assistant-header">
+                    <div>
+                        <div class="d-flex align-center gap-2">
+                            <MudIcon Icon="@Icons.Material.Outlined.SmartToy" Size="Size.Small" Style="color: white;" />
+                            <MudText Typo="Typo.subtitle1" Style="color: white; font-weight: 600;">@_assistantName</MudText>
+                        </div>
+                        <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.7); font-size: 0.7rem;">
+                            @(Lang?.T("AI_Subtitle") ?? "How can I help you?")
+                        </MudText>
+                    </div>
+                    <div class="d-flex align-center">
+                        <MudTooltip Text="@(Lang?.T("AI_ClearChat") ?? "Clear chat")">
+                            <MudIconButton Icon="@Icons.Material.Outlined.DeleteOutline" Size="Size.Small" Style="color: rgba(255,255,255,0.7);"
+                                           OnClick="ClearChat" />
+                        </MudTooltip>
+                        <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" Style="color: white;"
+                                       OnClick="@(() => _isOpen = false)" />
+                    </div>
+                </div>
+
+                <div class="ai-assistant-body" @ref="_chatContainer">
+                    @foreach (var msg in _messages)
+                    {
+                        <div class="ai-msg @(msg.IsUser ? "ai-msg-user" : "ai-msg-bot")">
+                            @if (!msg.IsUser)
+                            {
+                                <MudAvatar Size="Size.Small" Class="ai-msg-avatar" Style="background: var(--mud-palette-primary); width:28px; height:28px;">
+                                    <MudIcon Icon="@Icons.Material.Outlined.SmartToy" Size="Size.Small" Style="color:white; font-size:16px;" />
+                                </MudAvatar>
+                            }
+                            <div>
+                                <div class="ai-msg-content">
+                                    @((MarkupString)msg.Text)
+                                </div>
+                                <div class="ai-msg-time">@msg.Time.ToString("HH:mm")</div>
+                                @if (!msg.IsUser)
+                                {
+                                    <div class="ai-feedback">
+                                        <MudIconButton Icon="@Icons.Material.Outlined.ThumbUp" Size="Size.Small"
+                                                       Style="@(msg.Feedback == 1 ? "color: var(--mud-palette-primary);" : "color: var(--mud-palette-text-secondary); opacity:0.5;")"
+                                                       OnClick="@(() => msg.Feedback = 1)" />
+                                        <MudIconButton Icon="@Icons.Material.Outlined.ThumbDown" Size="Size.Small"
+                                                       Style="@(msg.Feedback == -1 ? "color: var(--mud-palette-error);" : "color: var(--mud-palette-text-secondary); opacity:0.5;")"
+                                                       OnClick="@(() => msg.Feedback = -1)" />
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    @if (_isTyping)
+                    {
+                        <div class="ai-msg ai-msg-bot">
+                            <MudAvatar Size="Size.Small" Class="ai-msg-avatar" Style="background: var(--mud-palette-primary); width:28px; height:28px;">
+                                <MudIcon Icon="@Icons.Material.Outlined.SmartToy" Size="Size.Small" Style="color:white; font-size:16px;" />
+                            </MudAvatar>
+                            <div class="ai-typing-indicator">
+                                <span></span><span></span><span></span>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="ai-assistant-suggestions">
+                    @foreach (var suggestion in GetContextualSuggestions())
+                    {
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
+                                   Class="ai-suggestion-chip" OnClick="@(() => AskQuestion(suggestion))">
+                            @suggestion
+                        </MudButton>
+                    }
+                </div>
+
+                <div class="ai-assistant-input">
+                    <MudTextField @bind-Value="_userInput" Placeholder="@(Lang?.T("AI_AskQuestion") ?? "Ask a question...")"
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
+                                  Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Send"
+                                  AdornmentColor="Color.Primary" OnAdornmentClick="SendMessage"
+                                  OnKeyDown="OnKeyDown" />
+                </div>
+            </div>
+        }
+
+        <MudBadge Visible="@(_unreadCount > 0 && !_isOpen)" Content="@_unreadCount" Color="Color.Error" Overlap="true">
+            <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Outlined.SmartToy"
+                    Size="Size.Large" OnClick="TogglePanel"
+                    Style="box-shadow: 0 4px 20px rgba(37, 99, 235, 0.4);" />
+        </MudBadge>
+    </div>
+}
+
+@code {
+    [CascadingParameter] public ILanguageService? Lang { get; set; }
+
+    private bool _enabled = true;
+    private bool _isOpen;
+    private bool _isTyping;
+    private string _userInput = "";
+    private ElementReference _chatContainer;
+    private List<ChatMessage> _messages = new();
+    private string _assistantName = "RasidBase Assistant";
+    private string _welcomeMessage = "";
+    private int _unreadCount;
+    private bool _settingsLoaded;
+
+    protected override void OnInitialized()
+    {
+        _messages.Add(new ChatMessage(false,
+            Lang?.T("AI_Welcome") ??
+            "Hello! I'm your <strong>RasidBase Assistant</strong>. I can help you navigate the system, understand features, and answer questions about airtime distribution, dealers, reports, and more. How can I help you today?"));
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _settingsLoaded) return;
+        _settingsLoaded = true;
+        try
+        {
+            var enabledSetting = await SettingsRepo.GetByKeyAsync("AIAssistantEnabled");
+            if (enabledSetting is not null && string.Equals(enabledSetting.Value, "No", StringComparison.OrdinalIgnoreCase))
+            {
+                _enabled = false;
+                StateHasChanged();
+                return;
+            }
+
+            var nameSetting = await SettingsRepo.GetByKeyAsync("AIAssistantName");
+            if (nameSetting is not null && !string.IsNullOrWhiteSpace(nameSetting.Value))
+                _assistantName = nameSetting.Value;
+
+            var welcomeSetting = await SettingsRepo.GetByKeyAsync("AIAssistantWelcomeMessage");
+            if (welcomeSetting is not null && !string.IsNullOrWhiteSpace(welcomeSetting.Value))
+            {
+                _welcomeMessage = welcomeSetting.Value;
+                if (_messages.Count > 0 && !_messages[0].IsUser)
+                    _messages[0] = new ChatMessage(false, _welcomeMessage);
+            }
+            StateHasChanged();
+        }
+        catch { }
+    }
+
+    private void TogglePanel()
+    {
+        _isOpen = !_isOpen;
+        if (_isOpen) _unreadCount = 0;
+    }
+
+    private void ClearChat()
+    {
+        _messages.Clear();
+        _messages.Add(new ChatMessage(false,
+            !string.IsNullOrEmpty(_welcomeMessage) ? _welcomeMessage :
+            (Lang?.T("AI_Welcome") ?? "Hello! I'm your <strong>RasidBase Assistant</strong>. How can I help you today?")));
+    }
+
+    private void OnKeyDown(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(_userInput))
+            SendMessage();
+    }
+
+    private void AskQuestion(string question)
+    {
+        _userInput = question;
+        SendMessage();
+    }
+
+    private async void SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(_userInput)) return;
+
+        var question = _userInput.Trim();
+        _messages.Add(new ChatMessage(true, question));
+        _userInput = "";
+
+        _isTyping = true;
+        StateHasChanged();
+        await ScrollToBottom();
+
+        await Task.Delay(400);
+
+        var answer = GetAnswer(question);
+        _messages.Add(new ChatMessage(false, answer));
+        _isTyping = false;
+
+        if (!_isOpen) _unreadCount++;
+
+        StateHasChanged();
+        await ScrollToBottom();
+    }
+
+    private async Task ScrollToBottom()
+    {
+        try
+        {
+            await Task.Delay(50);
+            await JS.InvokeVoidAsync("eval", "document.querySelector('.ai-assistant-body')?.scrollTo({top: 999999, behavior: 'smooth'})");
+        }
+        catch { }
+    }
+
+    private string GetAnswer(string question)
+    {
+        var q = question.ToLowerInvariant();
+
+        // Transfer related
+        if (q.Contains("transfer") && (q.Contains("create") || q.Contains("new") || q.Contains("make") || q.Contains("how")))
+            return Lang?.T("AI_HowTransfer") ?? "To create a new transfer:<br/>1. Go to <a href='/dealer/transfers' style='color:var(--mud-palette-primary);font-weight:600;'>Dealers &gt; Transfers</a><br/>2. Click <strong>+ New Transfer</strong><br/>3. Select the dealer, product, and enter the amount<br/>4. The system auto-calculates airtime and commission<br/>5. Submit for admin approval";
+
+        if (q.Contains("transfer") && (q.Contains("approv") || q.Contains("pending")))
+            return Lang?.T("AI_TransferApproval") ?? "To approve transfers:<br/>1. Go to <a href='/admin/transfer-approvals' style='color:var(--mud-palette-primary);font-weight:600;'>Admin &gt; Transfer Approvals</a><br/>2. Review pending transfers<br/>3. Click <strong>Approve</strong> or <strong>Reject</strong><br/>4. Approved transfers deduct airtime and notify the dealer";
+
+        if (q.Contains("transfer") && q.Contains("notification"))
+            return Lang?.T("AI_TransferNotification") ?? "Transfer notifications can be configured in <a href='/admin/settings' style='color:var(--mud-palette-primary);font-weight:600;'>System Settings</a>. You can enable Email, WhatsApp (to dealer's number), or WhatsApp Group notifications.";
+
+        // Dealer related
+        if (q.Contains("dealer") && (q.Contains("register") || q.Contains("add") || q.Contains("new") || q.Contains("create")))
+            return Lang?.T("AI_RegisterDealer") ?? "To register a new dealer:<br/>1. Go to <a href='/dealer/registration' style='color:var(--mud-palette-primary);font-weight:600;'>Dealers &gt; Registration</a><br/>2. Click <strong>+ New Dealer</strong><br/>3. Enter name, phone number, and select branch<br/>4. Set commission rates for each product<br/>5. A dealer number (DLR-xxxx) is auto-generated";
+
+        if (q.Contains("dealer") && q.Contains("commission"))
+            return Lang?.T("AI_DealerCommission") ?? "Commissions are calculated using the formula:<br/><code>Airtime = Amount / (1 + Rate/100)</code><br/><code>Commission = Amount - Airtime</code><br/><br/>Each dealer has individual commission rates per product, set during registration.";
+
+        if (q.Contains("dealer") && q.Contains("balance"))
+            return Lang?.T("AI_DealerBalance") ?? "Check dealer balances in <a href='/cashier/balances' style='color:var(--mud-palette-primary);font-weight:600;'>Cashier &gt; Balances</a>. The balance = Total airtime transferred - Cash deposits received.";
+
+        // Deposit related
+        if (q.Contains("deposit") && q.Contains("airtime"))
+            return Lang?.T("AI_AirtimeDeposit") ?? "To add airtime stock:<br/>1. Go to <a href='/admin/deposits' style='color:var(--mud-palette-primary);font-weight:600;'>Admin &gt; Deposits</a><br/>2. Click <strong>+ New Deposit</strong><br/>3. Select product, enter amount and bonus %<br/>4. Total = Amount + (Amount x Bonus%)<br/>5. May require admin approval";
+
+        if (q.Contains("deposit") && q.Contains("cash"))
+            return Lang?.T("AI_CashDeposit") ?? "To record a cash deposit:<br/>1. Go to <a href='/cashier/deposits' style='color:var(--mud-palette-primary);font-weight:600;'>Cashier &gt; Cash Deposits</a><br/>2. Click <strong>+ New Deposit</strong><br/>3. Select the dealer and enter the amount";
+
+        if (q.Contains("deposit") && q.Contains("approv"))
+            return Lang?.T("AI_DepositApproval") ?? "Deposit approvals are managed in <a href='/admin/approvals' style='color:var(--mud-palette-primary);font-weight:600;'>Admin &gt; Deposit Approvals</a>. Auto-approval can be enabled in System Settings.";
+
+        // Expense related
+        if (q.Contains("expense"))
+            return Lang?.T("AI_Expense") ?? "To manage expenses:<br/>1. Go to <a href='/cashier/expenses' style='color:var(--mud-palette-primary);font-weight:600;'>Cashier &gt; Expenses</a><br/>2. Click <strong>+ New Expense</strong><br/>3. Select category, enter amount and description<br/>4. Expenses above the threshold require admin approval";
+
+        // Report related
+        if (q.Contains("report") || q.Contains("export") || q.Contains("pdf") || q.Contains("excel"))
+            return Lang?.T("AI_Reports") ?? "To generate reports:<br/>1. Go to <a href='/admin/reports' style='color:var(--mud-palette-primary);font-weight:600;'>Reports</a><br/>2. Select report type and date range<br/>3. Click <strong>View</strong> for inline preview<br/>4. Export as <strong>PDF</strong> or <strong>Excel</strong>";
+
+        // Asset related
+        if (q.Contains("asset"))
+            return Lang?.T("AI_Assets") ?? "The Asset Registry helps you track company assets:<br/>1. Go to <a href='/admin/assets' style='color:var(--mud-palette-primary);font-weight:600;'>Asset Registry &gt; Assets</a> to manage assets<br/>2. Use <a href='/admin/asset-categories' style='color:var(--mud-palette-primary);font-weight:600;'>Asset Categories</a> to organize by type<br/>3. Track assignments, maintenance, and depreciation";
+
+        // Settings
+        if (q.Contains("setting") || q.Contains("configure") || q.Contains("setup"))
+            return Lang?.T("AI_Settings") ?? "System settings are in <a href='/admin/settings' style='color:var(--mud-palette-primary);font-weight:600;'>System Settings</a>:<br/>- <strong>General Settings</strong>: Approval rules, formulas, notifications<br/>- <strong>Email/SMTP</strong>: Email notification setup<br/>- <strong>WhatsApp</strong>: WhatsApp Business API<br/>- <strong>Currency</strong>: Manage currencies<br/>- <strong>AI Assistant</strong>: Configure this assistant";
+
+        // Currency
+        if (q.Contains("currency") || q.Contains("currencies"))
+            return Lang?.T("AI_Currency") ?? "Manage currencies in <a href='/admin/settings' style='color:var(--mud-palette-primary);font-weight:600;'>System Settings &gt; Currency Configuration</a>. You can add/remove currencies, set the default currency, and configure currency symbols. Currencies are used in the Asset Registry.";
+
+        // Audit logs
+        if (q.Contains("audit") || q.Contains("log"))
+            return Lang?.T("AI_AuditLogs") ?? "View system activity in <a href='/superadmin/audit' style='color:var(--mud-palette-primary);font-weight:600;'>System &gt; Audit Logs</a>. All significant actions (transfers, approvals, user changes) are recorded with timestamps, user info, and details.";
+
+        // Branch management
+        if (q.Contains("branch"))
+            return Lang?.T("AI_Branch") ?? "Manage branches in <a href='/admin/branches' style='color:var(--mud-palette-primary);font-weight:600;'>Admin &gt; Branches</a>. Each branch has a name and can be assigned to dealers, users, and transactions. Products are also managed per branch.";
+
+        // User management
+        if (q.Contains("user") || q.Contains("password") || q.Contains("role"))
+            return Lang?.T("AI_Users") ?? "User management is in <a href='/superadmin/users' style='color:var(--mud-palette-primary);font-weight:600;'>System &gt; Users</a>:<br/>- Add users with roles (SystemAdmin, SuperAdministrator, AssetManager, Dealer, Cashier)<br/>- Default password: <strong>Pass@1234</strong><br/>- Reset passwords using the lock icon<br/>- Control access in <a href='/admin/permissions' style='color:var(--mud-palette-primary);font-weight:600;'>Permissions</a>";
+
+        // Permission
+        if (q.Contains("permission") || q.Contains("access"))
+            return Lang?.T("AI_Permissions") ?? "Permissions are managed in <a href='/admin/permissions' style='color:var(--mud-palette-primary);font-weight:600;'>System &gt; Permissions</a> (SystemAdmin only). Toggle page access for each role.";
+
+        // Language/theme
+        if (q.Contains("language") || q.Contains("arabic") || q.Contains("rtl"))
+            return Lang?.T("AI_Language") ?? "Click the <strong>globe icon</strong> in the top-right corner to switch between English and Arabic. Arabic mode activates RTL layout automatically.";
+
+        if (q.Contains("dark") || q.Contains("theme") || q.Contains("light"))
+            return Lang?.T("AI_Theme") ?? "Click the <strong>theme icon</strong> in the top-right to switch between Light, Dark, or Auto mode.";
+
+        // WhatsApp
+        if (q.Contains("whatsapp"))
+            return Lang?.T("AI_WhatsApp") ?? "WhatsApp integration uses the <strong>Meta WhatsApp Business API</strong>. Configure in <a href='/admin/settings' style='color:var(--mud-palette-primary);font-weight:600;'>System Settings</a>.";
+
+        // Company profile
+        if (q.Contains("company") || q.Contains("logo") || q.Contains("stamp"))
+            return Lang?.T("AI_Company") ?? "Set up your company profile in <a href='/admin/company-profile' style='color:var(--mud-palette-primary);font-weight:600;'>Company Profile</a>. Upload your logo, stamp, and enter company details.";
+
+        // Analytics
+        if (q.Contains("analytics") || q.Contains("chart") || q.Contains("graph"))
+            return Lang?.T("AI_Analytics") ?? "View business analytics in <a href='/admin/analytics' style='color:var(--mud-palette-primary);font-weight:600;'>Sales &amp; Capital</a>. See charts for sales trends, product performance, and branch comparisons.";
+
+        // Navigation
+        if (q.Contains("navigate") || q.Contains("find") || q.Contains("where"))
+            return Lang?.T("AI_Navigate") ?? "Use the <strong>sidebar menu</strong> on the left to navigate. Sections are organized by function: Admin, Reports, Asset Registry, Dealers, Cashier, and System.";
+
+        // Greeting
+        if (q.Contains("hello") || q.Contains("hi") || q.Contains("hey") || q.Contains("help") || q.Contains("مرحبا") || q.Contains("مساعدة"))
+            return Lang?.T("AI_Greeting") ?? "Hello! I can help you with:<br/>- Creating transfers and deposits<br/>- Managing dealers and commissions<br/>- Generating reports (PDF/Excel)<br/>- Configuring system settings<br/>- Understanding permissions and roles<br/><br/>Just ask me anything about RasidBase!";
+
+        // Default
+        return Lang?.T("AI_Default") ?? "I can help you with transfers, deposits, dealer management, reports, settings, and more. Try asking about a specific feature like:<br/>- \"How do I create a transfer?\"<br/>- \"How do commissions work?\"<br/>- \"How to generate reports?\"<br/>- \"How to manage currencies?\"";
+    }
+
+    private List<string> GetContextualSuggestions()
+    {
+        var uri = Navigation.ToBaseRelativePath(Navigation.Uri).ToLower();
+
+        if (uri.Contains("transfer"))
+            return [
+                Lang?.T("AI_Sug_CreateTransfer") ?? "How to create a transfer?",
+                Lang?.T("AI_Sug_Commission") ?? "How are commissions calculated?",
+                Lang?.T("AI_Sug_TransferNotif") ?? "How do transfer notifications work?"
+            ];
+
+        if (uri.Contains("dealer") || uri.Contains("registration"))
+            return [
+                Lang?.T("AI_Sug_RegisterDealer") ?? "How to register a dealer?",
+                Lang?.T("AI_Sug_DealerBalance") ?? "How to check dealer balance?",
+                Lang?.T("AI_Sug_Commission") ?? "How are commissions calculated?"
+            ];
+
+        if (uri.Contains("deposit"))
+            return [
+                Lang?.T("AI_Sug_AirtimeDeposit") ?? "How to add airtime stock?",
+                Lang?.T("AI_Sug_CashDeposit") ?? "How to record a cash deposit?",
+                Lang?.T("AI_Sug_AutoApproval") ?? "How does auto-approval work?"
+            ];
+
+        if (uri.Contains("report") || uri.Contains("analytics"))
+            return [
+                Lang?.T("AI_Sug_Report") ?? "How to generate a report?",
+                Lang?.T("AI_Sug_ExportPdf") ?? "How to export as PDF?",
+                Lang?.T("AI_Sug_Analytics") ?? "What analytics are available?"
+            ];
+
+        if (uri.Contains("expense"))
+            return [
+                Lang?.T("AI_Sug_Expense") ?? "How to record an expense?",
+                Lang?.T("AI_Sug_ExpenseApproval") ?? "When do expenses need approval?",
+                Lang?.T("AI_Sug_ExpenseCategory") ?? "How to manage expense categories?"
+            ];
+
+        if (uri.Contains("setting") || uri.Contains("company"))
+            return [
+                Lang?.T("AI_Sug_Company") ?? "How to set up company profile?",
+                Lang?.T("AI_Sug_Currency") ?? "How to manage currencies?",
+                Lang?.T("AI_Sug_WhatsApp") ?? "How to set up WhatsApp?"
+            ];
+
+        if (uri.Contains("asset"))
+            return [
+                Lang?.T("AI_Sug_Asset") ?? "How to manage assets?",
+                Lang?.T("AI_Sug_AssetCategory") ?? "How to organize asset categories?",
+                Lang?.T("AI_Sug_AssetRole") ?? "Who can manage assets?"
+            ];
+
+        if (uri.Contains("user") || uri.Contains("permission") || uri.Contains("audit"))
+            return [
+                Lang?.T("AI_Sug_AddUser") ?? "How to add a new user?",
+                Lang?.T("AI_Sug_ResetPassword") ?? "How to reset a password?",
+                Lang?.T("AI_Sug_Permissions") ?? "How to manage permissions?"
+            ];
+
+        // Default suggestions
+        return [
+            Lang?.T("AI_Sug_GetStarted") ?? "How do I get started?",
+            Lang?.T("AI_Sug_CreateTransfer") ?? "How to create a transfer?",
+            Lang?.T("AI_Sug_Report") ?? "How to generate a report?"
+        ];
+    }
+
+    private class ChatMessage
+    {
+        public bool IsUser { get; set; }
+        public string Text { get; set; }
+        public DateTime Time { get; set; }
+        public int Feedback { get; set; } // 0=none, 1=up, -1=down
+
+        public ChatMessage(bool isUser, string text)
+        {
+            IsUser = isUser;
+            Text = text;
+            Time = DateTime.Now;
+        }
+    }
+}

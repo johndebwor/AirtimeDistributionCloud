@@ -29,7 +29,7 @@
                  Loading="@_loading" Dense="true" Hover="true" Striped="true"
                  QuickFilter="@(new Func<CashDepositDto, bool>(FilterFunc))">
         <Columns>
-            <PropertyColumn Property="x => x.Id" Title="ID" />
+            <PropertyColumn Property="x => x.TransactionNumber" Title="Transaction #" />
             <PropertyColumn Property="x => x.BranchName" Title="@(Lang?.T("Branch") ?? "Branch")" />
             <PropertyColumn Property="x => x.DealerName" Title="@(Lang?.T("Dealer") ?? "Dealer")" />
             <PropertyColumn Property="x => x.Amount" Title="@(Lang?.T("Amount") ?? "Amount")" Format="C6" />

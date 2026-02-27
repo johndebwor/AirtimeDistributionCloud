@@ -31,14 +31,14 @@ public class DealerService : IDealerService
     {
         var dealers = await _dealerRepository.GetAllAsync(cancellationToken);
         return dealers.Select(d => new DealerDto(d.Id, d.DealerNumber, d.Type, d.Name, d.Gender, d.IdType, d.IdTypeSpecification,
-            d.IDNumber, d.CompanyRegNumber, d.Nationality, d.State, d.County, d.PhysicalAddress, d.PhoneNumber, d.DocumentPath, d.IsActive)).ToList();
+            d.IDNumber, d.CompanyRegNumber, d.Nationality, d.State, d.County, d.PhysicalAddress, d.PhoneNumber, d.DocumentPath, d.IsActive, d.PhotoPath)).ToList();
     }
 
     public async Task<DealerDto?> GetDealerByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var d = await _dealerRepository.GetByIdAsync(id, cancellationToken);
         return d is null ? null : new DealerDto(d.Id, d.DealerNumber, d.Type, d.Name, d.Gender, d.IdType, d.IdTypeSpecification,
-            d.IDNumber, d.CompanyRegNumber, d.Nationality, d.State, d.County, d.PhysicalAddress, d.PhoneNumber, d.DocumentPath, d.IsActive);
+            d.IDNumber, d.CompanyRegNumber, d.Nationality, d.State, d.County, d.PhysicalAddress, d.PhoneNumber, d.DocumentPath, d.IsActive, d.PhotoPath);
     }
 
     public async Task<DealerDto> CreateDealerAsync(CreateDealerRequest request, CancellationToken cancellationToken = default)
@@ -51,7 +51,8 @@ public class DealerService : IDealerService
             Nationality = request.Nationality, State = request.State,
             County = request.County, PhysicalAddress = request.PhysicalAddress,
             PhoneNumber = request.PhoneNumber,
-            DocumentPath = request.DocumentPath
+            DocumentPath = request.DocumentPath,
+            PhotoPath = request.PhotoPath
         };
 
         await _dealerRepository.AddAsync(dealer, cancellationToken);
@@ -70,7 +71,7 @@ public class DealerService : IDealerService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return new DealerDto(dealer.Id, dealer.DealerNumber, dealer.Type, dealer.Name, dealer.Gender, dealer.IdType, dealer.IdTypeSpecification,
-            dealer.IDNumber, dealer.CompanyRegNumber, dealer.Nationality, dealer.State, dealer.County, dealer.PhysicalAddress, dealer.PhoneNumber, dealer.DocumentPath, dealer.IsActive);
+            dealer.IDNumber, dealer.CompanyRegNumber, dealer.Nationality, dealer.State, dealer.County, dealer.PhysicalAddress, dealer.PhoneNumber, dealer.DocumentPath, dealer.IsActive, dealer.PhotoPath);
     }
 
     public async Task UpdateDealerAsync(UpdateDealerRequest request, CancellationToken cancellationToken = default)
@@ -91,6 +92,8 @@ public class DealerService : IDealerService
         dealer.PhoneNumber = request.PhoneNumber;
         if (request.DocumentPath is not null)
             dealer.DocumentPath = request.DocumentPath;
+        if (request.PhotoPath is not null)
+            dealer.PhotoPath = request.PhotoPath;
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
@@ -116,6 +119,25 @@ public class DealerService : IDealerService
         var dps = await _unitOfWork.Repository<DealerProduct>().FindAsync(dp => dp.DealerId == dealerId, cancellationToken);
         var airtimeBalance = dps.Sum(dp => dp.Balance);
         return totalDeposits - airtimeBalance;
+    }
+
+    public async Task<IReadOnlyDictionary<int, decimal>> GetAllDealerCashBalancesAsync(CancellationToken cancellationToken = default)
+    {
+        var allDeposits = await _cashDepositRepository.GetAllAsync(cancellationToken);
+        var allDealerProducts = await _unitOfWork.Repository<DealerProduct>().GetAllAsync(cancellationToken);
+
+        var depositsByDealer = allDeposits
+            .GroupBy(d => d.DealerId)
+            .ToDictionary(g => g.Key, g => g.Sum(d => d.Amount));
+
+        var airtimeByDealer = allDealerProducts
+            .GroupBy(dp => dp.DealerId)
+            .ToDictionary(g => g.Key, g => g.Sum(dp => dp.Balance));
+
+        var allIds = depositsByDealer.Keys.Union(airtimeByDealer.Keys);
+        return allIds.ToDictionary(
+            id => id,
+            id => depositsByDealer.GetValueOrDefault(id) - airtimeByDealer.GetValueOrDefault(id));
     }
 
     public async Task<IReadOnlyList<DealerProductRateDto>> GetAllDealerProductRatesAsync(CancellationToken cancellationToken = default)

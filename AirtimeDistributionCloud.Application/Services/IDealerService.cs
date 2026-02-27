@@ -10,6 +10,7 @@ public interface IDealerService
     Task UpdateDealerAsync(UpdateDealerRequest request, CancellationToken cancellationToken = default);
     Task SetDealerActiveAsync(int dealerId, bool isActive, CancellationToken cancellationToken = default);
     Task<decimal> GetDealerCashBalanceAsync(int dealerId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyDictionary<int, decimal>> GetAllDealerCashBalancesAsync(CancellationToken cancellationToken = default);
     Task UpdateCommissionAsync(UpdateCommissionRequest request, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<DealerProductRateDto>> GetAllDealerProductRatesAsync(CancellationToken cancellationToken = default);
 }
